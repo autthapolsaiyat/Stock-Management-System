@@ -1,0 +1,13 @@
+export { default as LoginPage } from './LoginPage';
+export { default as DashboardPage } from './DashboardPage';
+export { default as ProductsPage } from './ProductsPage';
+export { default as CategoriesPage } from './CategoriesPage';
+export { default as CustomersPage } from './CustomersPage';
+export { default as SuppliersPage } from './SuppliersPage';
+export { default as WarehousesPage } from './WarehousesPage';
+export { default as StockBalancePage } from './StockBalancePage';
+export { default as SalesInvoicesPage } from './SalesInvoicesPage';
+export { default as PurchaseOrdersPage } from './PurchaseOrdersPage';
+export { default as GoodsReceiptsPage } from './GoodsReceiptsPage';
+export { default as StockIssuesPage } from './StockIssuesPage';
+export { default as StockTransfersPage } from './StockTransfersPage';

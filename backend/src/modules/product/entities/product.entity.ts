@@ -24,6 +24,9 @@ export class ProductEntity {
 
   @Column({ length: 50, nullable: true })
   barcode: string;
+ 
+ @Column({ name: 'image_url', length: 500, nullable: true })
+  imageUrl: string;
 
   @Column({ name: 'min_stock', type: 'decimal', precision: 15, scale: 4, default: 0 })
   minStock: number;

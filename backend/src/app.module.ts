@@ -16,6 +16,7 @@ import { GoodsReceiptModule } from './modules/goods-receipt/goods-receipt.module
 import { StockIssueModule } from './modules/stock-issue/stock-issue.module';
 import { StockTransferModule } from './modules/stock-transfer/stock-transfer.module';
 import { SalesInvoiceModule } from './modules/sales-invoice/sales-invoice.module';
+import { UploadModule } from './upload/upload.module';
 
 @Module({
   imports: [
@@ -50,6 +51,7 @@ import { SalesInvoiceModule } from './modules/sales-invoice/sales-invoice.module
     StockIssueModule,
     StockTransferModule,
     SalesInvoiceModule,
+    UploadModule,
   ],
 })
 export class AppModule {}
