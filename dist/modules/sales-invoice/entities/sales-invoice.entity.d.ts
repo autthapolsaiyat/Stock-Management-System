@@ -1,0 +1,32 @@
+import { SalesInvoiceItemEntity } from './sales-invoice-item.entity';
+export declare class SalesInvoiceEntity {
+    id: number;
+    docBaseNo: string;
+    docRevision: number;
+    docFullNo: string;
+    isLatestRevision: boolean;
+    customerId: number;
+    warehouseId: number;
+    quotationId: number;
+    docDate: Date;
+    dueDate: Date;
+    creditTermDays: number;
+    status: string;
+    subtotal: number;
+    discountTotal: number;
+    taxRate: number;
+    taxAmount: number;
+    grandTotal: number;
+    costTotal: number;
+    profitTotal: number;
+    remark: string;
+    postedAt: Date;
+    postedBy: number;
+    cancelledAt: Date;
+    cancelledBy: number;
+    createdAt: Date;
+    updatedAt: Date;
+    createdBy: number;
+    updatedBy: number;
+    items: SalesInvoiceItemEntity[];
+}

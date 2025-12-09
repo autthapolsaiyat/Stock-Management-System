@@ -1,0 +1,27 @@
+export declare enum DocStatus {
+    DRAFT = "DRAFT",
+    CONFIRMED = "CONFIRMED",
+    APPROVED = "APPROVED",
+    ORDERED = "ORDERED",
+    PARTIALLY_RECEIVED = "PARTIALLY_RECEIVED",
+    COMPLETED = "COMPLETED",
+    POSTED = "POSTED",
+    CANCELLED = "CANCELLED"
+}
+export declare enum DocType {
+    QT = "QT",
+    PO = "PO",
+    GR = "GR",
+    SI = "SI",
+    TR = "TR",
+    INV = "INV"
+}
+export declare enum FifoTransactionType {
+    GRN = "GRN",
+    ISSUE = "ISSUE",
+    SALES = "SALES",
+    TRANSFER_IN = "TRANSFER_IN",
+    TRANSFER_OUT = "TRANSFER_OUT",
+    ADJUSTMENT_IN = "ADJUSTMENT_IN",
+    ADJUSTMENT_OUT = "ADJUSTMENT_OUT"
+}
