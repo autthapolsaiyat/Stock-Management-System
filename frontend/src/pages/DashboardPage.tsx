@@ -6,7 +6,6 @@ import {
   ShopOutlined,
   InboxOutlined,
   ArrowUpOutlined,
-  ArrowDownOutlined,
 } from '@ant-design/icons';
 import { productsApi, customersApi, suppliersApi, stockApi, salesInvoicesApi } from '../services/api';
 

@@ -14,7 +14,6 @@ import {
   Popconfirm,
   Upload,
   Image,
-  Spin,
 } from 'antd';
 import type { UploadFile, UploadProps } from 'antd';
 import {
@@ -22,7 +21,6 @@ import {
   SearchOutlined,
   EditOutlined,
   DeleteOutlined,
-  UploadOutlined,
   PictureOutlined,
   LoadingOutlined,
 } from '@ant-design/icons';
