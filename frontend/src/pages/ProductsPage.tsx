@@ -269,6 +269,13 @@ const ProductsPage: React.FC = () => {
       render: (cost: number) => `฿${(cost || 0).toLocaleString()}`,
     },
     {
+      title: 'Min/Max',
+      dataIndex: 'minStock',
+      key: 'minMax',
+      align: 'center' as const,
+      render: (_: any, record: Product) => `${record.minStock || 0}/${record.maxStock || 0}`,
+    },
+    {
       title: 'สถานะ',
       dataIndex: 'isActive',
       key: 'isActive',
@@ -398,7 +405,7 @@ const ProductsPage: React.FC = () => {
             label="รหัสสินค้า"
             rules={[{ required: true, message: 'กรุณากรอกรหัสสินค้า' }]}
           >
-            <Input placeholder="เช่น PRD-001" />
+            <Input placeholder="เช่น PRD-001" disabled={!!editingProduct} />
           </Form.Item>
 
           <Form.Item

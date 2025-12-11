@@ -109,6 +109,7 @@ export const purchaseOrdersApi = {
   create: (data: any) => api.post('/api/purchase-orders', data),
   approve: (id: number) => api.post(`/api/purchase-orders/${id}/approve`),
   cancel: (id: number) => api.post(`/api/purchase-orders/${id}/cancel`),
+  update: (id: number, data: any) => api.put(`/api/purchase-orders/${id}`, data),
 };
 
 // Goods Receipts API
@@ -118,6 +119,7 @@ export const goodsReceiptsApi = {
   create: (data: any) => api.post('/api/goods-receipts', data),
   post: (id: number) => api.post(`/api/goods-receipts/${id}/post`),
   cancel: (id: number) => api.post(`/api/goods-receipts/${id}/cancel`),
+  update: (id: number, data: any) => api.put(`/api/goods-receipts/${id}`, data),
 };
 
 // Stock Issues API
