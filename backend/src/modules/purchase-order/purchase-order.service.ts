@@ -92,7 +92,6 @@ export class PurchaseOrderService {
       // Update PO header
       po.supplierId = dto.supplierId ?? po.supplierId;
       po.docDate = dto.docDate ?? po.docDate;
-      po.expectedDate = dto.expectedDate ?? po.expectedDate;
       po.remark = dto.remark ?? po.remark;
       po.updatedBy = userId;
 
