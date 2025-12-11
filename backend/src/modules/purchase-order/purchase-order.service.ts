@@ -89,12 +89,6 @@ export class PurchaseOrderService {
     await queryRunner.startTransaction();
 
     try {
-      // Update PO header
-      po.supplierId = dto.supplierId ?? po.supplierId;
-      po.docDate = dto.docDate ?? po.docDate;
-      po.remark = dto.remark ?? po.remark;
-      po.updatedBy = userId;
-
       // Delete old items
       await queryRunner.manager.delete(PurchaseOrderItemEntity, { purchaseOrderId: id });
 
@@ -103,27 +97,37 @@ export class PurchaseOrderService {
       if (dto.items && dto.items.length > 0) {
         for (let i = 0; i < dto.items.length; i++) {
           const item = dto.items[i];
-          const lineTotal = item.qty * item.unitPrice - (item.discountAmount || 0);
+          const lineTotal = (item.qty || 0) * (item.unitPrice || 0) - (item.discountAmount || 0);
           subtotal += lineTotal;
 
-          const poItem = queryRunner.manager.create(PurchaseOrderItemEntity, {
-            purchaseOrderId: id,
-            lineNo: i + 1,
-            productId: item.productId,
-            qty: item.qty,
-            unitPrice: item.unitPrice,
-            discountAmount: item.discountAmount || 0,
-            lineTotal,
-            qtyReceived: 0,
-          });
-          await queryRunner.manager.save(poItem);
+          await queryRunner.manager
+            .createQueryBuilder()
+            .insert()
+            .into(PurchaseOrderItemEntity)
+            .values({
+              purchaseOrderId: id,
+              lineNo: i + 1,
+              productId: item.productId,
+              qty: item.qty,
+              unitPrice: item.unitPrice,
+              discountAmount: item.discountAmount || 0,
+              lineTotal,
+              qtyReceived: 0,
+            })
+            .execute();
         }
       }
 
-      po.subtotal = subtotal;
-      po.taxAmount = subtotal * 0.07;
-      po.grandTotal = subtotal * 1.07;
-      await queryRunner.manager.save(po);
+      // Update PO header
+      await queryRunner.manager.update(PurchaseOrderEntity, id, {
+        supplierId: dto.supplierId ?? po.supplierId,
+        docDate: dto.docDate ?? po.docDate,
+        remark: dto.remark ?? po.remark,
+        updatedBy: userId,
+        subtotal,
+        taxAmount: subtotal * 0.07,
+        grandTotal: subtotal * 1.07,
+      });
 
       await queryRunner.commitTransaction();
       return this.findOne(id);

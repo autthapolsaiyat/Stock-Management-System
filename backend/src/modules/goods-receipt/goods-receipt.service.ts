@@ -89,14 +89,6 @@ export class GoodsReceiptService {
     await queryRunner.startTransaction();
 
     try {
-      // Update GRN header
-      grn.supplierId = dto.supplierId ?? grn.supplierId;
-      grn.warehouseId = dto.warehouseId ?? grn.warehouseId;
-      grn.docDate = dto.docDate ?? grn.docDate;
-      grn.purchaseOrderId = dto.purchaseOrderId ?? grn.purchaseOrderId;
-      grn.remark = dto.remark ?? grn.remark;
-      grn.updatedBy = userId;
-
       // Delete old items
       await queryRunner.manager.delete(GoodsReceiptItemEntity, { goodsReceiptId: id });
 
@@ -105,23 +97,35 @@ export class GoodsReceiptService {
       if (dto.items && dto.items.length > 0) {
         for (let i = 0; i < dto.items.length; i++) {
           const item = dto.items[i];
-          const lineTotal = item.qty * item.unitCost;
+          const lineTotal = (item.qty || 0) * (item.unitCost || 0);
           totalAmount += lineTotal;
 
-          const grnItem = queryRunner.manager.create(GoodsReceiptItemEntity, {
-            goodsReceiptId: id,
-            lineNo: i + 1,
-            productId: item.productId,
-            qty: item.qty,
-            unitCost: item.unitCost,
-            lineTotal,
-          });
-          await queryRunner.manager.save(grnItem);
+          await queryRunner.manager
+            .createQueryBuilder()
+            .insert()
+            .into(GoodsReceiptItemEntity)
+            .values({
+              goodsReceiptId: id,
+              lineNo: i + 1,
+              productId: item.productId,
+              qty: item.qty,
+              unitCost: item.unitCost,
+              lineTotal,
+            })
+            .execute();
         }
       }
 
-      grn.totalAmount = totalAmount;
-      await queryRunner.manager.save(grn);
+      // Update GRN header
+      await queryRunner.manager.update(GoodsReceiptEntity, id, {
+        supplierId: dto.supplierId ?? grn.supplierId,
+        warehouseId: dto.warehouseId ?? grn.warehouseId,
+        docDate: dto.docDate ?? grn.docDate,
+        purchaseOrderId: dto.purchaseOrderId ?? grn.purchaseOrderId,
+        remark: dto.remark ?? grn.remark,
+        updatedBy: userId,
+        totalAmount,
+      });
 
       await queryRunner.commitTransaction();
       return this.findOne(id);
