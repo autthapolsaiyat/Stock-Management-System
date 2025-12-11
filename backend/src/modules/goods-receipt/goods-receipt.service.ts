@@ -78,6 +78,61 @@ export class GoodsReceiptService {
     }
   }
 
+  async update(id: number, dto: any, userId: number) {
+    const grn = await this.findOne(id);
+    if (grn.status !== 'DRAFT') {
+      throw new BadRequestException('Only draft GRN can be updated');
+    }
+
+    const queryRunner = this.dataSource.createQueryRunner();
+    await queryRunner.connect();
+    await queryRunner.startTransaction();
+
+    try {
+      // Update GRN header
+      grn.supplierId = dto.supplierId ?? grn.supplierId;
+      grn.warehouseId = dto.warehouseId ?? grn.warehouseId;
+      grn.docDate = dto.docDate ?? grn.docDate;
+      grn.purchaseOrderId = dto.purchaseOrderId ?? grn.purchaseOrderId;
+      grn.remark = dto.remark ?? grn.remark;
+      grn.updatedBy = userId;
+
+      // Delete old items
+      await queryRunner.manager.delete(GoodsReceiptItemEntity, { goodsReceiptId: id });
+
+      // Create new items
+      let totalAmount = 0;
+      if (dto.items && dto.items.length > 0) {
+        for (let i = 0; i < dto.items.length; i++) {
+          const item = dto.items[i];
+          const lineTotal = item.qty * item.unitCost;
+          totalAmount += lineTotal;
+
+          const grnItem = queryRunner.manager.create(GoodsReceiptItemEntity, {
+            goodsReceiptId: id,
+            lineNo: i + 1,
+            productId: item.productId,
+            qty: item.qty,
+            unitCost: item.unitCost,
+            lineTotal,
+          });
+          await queryRunner.manager.save(grnItem);
+        }
+      }
+
+      grn.totalAmount = totalAmount;
+      await queryRunner.manager.save(grn);
+
+      await queryRunner.commitTransaction();
+      return this.findOne(id);
+    } catch (error) {
+      await queryRunner.rollbackTransaction();
+      throw error;
+    } finally {
+      await queryRunner.release();
+    }
+  }
+
   async post(id: number, userId: number) {
     const grn = await this.findOne(id);
     if (grn.status !== 'DRAFT') throw new BadRequestException('Only draft GRN can be posted');

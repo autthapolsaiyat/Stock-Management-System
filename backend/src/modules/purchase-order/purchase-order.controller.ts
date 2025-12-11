@@ -1,4 +1,4 @@
-import { Controller, Get, Post, Body, Param, Query, ParseIntPipe, UseGuards, Request } from '@nestjs/common';
+import { Controller, Get, Post, Put, Body, Param, Query, ParseIntPipe, UseGuards, Request } from '@nestjs/common';
 import { ApiTags, ApiBearerAuth, ApiQuery } from '@nestjs/swagger';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { PurchaseOrderService } from './purchase-order.service';
@@ -19,6 +19,11 @@ export class PurchaseOrderController {
 
   @Post()
   create(@Body() dto: any, @Request() req: any) { return this.poService.create(dto, req.user.sub); }
+
+  @Put(':id')
+  update(@Param('id', ParseIntPipe) id: number, @Body() dto: any, @Request() req: any) { 
+    return this.poService.update(id, dto, req.user.sub); 
+  }
 
   @Post(':id/approve')
   approve(@Param('id', ParseIntPipe) id: number, @Request() req: any) { return this.poService.approve(id, req.user.sub); }

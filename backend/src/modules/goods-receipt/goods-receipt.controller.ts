@@ -1,4 +1,4 @@
-import { Controller, Get, Post, Body, Param, Query, ParseIntPipe, UseGuards, Request } from '@nestjs/common';
+import { Controller, Get, Post, Put, Body, Param, Query, ParseIntPipe, UseGuards, Request } from '@nestjs/common';
 import { ApiTags, ApiBearerAuth, ApiQuery } from '@nestjs/swagger';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { GoodsReceiptService } from './goods-receipt.service';
@@ -19,6 +19,11 @@ export class GoodsReceiptController {
 
   @Post()
   create(@Body() dto: any, @Request() req: any) { return this.grnService.create(dto, req.user.sub); }
+
+  @Put(':id')
+  update(@Param('id', ParseIntPipe) id: number, @Body() dto: any, @Request() req: any) { 
+    return this.grnService.update(id, dto, req.user.sub); 
+  }
 
   @Post(':id/post')
   post(@Param('id', ParseIntPipe) id: number, @Request() req: any) { return this.grnService.post(id, req.user.sub); }

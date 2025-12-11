@@ -78,6 +78,64 @@ export class PurchaseOrderService {
     }
   }
 
+  async update(id: number, dto: any, userId: number) {
+    const po = await this.findOne(id);
+    if (po.status !== 'DRAFT') {
+      throw new BadRequestException('Only draft PO can be updated');
+    }
+
+    const queryRunner = this.dataSource.createQueryRunner();
+    await queryRunner.connect();
+    await queryRunner.startTransaction();
+
+    try {
+      // Update PO header
+      po.supplierId = dto.supplierId ?? po.supplierId;
+      po.docDate = dto.docDate ?? po.docDate;
+      po.expectedDate = dto.expectedDate ?? po.expectedDate;
+      po.remark = dto.remark ?? po.remark;
+      po.updatedBy = userId;
+
+      // Delete old items
+      await queryRunner.manager.delete(PurchaseOrderItemEntity, { purchaseOrderId: id });
+
+      // Create new items
+      let subtotal = 0;
+      if (dto.items && dto.items.length > 0) {
+        for (let i = 0; i < dto.items.length; i++) {
+          const item = dto.items[i];
+          const lineTotal = item.qty * item.unitPrice - (item.discountAmount || 0);
+          subtotal += lineTotal;
+
+          const poItem = queryRunner.manager.create(PurchaseOrderItemEntity, {
+            purchaseOrderId: id,
+            lineNo: i + 1,
+            productId: item.productId,
+            qty: item.qty,
+            unitPrice: item.unitPrice,
+            discountAmount: item.discountAmount || 0,
+            lineTotal,
+            qtyReceived: 0,
+          });
+          await queryRunner.manager.save(poItem);
+        }
+      }
+
+      po.subtotal = subtotal;
+      po.taxAmount = subtotal * 0.07;
+      po.grandTotal = subtotal * 1.07;
+      await queryRunner.manager.save(po);
+
+      await queryRunner.commitTransaction();
+      return this.findOne(id);
+    } catch (error) {
+      await queryRunner.rollbackTransaction();
+      throw error;
+    } finally {
+      await queryRunner.release();
+    }
+  }
+
   async approve(id: number, userId: number) {
     const po = await this.findOne(id);
     if (po.status !== 'DRAFT') throw new BadRequestException('Only draft PO can be approved');

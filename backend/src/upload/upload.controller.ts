@@ -13,7 +13,7 @@ import { JwtAuthGuard } from '../modules/auth/guards/jwt-auth.guard';
 import { UploadService } from './upload.service';
 
 @ApiTags('Upload')
-@Controller('api/upload')
+@Controller('upload')
 @UseGuards(JwtAuthGuard)
 @ApiBearerAuth()
 export class UploadController {
