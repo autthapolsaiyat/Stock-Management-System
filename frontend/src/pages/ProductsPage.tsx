@@ -124,11 +124,15 @@ const ProductsPage: React.FC = () => {
         }
       }
       
+      
       const payload = {
         ...values,
+        sellingPrice: Number(values.sellingPrice) || 0,
+        standardCost: Number(values.standardCost) || 0,
+        minStock: Number(values.minStock) || 0,
+        maxStock: Number(values.maxStock) || 0,
         imageUrl,
       };
-
       if (editingProduct) {
         await productsApi.update(editingProduct.id, payload);
         message.success('แก้ไขสินค้าสำเร็จ');
