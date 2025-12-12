@@ -111,10 +111,11 @@ const ProductsPage: React.FC = () => {
         if (file.url && !file.originFileObj) {
           imageUrl = file.url;
         } 
-        // If it's a new file, upload to Azure Blob
-        else if (file.thumbUrl && file.thumbUrl.startsWith('data:')) {
+        // If it's a new file, convert to base64 and upload
+        else if (file.originFileObj) {
           try {
-            const uploadRes = await uploadApi.uploadBase64(file.thumbUrl, 'products');
+            const base64 = await getBase64(file.originFileObj as File);
+            const uploadRes = await uploadApi.uploadBase64(base64, 'products');
             imageUrl = uploadRes.data.url;
             message.success('อัพโหลดรูปสำเร็จ');
           } catch (uploadError: any) {
@@ -124,7 +125,6 @@ const ProductsPage: React.FC = () => {
         }
       }
       
-      // FIX: Ensure numeric fields are numbers, not strings
       const payload = {
         ...values,
         sellingPrice: Number(values.sellingPrice) || 0,
