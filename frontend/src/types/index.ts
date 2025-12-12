@@ -82,7 +82,7 @@ export interface Supplier {
   address?: string;
   phone?: string;
   email?: string;
-  creditTermDays?: number;
+  contactName?: string;
   isActive: boolean;
 }
 
@@ -91,16 +91,19 @@ export interface Warehouse {
   id: number;
   code: string;
   name: string;
-  address?: string;
+  location?: string;
   isActive: boolean;
 }
 
-// Document Types
-export type DocumentStatus = 'draft' | 'confirmed' | 'approved' | 'posted' | 'cancelled';
+// Document Status - support both lowercase and UPPERCASE
+export type DocumentStatus = 
+  | 'draft' | 'confirmed' | 'approved' | 'posted' | 'cancelled'
+  | 'DRAFT' | 'CONFIRMED' | 'APPROVED' | 'POSTED' | 'CANCELLED';
 
 export interface Quotation {
   id: number;
   docNo: string;
+  docFullNo?: string;
   docDate: string;
   customerId: number;
   customer?: Customer;
@@ -129,6 +132,8 @@ export interface QuotationItem {
 export interface PurchaseOrder {
   id: number;
   docNo: string;
+  docFullNo?: string;
+  docBaseNo?: string;
   docDate: string;
   supplierId: number;
   supplier?: Supplier;
@@ -137,7 +142,9 @@ export interface PurchaseOrder {
   discountAmount: number;
   vatAmount: number;
   totalAmount: number;
+  grandTotal?: number;
   expectedDate?: string;
+  deliveryDate?: string;
   remark?: string;
   items: PurchaseOrderItem[];
   createdAt: string;
@@ -158,6 +165,8 @@ export interface PurchaseOrderItem {
 export interface GoodsReceipt {
   id: number;
   docNo: string;
+  docFullNo?: string;
+  docBaseNo?: string;
   docDate: string;
   supplierId: number;
   supplier?: Supplier;
@@ -184,6 +193,7 @@ export interface GoodsReceiptItem {
 export interface StockIssue {
   id: number;
   docNo: string;
+  docFullNo?: string;
   docDate: string;
   warehouseId: number;
   warehouse?: Warehouse;
@@ -202,9 +212,33 @@ export interface StockIssueItem {
   qty: number;
 }
 
+export interface StockTransfer {
+  id: number;
+  docNo: string;
+  docFullNo?: string;
+  docDate: string;
+  fromWarehouseId: number;
+  fromWarehouse?: Warehouse;
+  toWarehouseId: number;
+  toWarehouse?: Warehouse;
+  status: DocumentStatus;
+  remark?: string;
+  items: StockTransferItem[];
+  createdAt: string;
+}
+
+export interface StockTransferItem {
+  id: number;
+  lineNo: number;
+  productId: number;
+  product?: Product;
+  qty: number;
+}
+
 export interface SalesInvoice {
   id: number;
   docNo: string;
+  docFullNo?: string;
   docDate: string;
   customerId: number;
   customer?: Customer;
@@ -231,40 +265,12 @@ export interface SalesInvoiceItem {
   lineTotal: number;
 }
 
-// Stock Types
 export interface StockBalance {
-  id: number;
   productId: number;
   product?: Product;
   warehouseId: number;
   warehouse?: Warehouse;
   qtyOnHand: number;
-  qtyReserved: number;
-  qtyAvailable: number;
-}
-
-export interface FifoLayer {
-  id: number;
-  productId: number;
-  warehouseId: number;
-  refType: string;
-  refId: number;
-  refDocNo: string;
-  originalQty: number;
-  remainingQty: number;
-  unitCost: number;
-  createdAt: string;
-}
-
-// API Response Types
-export interface ApiResponse<T> {
-  data: T;
-  message?: string;
-}
-
-export interface PaginatedResponse<T> {
-  data: T[];
-  total: number;
-  page: number;
-  pageSize: number;
+  avgCost: number;
+  totalValue: number;
 }
