@@ -63,7 +63,7 @@ const LoginPage: React.FC = () => {
           </p>
         </div>
 
-        {/* Error Alert */}
+        {/* Error Alert - Bug #7 Fix */}
         {error && (
           <Alert
             message="เข้าสู่ระบบไม่สำเร็จ"

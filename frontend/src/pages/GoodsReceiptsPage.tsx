@@ -37,7 +37,8 @@ const GoodsReceiptsPage: React.FC = () => {
       setSuppliers(suppRes.data || []);
       setWarehouses(whRes.data || []);
       setProducts(prodRes.data || []);
-      setPurchaseOrders((poRes.data || []).filter((po: PurchaseOrder) => po.status === 'approved'));
+      // Bug #6 Fix: Filter only approved POs
+      setPurchaseOrders((poRes.data || []).filter((po: PurchaseOrder) => po.status === 'APPROVED' || po.status === 'approved'));
     } catch (error) {
       message.error('ไม่สามารถโหลดข้อมูลได้');
     } finally {
@@ -52,13 +53,13 @@ const GoodsReceiptsPage: React.FC = () => {
     setModalVisible(true);
   };
 
-  // Bug #5: เพิ่มปุ่ม Edit
+  // Bug #5 Fix: Edit GR Draft
   const handleEdit = (record: GoodsReceipt) => {
     setEditingReceipt(record);
     form.setFieldsValue({
       supplierId: record.supplierId,
       warehouseId: record.warehouseId,
-      poId: (record as any).poId,
+      poId: (record as any).purchaseOrderId || (record as any).poId,
       docDate: record.docDate ? dayjs(record.docDate) : null,
       remark: record.remark,
     });
@@ -70,7 +71,7 @@ const GoodsReceiptsPage: React.FC = () => {
     setModalVisible(true);
   };
 
-  // Bug #6: ดึงข้อมูลจาก PO
+  // Bug #6 Fix: Import from PO
   const handleImportFromPO = async (poId: number) => {
     try {
       const res = await purchaseOrdersApi.getById(poId);
@@ -87,7 +88,7 @@ const GoodsReceiptsPage: React.FC = () => {
           qty: item.qty,
           unitCost: item.unitPrice || 0,
         })));
-        message.success(`นำเข้าข้อมูลจากใบสั่งซื้อ ${po.docNo} สำเร็จ`);
+        message.success(`นำเข้าข้อมูลจากใบสั่งซื้อ ${po.docFullNo || po.docNo} สำเร็จ`);
       }
     } catch (error) {
       message.error('ไม่สามารถดึงข้อมูลจากใบสั่งซื้อได้');
@@ -129,6 +130,7 @@ const GoodsReceiptsPage: React.FC = () => {
       const payload = {
         ...values,
         docDate: values.docDate?.format('YYYY-MM-DD'),
+        purchaseOrderId: values.poId,
         items: items.filter(i => i.productId).map((item, idx) => ({
           ...item,
           lineNo: idx + 1,
@@ -167,24 +169,26 @@ const GoodsReceiptsPage: React.FC = () => {
     return items.reduce((sum, item) => sum + (item.qty || 0) * (item.unitCost || 0), 0);
   }, [items]);
 
-  const statusColors: Record<string, string> = { draft: 'default', posted: 'success', cancelled: 'error' };
-  const statusLabels: Record<string, string> = { draft: 'ร่าง', posted: 'รับแล้ว', cancelled: 'ยกเลิก' };
+  const statusColors: Record<string, string> = { draft: 'default', posted: 'success', cancelled: 'error', DRAFT: 'default', POSTED: 'success', CANCELLED: 'error' };
+  const statusLabels: Record<string, string> = { draft: 'ร่าง', posted: 'รับแล้ว', cancelled: 'ยกเลิก', DRAFT: 'ร่าง', POSTED: 'รับแล้ว', CANCELLED: 'ยกเลิก' };
 
   const columns = [
-    { title: 'เลขที่', dataIndex: 'docNo', key: 'docNo', width: 140 },
+    { title: 'เลขที่', dataIndex: 'docFullNo', key: 'docFullNo', width: 140, render: (v: string, r: GoodsReceipt) => v || r.docNo },
     { title: 'วันที่', dataIndex: 'docDate', key: 'docDate', width: 110, render: (d: string) => d ? dayjs(d).format('DD/MM/YYYY') : '-' },
     { title: 'ผู้จำหน่าย', key: 'supplier', render: (_: any, r: GoodsReceipt) => suppliers.find(s => s.id === r.supplierId)?.name || '-' },
     { title: 'คลัง', key: 'warehouse', render: (_: any, r: GoodsReceipt) => warehouses.find(w => w.id === r.warehouseId)?.name || '-' },
     { title: 'ยอดรวม', dataIndex: 'totalAmount', key: 'totalAmount', align: 'right' as const, render: (v: number) => `฿${(v || 0).toLocaleString()}` },
-    { title: 'สถานะ', dataIndex: 'status', key: 'status', render: (s: string) => <Tag color={statusColors[s]}>{statusLabels[s] || s}</Tag> },
+    { title: 'สถานะ', dataIndex: 'status', key: 'status', render: (s: string) => <Tag color={statusColors[s] || 'default'}>{statusLabels[s] || s}</Tag> },
     {
-      title: 'จัดการ', key: 'actions', width: 220,
+      title: 'จัดการ', key: 'actions', width: 250,
       render: (_: any, r: GoodsReceipt) => (
         <Space>
           <Button type="text" icon={<EyeOutlined />} onClick={() => handleView(r.id)} style={{ color: '#22d3ee' }} />
-          {r.status === 'draft' && (
+          {(r.status === 'draft' || r.status === 'DRAFT') && (
             <>
+              {/* Bug #5 Fix: Edit button for draft */}
               <Button type="text" icon={<EditOutlined />} onClick={() => handleEdit(r)} style={{ color: '#fbbf24' }} />
+              {/* Bug #10 Fix: Clear post button */}
               <Button type="primary" icon={<CheckOutlined />} onClick={() => handlePost(r.id)} style={{ background: '#10b981', borderColor: '#10b981' }}>บันทึกรับ</Button>
               <Button type="text" icon={<CloseOutlined />} onClick={() => handleCancel(r.id)} style={{ color: '#f97373' }} />
             </>
@@ -210,14 +214,14 @@ const GoodsReceiptsPage: React.FC = () => {
 
       {/* Create/Edit Modal */}
       <Modal 
-        title={editingReceipt ? `แก้ไขใบรับสินค้า: ${editingReceipt.docNo}` : 'สร้างใบรับสินค้า'} 
+        title={editingReceipt ? `แก้ไขใบรับสินค้า: ${editingReceipt.docFullNo || editingReceipt.docNo}` : 'สร้างใบรับสินค้า'} 
         open={modalVisible} 
         onCancel={() => setModalVisible(false)} 
         footer={null} 
         width={900}
       >
         <Form form={form} layout="vertical" onFinish={handleSubmit}>
-          {/* Bug #6: เลือก PO เพื่อนำเข้าข้อมูล */}
+          {/* Bug #6 Fix: Import from PO dropdown */}
           <Form.Item name="poId" label="นำเข้าจากใบสั่งซื้อ (PO)">
             <Select 
               placeholder="เลือกใบสั่งซื้อ" 
@@ -225,16 +229,16 @@ const GoodsReceiptsPage: React.FC = () => {
               onChange={(val) => val && handleImportFromPO(val)}
               options={purchaseOrders.map(po => ({ 
                 value: po.id, 
-                label: `${po.docNo} - ${suppliers.find(s => s.id === po.supplierId)?.name || ''}` 
+                label: `${po.docFullNo || po.docNo} - ${suppliers.find(s => s.id === po.supplierId)?.name || ''}` 
               }))} 
             />
           </Form.Item>
 
           <Space style={{ width: '100%' }} size={16}>
-            <Form.Item name="supplierId" label="ผู้จำหน่าย" rules={[{ required: true }]} style={{ flex: 1 }}>
+            <Form.Item name="supplierId" label="ผู้จำหน่าย" rules={[{ required: true, message: 'กรุณาเลือกผู้จำหน่าย' }]} style={{ flex: 1 }}>
               <Select placeholder="เลือกผู้จำหน่าย" options={suppliers.map(s => ({ value: s.id, label: s.name }))} />
             </Form.Item>
-            <Form.Item name="warehouseId" label="คลังรับสินค้า" rules={[{ required: true }]} style={{ flex: 1 }}>
+            <Form.Item name="warehouseId" label="คลังรับสินค้า" rules={[{ required: true, message: 'กรุณาเลือกคลัง' }]} style={{ flex: 1 }}>
               <Select placeholder="เลือกคลัง" options={warehouses.map(w => ({ value: w.id, label: w.name }))} />
             </Form.Item>
             <Form.Item name="docDate" label="วันที่รับ" style={{ flex: 1 }}>
@@ -281,7 +285,7 @@ const GoodsReceiptsPage: React.FC = () => {
       </Modal>
 
       {/* Detail Modal */}
-      <Modal title={`ใบรับสินค้า: ${selectedReceipt?.docNo || ''}`} open={detailVisible} onCancel={() => setDetailVisible(false)} footer={null} width={700}>
+      <Modal title={`ใบรับสินค้า: ${selectedReceipt?.docFullNo || selectedReceipt?.docNo || ''}`} open={detailVisible} onCancel={() => setDetailVisible(false)} footer={null} width={700}>
         {selectedReceipt && (
           <div>
             <p><strong>ผู้จำหน่าย:</strong> {suppliers.find(s => s.id === selectedReceipt.supplierId)?.name}</p>

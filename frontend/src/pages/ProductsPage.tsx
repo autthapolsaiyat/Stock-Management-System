@@ -124,7 +124,7 @@ const ProductsPage: React.FC = () => {
         }
       }
       
-      
+      // FIX: Ensure numeric fields are numbers, not strings
       const payload = {
         ...values,
         sellingPrice: Number(values.sellingPrice) || 0,
@@ -133,6 +133,7 @@ const ProductsPage: React.FC = () => {
         maxStock: Number(values.maxStock) || 0,
         imageUrl,
       };
+
       if (editingProduct) {
         await productsApi.update(editingProduct.id, payload);
         message.success('แก้ไขสินค้าสำเร็จ');
@@ -149,7 +150,7 @@ const ProductsPage: React.FC = () => {
     }
   };
 
-  // Convert file to base64 for preview (temporary until Azure Blob is ready)
+  // Convert file to base64 for preview
   const getBase64 = (file: File): Promise<string> =>
     new Promise((resolve, reject) => {
       const reader = new FileReader();
@@ -166,24 +167,14 @@ const ProductsPage: React.FC = () => {
     setPreviewOpen(true);
   };
 
-  const handleUploadChange: UploadProps['onChange'] = async ({ fileList: newFileList }) => {
-    // Process file to get base64 preview
-    const processedList = await Promise.all(
-      newFileList.map(async (file) => {
-        if (file.originFileObj && !file.url && !file.thumbUrl) {
-          const base64 = await getBase64(file.originFileObj as File);
-          return { ...file, thumbUrl: base64, status: 'done' as const };
-        }
-        return file;
-      })
-    );
-    setFileList(processedList);
+  const handleChange: UploadProps['onChange'] = ({ fileList: newFileList }) => {
+    setFileList(newFileList);
   };
 
   const uploadButton = (
     <div>
-      {uploading ? <LoadingOutlined /> : <PlusOutlined />}
-      <div style={{ marginTop: 8 }}>{uploading ? 'กำลังอัพโหลด...' : 'อัพโหลดรูป'}</div>
+      {uploading ? <LoadingOutlined /> : <PictureOutlined />}
+      <div style={{ marginTop: 8 }}>อัพโหลดรูป</div>
     </div>
   );
 
@@ -193,38 +184,12 @@ const ProductsPage: React.FC = () => {
       dataIndex: 'imageUrl',
       key: 'image',
       width: 80,
-      render: (imageUrl: string) => (
-        imageUrl ? (
-          <Image
-            src={imageUrl}
-            width={50}
-            height={50}
-            style={{ objectFit: 'cover', borderRadius: 8 }}
-            placeholder={
-              <div style={{ 
-                width: 50, 
-                height: 50, 
-                background: 'rgba(124,58,237,0.1)', 
-                borderRadius: 8,
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center'
-              }}>
-                <PictureOutlined style={{ color: '#7c3aed' }} />
-              </div>
-            }
-          />
+      render: (url: string) => (
+        url ? (
+          <Image src={url} width={50} height={50} style={{ objectFit: 'cover', borderRadius: 4 }} />
         ) : (
-          <div style={{ 
-            width: 50, 
-            height: 50, 
-            background: 'rgba(124,58,237,0.1)', 
-            borderRadius: 8,
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center'
-          }}>
-            <PictureOutlined style={{ color: '#7c3aed', fontSize: 20 }} />
+          <div style={{ width: 50, height: 50, background: '#1f2937', borderRadius: 4, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+            <PictureOutlined style={{ color: '#6b7280' }} />
           </div>
         )
       ),
@@ -303,16 +268,12 @@ const ProductsPage: React.FC = () => {
           />
           <Popconfirm
             title="ยืนยันการลบ"
-            description="คุณต้องการลบสินค้านี้ใช่หรือไม่?"
+            description="ต้องการลบสินค้านี้หรือไม่?"
             onConfirm={() => handleDelete(record.id)}
             okText="ลบ"
             cancelText="ยกเลิก"
           >
-            <Button
-              type="text"
-              icon={<DeleteOutlined />}
-              style={{ color: '#f97373' }}
-            />
+            <Button type="text" icon={<DeleteOutlined />} danger />
           </Popconfirm>
         </Space>
       ),
@@ -333,29 +294,16 @@ const ProductsPage: React.FC = () => {
       </div>
 
       <Card className="card-holo">
-        <div
-          style={{
-            display: 'flex',
-            justifyContent: 'space-between',
-            marginBottom: 16,
-            flexWrap: 'wrap',
-            gap: 12,
-          }}
-        >
+        <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 16 }}>
           <Input
             placeholder="ค้นหาสินค้า..."
-            prefix={<SearchOutlined style={{ color: '#9ca3af' }} />}
+            prefix={<SearchOutlined />}
             value={searchText}
             onChange={(e) => setSearchText(e.target.value)}
             style={{ width: 300 }}
           />
-          <Button
-            type="primary"
-            icon={<PlusOutlined />}
-            onClick={handleCreate}
-            className="btn-holo"
-          >
-            เพิ่มสินค้า
+          <Button type="primary" icon={<PlusOutlined />} onClick={handleCreate} className="btn-holo">
+            + เพิ่มสินค้า
           </Button>
         </div>
 
@@ -364,11 +312,7 @@ const ProductsPage: React.FC = () => {
           dataSource={filteredProducts}
           rowKey="id"
           loading={loading}
-          pagination={{
-            pageSize: 10,
-            showSizeChanger: true,
-            showTotal: (total) => `ทั้งหมด ${total} รายการ`,
-          }}
+          pagination={{ pageSize: 10 }}
         />
       </Card>
 
@@ -378,30 +322,21 @@ const ProductsPage: React.FC = () => {
         open={modalVisible}
         onCancel={() => setModalVisible(false)}
         footer={null}
-        width={650}
+        width={600}
       >
-        <Form
-          form={form}
-          layout="vertical"
-          onFinish={handleSubmit}
-          initialValues={{ isActive: true }}
-        >
+        <Form form={form} layout="vertical" onFinish={handleSubmit}>
           {/* Image Upload */}
           <Form.Item label="รูปสินค้า">
             <Upload
               listType="picture-card"
               fileList={fileList}
               onPreview={handlePreview}
-              onChange={handleUploadChange}
-              beforeUpload={() => false} // Prevent auto upload
+              onChange={handleChange}
+              beforeUpload={() => false}
               maxCount={1}
-              accept="image/*"
             >
               {fileList.length >= 1 ? null : uploadButton}
             </Upload>
-            <span style={{ color: 'var(--text-secondary)', fontSize: 12 }}>
-              รองรับไฟล์ JPG, PNG ขนาดไม่เกิน 5MB
-            </span>
           </Form.Item>
 
           <Form.Item
@@ -409,6 +344,7 @@ const ProductsPage: React.FC = () => {
             label="รหัสสินค้า"
             rules={[{ required: true, message: 'กรุณากรอกรหัสสินค้า' }]}
           >
+            {/* FIX Bug #8: Disable code field when editing */}
             <Input placeholder="เช่น PRD-001" disabled={!!editingProduct} />
           </Form.Item>
 
@@ -426,23 +362,17 @@ const ProductsPage: React.FC = () => {
 
           <Space style={{ width: '100%' }} size={16}>
             <Form.Item name="categoryId" label="หมวดหมู่" style={{ flex: 1 }}>
-              <Select placeholder="เลือกหมวดหมู่" allowClear>
-                {categories.map((cat) => (
-                  <Select.Option key={cat.id} value={cat.id}>
-                    {cat.name}
-                  </Select.Option>
-                ))}
-              </Select>
+              <Select
+                placeholder="เลือกหมวดหมู่"
+                options={categories.map((c) => ({ value: c.id, label: c.name }))}
+              />
             </Form.Item>
 
             <Form.Item name="unitId" label="หน่วย" style={{ flex: 1 }}>
-              <Select placeholder="เลือกหน่วย" allowClear>
-                {units.map((unit) => (
-                  <Select.Option key={unit.id} value={unit.id}>
-                    {unit.name}
-                  </Select.Option>
-                ))}
-              </Select>
+              <Select
+                placeholder="เลือกหน่วย"
+                options={units.map((u) => ({ value: u.id, label: u.name }))}
+              />
             </Form.Item>
           </Space>
 
@@ -451,9 +381,8 @@ const ProductsPage: React.FC = () => {
               <InputNumber
                 style={{ width: '100%' }}
                 min={0}
-                precision={2}
-                formatter={(value) => `฿ ${value}`.replace(/\B(?=(\d{3})+(?!\d))/g, ',')}
-                parser={(value) => value!.replace(/฿\s?|(,*)/g, '') as any}
+                prefix="฿"
+                placeholder="0"
               />
             </Form.Item>
 
@@ -461,20 +390,20 @@ const ProductsPage: React.FC = () => {
               <InputNumber
                 style={{ width: '100%' }}
                 min={0}
-                precision={2}
-                formatter={(value) => `฿ ${value}`.replace(/\B(?=(\d{3})+(?!\d))/g, ',')}
-                parser={(value) => value!.replace(/฿\s?|(,*)/g, '') as any}
+                prefix="฿"
+                placeholder="0"
               />
             </Form.Item>
           </Space>
 
+          {/* FIX Bug #9: Min/Max Stock fields */}
           <Space style={{ width: '100%' }} size={16}>
             <Form.Item name="minStock" label="สต็อกขั้นต่ำ" style={{ flex: 1 }}>
-              <InputNumber style={{ width: '100%' }} min={0} />
+              <InputNumber style={{ width: '100%' }} min={0} placeholder="0" />
             </Form.Item>
 
             <Form.Item name="maxStock" label="สต็อกสูงสุด" style={{ flex: 1 }}>
-              <InputNumber style={{ width: '100%' }} min={0} />
+              <InputNumber style={{ width: '100%' }} min={0} placeholder="0" />
             </Form.Item>
           </Space>
 
@@ -482,11 +411,20 @@ const ProductsPage: React.FC = () => {
             <Input placeholder="บาร์โค้ด (ถ้ามี)" />
           </Form.Item>
 
+          <Form.Item name="isActive" label="สถานะ" initialValue={true}>
+            <Select
+              options={[
+                { value: true, label: 'ใช้งาน' },
+                { value: false, label: 'ไม่ใช้งาน' },
+              ]}
+            />
+          </Form.Item>
+
           <Form.Item style={{ marginBottom: 0, marginTop: 24 }}>
             <Space style={{ width: '100%', justifyContent: 'flex-end' }}>
-              <Button onClick={() => setModalVisible(false)} disabled={uploading}>ยกเลิก</Button>
-              <Button type="primary" htmlType="submit" className="btn-holo" loading={uploading}>
-                {uploading ? 'กำลังบันทึก...' : editingProduct ? 'บันทึก' : 'เพิ่มสินค้า'}
+              <Button onClick={() => setModalVisible(false)}>ยกเลิก</Button>
+              <Button type="primary" htmlType="submit" loading={uploading} className="btn-holo">
+                {editingProduct ? 'บันทึก' : 'เพิ่มสินค้า'}
               </Button>
             </Space>
           </Form.Item>
@@ -496,7 +434,7 @@ const ProductsPage: React.FC = () => {
       {/* Image Preview Modal */}
       <Modal
         open={previewOpen}
-        title="รูปสินค้า"
+        title="ตัวอย่างรูปภาพ"
         footer={null}
         onCancel={() => setPreviewOpen(false)}
       >

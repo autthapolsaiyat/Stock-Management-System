@@ -46,13 +46,12 @@ const PurchaseOrdersPage: React.FC = () => {
     setModalVisible(true);
   };
 
-  // Bug #4: เพิ่มปุ่ม Edit
+  // Bug #4 Fix: Edit PO Draft
   const handleEdit = (record: PurchaseOrder) => {
     setEditingOrder(record);
     form.setFieldsValue({
       supplierId: record.supplierId,
       docDate: record.docDate ? dayjs(record.docDate) : null,
-      expectedDate: record.expectedDate ? dayjs(record.expectedDate) : null,
       remark: record.remark,
     });
     setItems(record.items?.map((i: any) => ({
@@ -98,7 +97,6 @@ const PurchaseOrdersPage: React.FC = () => {
       const payload = {
         ...values,
         docDate: values.docDate?.format('YYYY-MM-DD'),
-        expectedDate: values.expectedDate?.format('YYYY-MM-DD'),
         items: items.filter(i => i.productId).map((item, idx) => ({
           ...item,
           lineNo: idx + 1,
@@ -133,28 +131,30 @@ const PurchaseOrdersPage: React.FC = () => {
     setItems(newItems);
   };
 
-  // Bug #2: คำนวณยอดรวม
+  // Bug #2 Fix: Calculate total in real-time
   const totalAmount = useMemo(() => {
     return items.reduce((sum, item) => sum + (item.qty || 0) * (item.unitPrice || 0), 0);
   }, [items]);
 
-  const statusColors: Record<string, string> = { draft: 'default', approved: 'success', cancelled: 'error' };
-  const statusLabels: Record<string, string> = { draft: 'ร่าง', approved: 'อนุมัติ', cancelled: 'ยกเลิก' };
+  const statusColors: Record<string, string> = { draft: 'default', approved: 'success', cancelled: 'error', DRAFT: 'default', APPROVED: 'success', CANCELLED: 'error' };
+  const statusLabels: Record<string, string> = { draft: 'ร่าง', approved: 'อนุมัติ', cancelled: 'ยกเลิก', DRAFT: 'ร่าง', APPROVED: 'อนุมัติ', CANCELLED: 'ยกเลิก' };
 
   const columns = [
-    { title: 'เลขที่', dataIndex: 'docNo', key: 'docNo', width: 140 },
+    { title: 'เลขที่', dataIndex: 'docFullNo', key: 'docFullNo', width: 140, render: (v: string, r: PurchaseOrder) => v || r.docNo },
     { title: 'วันที่', dataIndex: 'docDate', key: 'docDate', width: 110, render: (d: string) => d ? dayjs(d).format('DD/MM/YYYY') : '-' },
     { title: 'ผู้จำหน่าย', key: 'supplier', render: (_: any, r: PurchaseOrder) => suppliers.find(s => s.id === r.supplierId)?.name || '-' },
-    { title: 'ยอดรวม', dataIndex: 'totalAmount', key: 'totalAmount', align: 'right' as const, render: (v: number) => `฿${(v || 0).toLocaleString()}` },
-    { title: 'สถานะ', dataIndex: 'status', key: 'status', render: (s: string) => <Tag color={statusColors[s]}>{statusLabels[s] || s}</Tag> },
+    { title: 'ยอดรวม', dataIndex: 'grandTotal', key: 'grandTotal', align: 'right' as const, render: (v: number, r: any) => `฿${(v || r.totalAmount || 0).toLocaleString()}` },
+    { title: 'สถานะ', dataIndex: 'status', key: 'status', render: (s: string) => <Tag color={statusColors[s] || 'default'}>{statusLabels[s] || s}</Tag> },
     {
-      title: 'จัดการ', key: 'actions', width: 180,
+      title: 'จัดการ', key: 'actions', width: 220,
       render: (_: any, r: PurchaseOrder) => (
         <Space>
           <Button type="text" icon={<EyeOutlined />} onClick={() => handleView(r.id)} style={{ color: '#22d3ee' }} />
-          {r.status === 'draft' && (
+          {(r.status === 'draft' || r.status === 'DRAFT') && (
             <>
+              {/* Bug #4 Fix: Edit button for draft */}
               <Button type="text" icon={<EditOutlined />} onClick={() => handleEdit(r)} style={{ color: '#fbbf24' }} />
+              {/* Bug #10 Fix: Clear approve button */}
               <Button type="primary" icon={<CheckOutlined />} onClick={() => handleApprove(r.id)} style={{ background: '#10b981', borderColor: '#10b981' }}>อนุมัติ</Button>
               <Button type="text" icon={<CloseOutlined />} onClick={() => handleCancel(r.id)} style={{ color: '#f97373' }} />
             </>
@@ -180,7 +180,7 @@ const PurchaseOrdersPage: React.FC = () => {
 
       {/* Create/Edit Modal */}
       <Modal 
-        title={editingOrder ? `แก้ไขใบสั่งซื้อ: ${editingOrder.docNo}` : 'สร้างใบสั่งซื้อ'} 
+        title={editingOrder ? `แก้ไขใบสั่งซื้อ: ${editingOrder.docFullNo || editingOrder.docNo}` : 'สร้างใบสั่งซื้อ'} 
         open={modalVisible} 
         onCancel={() => setModalVisible(false)} 
         footer={null} 
@@ -188,13 +188,10 @@ const PurchaseOrdersPage: React.FC = () => {
       >
         <Form form={form} layout="vertical" onFinish={handleSubmit}>
           <Space style={{ width: '100%' }} size={16}>
-            <Form.Item name="supplierId" label="ผู้จำหน่าย" rules={[{ required: true }]} style={{ flex: 1 }}>
+            <Form.Item name="supplierId" label="ผู้จำหน่าย" rules={[{ required: true, message: 'กรุณาเลือกผู้จำหน่าย' }]} style={{ flex: 1 }}>
               <Select placeholder="เลือกผู้จำหน่าย" options={suppliers.map(s => ({ value: s.id, label: s.name }))} />
             </Form.Item>
             <Form.Item name="docDate" label="วันที่" style={{ flex: 1 }}>
-              <DatePicker style={{ width: '100%' }} />
-            </Form.Item>
-            <Form.Item name="expectedDate" label="กำหนดส่ง" style={{ flex: 1 }}>
               <DatePicker style={{ width: '100%' }} />
             </Form.Item>
           </Space>
@@ -218,7 +215,7 @@ const PurchaseOrdersPage: React.FC = () => {
             <Button type="dashed" onClick={addItem} style={{ width: '100%' }}>+ เพิ่มรายการ</Button>
           </div>
 
-          {/* Bug #2: แสดงยอดรวม */}
+          {/* Bug #2 Fix: Show total amount */}
           <Divider />
           <div style={{ textAlign: 'right', marginBottom: 16 }}>
             <Text style={{ fontSize: 18 }}>ยอดรวม: </Text>
@@ -239,7 +236,7 @@ const PurchaseOrdersPage: React.FC = () => {
       </Modal>
 
       {/* Detail Modal */}
-      <Modal title={`ใบสั่งซื้อ: ${selectedOrder?.docNo || ''}`} open={detailVisible} onCancel={() => setDetailVisible(false)} footer={null} width={700}>
+      <Modal title={`ใบสั่งซื้อ: ${selectedOrder?.docFullNo || selectedOrder?.docNo || ''}`} open={detailVisible} onCancel={() => setDetailVisible(false)} footer={null} width={700}>
         {selectedOrder && (
           <div>
             <p><strong>ผู้จำหน่าย:</strong> {suppliers.find(s => s.id === selectedOrder.supplierId)?.name}</p>
@@ -260,7 +257,7 @@ const PurchaseOrdersPage: React.FC = () => {
                 <Table.Summary>
                   <Table.Summary.Row>
                     <Table.Summary.Cell index={0} colSpan={3} align="right"><strong>ยอดรวม</strong></Table.Summary.Cell>
-                    <Table.Summary.Cell index={1} align="right"><strong style={{ color: '#10b981' }}>฿{(selectedOrder.totalAmount || 0).toLocaleString()}</strong></Table.Summary.Cell>
+                    <Table.Summary.Cell index={1} align="right"><strong style={{ color: '#10b981' }}>฿{(selectedOrder.grandTotal || selectedOrder.totalAmount || 0).toLocaleString()}</strong></Table.Summary.Cell>
                   </Table.Summary.Row>
                 </Table.Summary>
               )}
