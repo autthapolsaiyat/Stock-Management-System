@@ -30,6 +30,11 @@ export class CreateProductDto {
   @IsOptional()
   barcode?: string;
 
+  @ApiPropertyOptional()
+  @IsString()
+  @IsOptional()
+  imageUrl?: string;
+
   @ApiPropertyOptional({ example: 100 })
   @IsNumber()
   @Min(0)
@@ -41,6 +46,18 @@ export class CreateProductDto {
   @Min(0)
   @IsOptional()
   standardCost?: number;
+
+  @ApiPropertyOptional({ example: 10 })
+  @IsNumber()
+  @Min(0)
+  @IsOptional()
+  minStock?: number;
+
+  @ApiPropertyOptional({ example: 100 })
+  @IsNumber()
+  @Min(0)
+  @IsOptional()
+  maxStock?: number;
 }
 
 export class UpdateProductDto {
@@ -65,6 +82,16 @@ export class UpdateProductDto {
   unitId?: number;
 
   @ApiPropertyOptional()
+  @IsString()
+  @IsOptional()
+  barcode?: string;
+
+  @ApiPropertyOptional()
+  @IsString()
+  @IsOptional()
+  imageUrl?: string;
+
+  @ApiPropertyOptional()
   @IsNumber()
   @Min(0)
   @IsOptional()
@@ -75,6 +102,18 @@ export class UpdateProductDto {
   @Min(0)
   @IsOptional()
   standardCost?: number;
+
+  @ApiPropertyOptional()
+  @IsNumber()
+  @Min(0)
+  @IsOptional()
+  minStock?: number;
+
+  @ApiPropertyOptional()
+  @IsNumber()
+  @Min(0)
+  @IsOptional()
+  maxStock?: number;
 }
 
 export class CreateCategoryDto {
