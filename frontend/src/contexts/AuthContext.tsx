@@ -1,7 +1,15 @@
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
-import { User } from '../types';
 import { authApi } from '../services/api';
 import { message } from 'antd';
+
+interface User {
+  id: number;
+  username: string;
+  email: string;
+  fullName: string;
+  roles: string[];
+  permissions: string[];
+}
 
 interface AuthContextType {
   user: User | null;
@@ -10,6 +18,8 @@ interface AuthContextType {
   isLoading: boolean;
   login: (username: string, password: string) => Promise<boolean>;
   logout: () => void;
+  hasRole: (role: string) => boolean;
+  hasPermission: (permission: string) => boolean;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -34,17 +44,28 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
   const login = async (username: string, password: string): Promise<boolean> => {
     try {
       const response = await authApi.login(username, password);
-      const { accessToken, user } = response.data;
+      const { accessToken, user: userData, roles, permissions } = response.data;
+      
+      // Combine user data with roles and permissions
+      const fullUser: User = {
+        id: userData.id,
+        username: userData.username,
+        email: userData.email,
+        fullName: userData.fullName,
+        roles: roles || [],
+        permissions: permissions || [],
+      };
       
       localStorage.setItem('token', accessToken);
-      localStorage.setItem('user', JSON.stringify(user));
+      localStorage.setItem('user', JSON.stringify(fullUser));
       
       setToken(accessToken);
-      setUser(user);
+      setUser(fullUser);
       
       message.success('เข้าสู่ระบบสำเร็จ');
       return true;
     } catch (error: any) {
+      console.error('Login error:', error);
       message.error(error.response?.data?.message || 'เข้าสู่ระบบไม่สำเร็จ');
       return false;
     }
@@ -58,6 +79,14 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     message.info('ออกจากระบบแล้ว');
   };
 
+  const hasRole = (role: string): boolean => {
+    return user?.roles?.includes(role) || false;
+  };
+
+  const hasPermission = (permission: string): boolean => {
+    return user?.permissions?.includes(permission) || false;
+  };
+
   return (
     <AuthContext.Provider
       value={{
@@ -67,6 +96,8 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
         isLoading,
         login,
         logout,
+        hasRole,
+        hasPermission,
       }}
     >
       {children}
