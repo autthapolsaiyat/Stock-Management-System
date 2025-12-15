@@ -13,6 +13,7 @@ const entities_1 = require("./entities");
 const purchase_order_service_1 = require("./purchase-order.service");
 const purchase_order_controller_1 = require("./purchase-order.controller");
 const doc_numbering_module_1 = require("../doc-numbering/doc-numbering.module");
+const quotation_module_1 = require("../quotation/quotation.module");
 let PurchaseOrderModule = class PurchaseOrderModule {
 };
 exports.PurchaseOrderModule = PurchaseOrderModule;
@@ -21,6 +22,7 @@ exports.PurchaseOrderModule = PurchaseOrderModule = __decorate([
         imports: [
             typeorm_1.TypeOrmModule.forFeature([entities_1.PurchaseOrderEntity, entities_1.PurchaseOrderItemEntity]),
             doc_numbering_module_1.DocNumberingModule,
+            (0, common_1.forwardRef)(() => quotation_module_1.QuotationModule),
         ],
         controllers: [purchase_order_controller_1.PurchaseOrderController],
         providers: [purchase_order_service_1.PurchaseOrderService],

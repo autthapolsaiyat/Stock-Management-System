@@ -13,6 +13,8 @@ const entities_1 = require("./entities");
 const quotation_service_1 = require("./quotation.service");
 const quotation_controller_1 = require("./quotation.controller");
 const doc_numbering_module_1 = require("../doc-numbering/doc-numbering.module");
+const temp_product_module_1 = require("../temp-product/temp-product.module");
+const system_settings_module_1 = require("../system-settings/system-settings.module");
 let QuotationModule = class QuotationModule {
 };
 exports.QuotationModule = QuotationModule;
@@ -21,6 +23,8 @@ exports.QuotationModule = QuotationModule = __decorate([
         imports: [
             typeorm_1.TypeOrmModule.forFeature([entities_1.QuotationEntity, entities_1.QuotationItemEntity]),
             doc_numbering_module_1.DocNumberingModule,
+            temp_product_module_1.TempProductModule,
+            system_settings_module_1.SystemSettingsModule,
         ],
         controllers: [quotation_controller_1.QuotationController],
         providers: [quotation_service_1.QuotationService],

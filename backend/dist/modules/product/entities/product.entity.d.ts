@@ -8,6 +8,7 @@ export declare class ProductEntity {
     categoryId: number;
     unitId: number;
     barcode: string;
+    imageUrl: string;
     minStock: number;
     maxStock: number;
     reorderPoint: number;

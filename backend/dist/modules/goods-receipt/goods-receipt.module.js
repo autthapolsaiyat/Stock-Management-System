@@ -14,6 +14,9 @@ const goods_receipt_service_1 = require("./goods-receipt.service");
 const goods_receipt_controller_1 = require("./goods-receipt.controller");
 const doc_numbering_module_1 = require("../doc-numbering/doc-numbering.module");
 const fifo_module_1 = require("../fifo/fifo.module");
+const purchase_order_module_1 = require("../purchase-order/purchase-order.module");
+const temp_product_module_1 = require("../temp-product/temp-product.module");
+const system_settings_module_1 = require("../system-settings/system-settings.module");
 let GoodsReceiptModule = class GoodsReceiptModule {
 };
 exports.GoodsReceiptModule = GoodsReceiptModule;
@@ -23,6 +26,9 @@ exports.GoodsReceiptModule = GoodsReceiptModule = __decorate([
             typeorm_1.TypeOrmModule.forFeature([entities_1.GoodsReceiptEntity, entities_1.GoodsReceiptItemEntity]),
             doc_numbering_module_1.DocNumberingModule,
             fifo_module_1.FifoModule,
+            (0, common_1.forwardRef)(() => purchase_order_module_1.PurchaseOrderModule),
+            temp_product_module_1.TempProductModule,
+            system_settings_module_1.SystemSettingsModule,
         ],
         controllers: [goods_receipt_controller_1.GoodsReceiptController],
         providers: [goods_receipt_service_1.GoodsReceiptService],

@@ -18,14 +18,36 @@ const swagger_1 = require("@nestjs/swagger");
 const jwt_auth_guard_1 = require("../auth/guards/jwt-auth.guard");
 const goods_receipt_service_1 = require("./goods-receipt.service");
 let GoodsReceiptController = class GoodsReceiptController {
-    constructor(grnService) {
-        this.grnService = grnService;
+    constructor(grService) {
+        this.grService = grService;
     }
-    findAll(status) { return this.grnService.findAll(status); }
-    findOne(id) { return this.grnService.findOne(id); }
-    create(dto, req) { return this.grnService.create(dto, req.user.sub); }
-    post(id, req) { return this.grnService.post(id, req.user.sub); }
-    cancel(id, req) { return this.grnService.cancel(id, req.user.sub); }
+    findAll(status) {
+        return this.grService.findAll(status);
+    }
+    findOne(id) {
+        return this.grService.findOne(id);
+    }
+    findByPO(poId) {
+        return this.grService.findByPO(poId);
+    }
+    findByQuotation(quotationId) {
+        return this.grService.findByQuotation(quotationId);
+    }
+    getVarianceReport(id) {
+        return this.grService.getVarianceReport(id);
+    }
+    create(dto, req) {
+        return this.grService.create(dto, req.user.sub);
+    }
+    createFromPO(poId, dto, req) {
+        return this.grService.createFromPO(poId, dto, req.user.sub);
+    }
+    post(id, req) {
+        return this.grService.post(id, req.user.sub);
+    }
+    cancel(id, reason, req) {
+        return this.grService.cancel(id, req.user.sub, reason);
+    }
 };
 exports.GoodsReceiptController = GoodsReceiptController;
 __decorate([
@@ -44,6 +66,27 @@ __decorate([
     __metadata("design:returntype", void 0)
 ], GoodsReceiptController.prototype, "findOne", null);
 __decorate([
+    (0, common_1.Get)('purchase-order/:poId'),
+    __param(0, (0, common_1.Param)('poId', common_1.ParseIntPipe)),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [Number]),
+    __metadata("design:returntype", void 0)
+], GoodsReceiptController.prototype, "findByPO", null);
+__decorate([
+    (0, common_1.Get)('quotation/:quotationId'),
+    __param(0, (0, common_1.Param)('quotationId', common_1.ParseIntPipe)),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [Number]),
+    __metadata("design:returntype", void 0)
+], GoodsReceiptController.prototype, "findByQuotation", null);
+__decorate([
+    (0, common_1.Get)(':id/variance-report'),
+    __param(0, (0, common_1.Param)('id', common_1.ParseIntPipe)),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [Number]),
+    __metadata("design:returntype", void 0)
+], GoodsReceiptController.prototype, "getVarianceReport", null);
+__decorate([
     (0, common_1.Post)(),
     __param(0, (0, common_1.Body)()),
     __param(1, (0, common_1.Request)()),
@@ -51,6 +94,15 @@ __decorate([
     __metadata("design:paramtypes", [Object, Object]),
     __metadata("design:returntype", void 0)
 ], GoodsReceiptController.prototype, "create", null);
+__decorate([
+    (0, common_1.Post)('from-po/:poId'),
+    __param(0, (0, common_1.Param)('poId', common_1.ParseIntPipe)),
+    __param(1, (0, common_1.Body)()),
+    __param(2, (0, common_1.Request)()),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [Number, Object, Object]),
+    __metadata("design:returntype", void 0)
+], GoodsReceiptController.prototype, "createFromPO", null);
 __decorate([
     (0, common_1.Post)(':id/post'),
     __param(0, (0, common_1.Param)('id', common_1.ParseIntPipe)),
@@ -62,9 +114,10 @@ __decorate([
 __decorate([
     (0, common_1.Post)(':id/cancel'),
     __param(0, (0, common_1.Param)('id', common_1.ParseIntPipe)),
-    __param(1, (0, common_1.Request)()),
+    __param(1, (0, common_1.Body)('reason')),
+    __param(2, (0, common_1.Request)()),
     __metadata("design:type", Function),
-    __metadata("design:paramtypes", [Number, Object]),
+    __metadata("design:paramtypes", [Number, String, Object]),
     __metadata("design:returntype", void 0)
 ], GoodsReceiptController.prototype, "cancel", null);
 exports.GoodsReceiptController = GoodsReceiptController = __decorate([

@@ -12,22 +12,61 @@ export class PurchaseOrderController {
 
   @Get()
   @ApiQuery({ name: 'status', required: false })
-  findAll(@Query('status') status?: string) { return this.poService.findAll(status); }
+  findAll(@Query('status') status?: string) {
+    return this.poService.findAll(status);
+  }
 
   @Get(':id')
-  findOne(@Param('id', ParseIntPipe) id: number) { return this.poService.findOne(id); }
+  findOne(@Param('id', ParseIntPipe) id: number) {
+    return this.poService.findOne(id);
+  }
+
+  @Get('quotation/:quotationId')
+  findByQuotation(@Param('quotationId', ParseIntPipe) quotationId: number) {
+    return this.poService.findByQuotation(quotationId);
+  }
+
+  @Get(':id/items-for-gr')
+  getItemsForGR(@Param('id', ParseIntPipe) id: number) {
+    return this.poService.getItemsForGR(id);
+  }
 
   @Post()
-  create(@Body() dto: any, @Request() req: any) { return this.poService.create(dto, req.user.sub); }
+  create(@Body() dto: any, @Request() req: any) {
+    return this.poService.create(dto, req.user.sub);
+  }
+
+  @Post('from-quotation/:quotationId')
+  createFromQuotation(
+    @Param('quotationId', ParseIntPipe) quotationId: number,
+    @Body() dto: any,
+    @Request() req: any,
+  ) {
+    return this.poService.createFromQuotation(quotationId, dto.supplierId, dto, req.user.sub);
+  }
 
   @Put(':id')
-  update(@Param('id', ParseIntPipe) id: number, @Body() dto: any, @Request() req: any) { 
-    return this.poService.update(id, dto, req.user.sub); 
+  update(@Param('id', ParseIntPipe) id: number, @Body() dto: any, @Request() req: any) {
+    return this.poService.update(id, dto, req.user.sub);
+  }
+
+  @Post(':id/submit')
+  submitForApproval(@Param('id', ParseIntPipe) id: number, @Request() req: any) {
+    return this.poService.submitForApproval(id, req.user.sub);
   }
 
   @Post(':id/approve')
-  approve(@Param('id', ParseIntPipe) id: number, @Request() req: any) { return this.poService.approve(id, req.user.sub); }
+  approve(@Param('id', ParseIntPipe) id: number, @Body('note') note: string, @Request() req: any) {
+    return this.poService.approve(id, req.user.sub, note);
+  }
+
+  @Post(':id/send')
+  send(@Param('id', ParseIntPipe) id: number, @Request() req: any) {
+    return this.poService.send(id, req.user.sub);
+  }
 
   @Post(':id/cancel')
-  cancel(@Param('id', ParseIntPipe) id: number, @Request() req: any) { return this.poService.cancel(id, req.user.sub); }
+  cancel(@Param('id', ParseIntPipe) id: number, @Body('reason') reason: string, @Request() req: any) {
+    return this.poService.cancel(id, req.user.sub, reason);
+  }
 }

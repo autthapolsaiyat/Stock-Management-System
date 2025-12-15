@@ -36,17 +36,37 @@ __decorate([
     __metadata("design:type", Boolean)
 ], SalesInvoiceEntity.prototype, "isLatestRevision", void 0);
 __decorate([
+    (0, typeorm_1.Column)({ name: 'quotation_id', nullable: true }),
+    __metadata("design:type", Number)
+], SalesInvoiceEntity.prototype, "quotationId", void 0);
+__decorate([
+    (0, typeorm_1.Column)({ name: 'quotation_doc_no', type: 'varchar', length: 25, nullable: true }),
+    __metadata("design:type", String)
+], SalesInvoiceEntity.prototype, "quotationDocNo", void 0);
+__decorate([
     (0, typeorm_1.Column)({ name: 'customer_id' }),
     __metadata("design:type", Number)
 ], SalesInvoiceEntity.prototype, "customerId", void 0);
+__decorate([
+    (0, typeorm_1.Column)({ name: 'customer_name', type: 'varchar', length: 255, nullable: true }),
+    __metadata("design:type", String)
+], SalesInvoiceEntity.prototype, "customerName", void 0);
+__decorate([
+    (0, typeorm_1.Column)({ name: 'customer_address', type: 'text', nullable: true }),
+    __metadata("design:type", String)
+], SalesInvoiceEntity.prototype, "customerAddress", void 0);
+__decorate([
+    (0, typeorm_1.Column)({ name: 'contact_person', type: 'varchar', length: 100, nullable: true }),
+    __metadata("design:type", String)
+], SalesInvoiceEntity.prototype, "contactPerson", void 0);
 __decorate([
     (0, typeorm_1.Column)({ name: 'warehouse_id' }),
     __metadata("design:type", Number)
 ], SalesInvoiceEntity.prototype, "warehouseId", void 0);
 __decorate([
-    (0, typeorm_1.Column)({ name: 'quotation_id', nullable: true }),
-    __metadata("design:type", Number)
-], SalesInvoiceEntity.prototype, "quotationId", void 0);
+    (0, typeorm_1.Column)({ name: 'warehouse_name', type: 'varchar', length: 100, nullable: true }),
+    __metadata("design:type", String)
+], SalesInvoiceEntity.prototype, "warehouseName", void 0);
 __decorate([
     (0, typeorm_1.Column)({ name: 'doc_date', type: 'date' }),
     __metadata("design:type", Date)
@@ -68,9 +88,17 @@ __decorate([
     __metadata("design:type", Number)
 ], SalesInvoiceEntity.prototype, "subtotal", void 0);
 __decorate([
+    (0, typeorm_1.Column)({ name: 'discount_percent', type: 'decimal', precision: 5, scale: 2, default: 0 }),
+    __metadata("design:type", Number)
+], SalesInvoiceEntity.prototype, "discountPercent", void 0);
+__decorate([
     (0, typeorm_1.Column)({ name: 'discount_total', type: 'decimal', precision: 15, scale: 4, default: 0 }),
     __metadata("design:type", Number)
 ], SalesInvoiceEntity.prototype, "discountTotal", void 0);
+__decorate([
+    (0, typeorm_1.Column)({ name: 'after_discount', type: 'decimal', precision: 15, scale: 4, default: 0 }),
+    __metadata("design:type", Number)
+], SalesInvoiceEntity.prototype, "afterDiscount", void 0);
 __decorate([
     (0, typeorm_1.Column)({ name: 'tax_rate', type: 'decimal', precision: 5, scale: 2, default: 7 }),
     __metadata("design:type", Number)
@@ -92,6 +120,34 @@ __decorate([
     __metadata("design:type", Number)
 ], SalesInvoiceEntity.prototype, "profitTotal", void 0);
 __decorate([
+    (0, typeorm_1.Column)({ name: 'profit_percent', type: 'decimal', precision: 5, scale: 2, default: 0 }),
+    __metadata("design:type", Number)
+], SalesInvoiceEntity.prototype, "profitPercent", void 0);
+__decorate([
+    (0, typeorm_1.Column)({ name: 'has_price_variance', type: 'boolean', default: false }),
+    __metadata("design:type", Boolean)
+], SalesInvoiceEntity.prototype, "hasPriceVariance", void 0);
+__decorate([
+    (0, typeorm_1.Column)({ name: 'price_variance_approved', type: 'boolean', default: false }),
+    __metadata("design:type", Boolean)
+], SalesInvoiceEntity.prototype, "priceVarianceApproved", void 0);
+__decorate([
+    (0, typeorm_1.Column)({ name: 'price_variance_approved_by', nullable: true }),
+    __metadata("design:type", Number)
+], SalesInvoiceEntity.prototype, "priceVarianceApprovedBy", void 0);
+__decorate([
+    (0, typeorm_1.Column)({ name: 'price_variance_approved_at', type: 'timestamptz', nullable: true }),
+    __metadata("design:type", Date)
+], SalesInvoiceEntity.prototype, "priceVarianceApprovedAt", void 0);
+__decorate([
+    (0, typeorm_1.Column)({ name: 'public_note', type: 'text', nullable: true }),
+    __metadata("design:type", String)
+], SalesInvoiceEntity.prototype, "publicNote", void 0);
+__decorate([
+    (0, typeorm_1.Column)({ name: 'internal_note', type: 'text', nullable: true }),
+    __metadata("design:type", String)
+], SalesInvoiceEntity.prototype, "internalNote", void 0);
+__decorate([
     (0, typeorm_1.Column)({ type: 'text', nullable: true }),
     __metadata("design:type", String)
 ], SalesInvoiceEntity.prototype, "remark", void 0);
@@ -111,6 +167,10 @@ __decorate([
     (0, typeorm_1.Column)({ name: 'cancelled_by', nullable: true }),
     __metadata("design:type", Number)
 ], SalesInvoiceEntity.prototype, "cancelledBy", void 0);
+__decorate([
+    (0, typeorm_1.Column)({ name: 'cancel_reason', type: 'text', nullable: true }),
+    __metadata("design:type", String)
+], SalesInvoiceEntity.prototype, "cancelReason", void 0);
 __decorate([
     (0, typeorm_1.CreateDateColumn)({ name: 'created_at' }),
     __metadata("design:type", Date)

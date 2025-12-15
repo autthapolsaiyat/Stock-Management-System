@@ -45,6 +45,10 @@ __decorate([
     __metadata("design:type", String)
 ], ProductEntity.prototype, "barcode", void 0);
 __decorate([
+    (0, typeorm_1.Column)({ name: 'image_url', length: 500, nullable: true }),
+    __metadata("design:type", String)
+], ProductEntity.prototype, "imageUrl", void 0);
+__decorate([
     (0, typeorm_1.Column)({ name: 'min_stock', type: 'decimal', precision: 15, scale: 4, default: 0 }),
     __metadata("design:type", Number)
 ], ProductEntity.prototype, "minStock", void 0);

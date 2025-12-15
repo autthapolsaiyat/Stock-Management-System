@@ -3,12 +3,28 @@ export declare class SalesInvoiceItemEntity {
     id: number;
     salesInvoiceId: number;
     lineNo: number;
+    quotationItemId: number;
     productId: number;
+    itemCode: string;
+    itemName: string;
+    itemDescription: string;
+    brand: string;
     qty: number;
+    unit: string;
     unitPrice: number;
+    discountPercent: number;
     discountAmount: number;
+    netPrice: number;
     lineTotal: number;
     unitCost: number;
     costTotal: number;
+    profitAmount: number;
+    profitPercent: number;
+    quotedPrice: number;
+    priceVariance: number;
+    priceVariancePercent: number;
+    hasPriceVariance: boolean;
+    priceAdjustmentReason: string;
+    internalNote: string;
     salesInvoice: SalesInvoiceEntity;
 }

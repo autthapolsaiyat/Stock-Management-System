@@ -19,12 +19,15 @@ const supplier_module_1 = require("./modules/supplier/supplier.module");
 const warehouse_module_1 = require("./modules/warehouse/warehouse.module");
 const doc_numbering_module_1 = require("./modules/doc-numbering/doc-numbering.module");
 const fifo_module_1 = require("./modules/fifo/fifo.module");
+const system_settings_module_1 = require("./modules/system-settings/system-settings.module");
+const temp_product_module_1 = require("./modules/temp-product/temp-product.module");
 const quotation_module_1 = require("./modules/quotation/quotation.module");
 const purchase_order_module_1 = require("./modules/purchase-order/purchase-order.module");
 const goods_receipt_module_1 = require("./modules/goods-receipt/goods-receipt.module");
 const stock_issue_module_1 = require("./modules/stock-issue/stock-issue.module");
 const stock_transfer_module_1 = require("./modules/stock-transfer/stock-transfer.module");
 const sales_invoice_module_1 = require("./modules/sales-invoice/sales-invoice.module");
+const upload_module_1 = require("./upload/upload.module");
 let AppModule = class AppModule {
 };
 exports.AppModule = AppModule;
@@ -56,12 +59,15 @@ exports.AppModule = AppModule = __decorate([
             warehouse_module_1.WarehouseModule,
             doc_numbering_module_1.DocNumberingModule,
             fifo_module_1.FifoModule,
+            system_settings_module_1.SystemSettingsModule,
+            temp_product_module_1.TempProductModule,
             quotation_module_1.QuotationModule,
             purchase_order_module_1.PurchaseOrderModule,
             goods_receipt_module_1.GoodsReceiptModule,
             stock_issue_module_1.StockIssueModule,
             stock_transfer_module_1.StockTransferModule,
             sales_invoice_module_1.SalesInvoiceModule,
+            upload_module_1.UploadModule,
         ],
     })
 ], AppModule);

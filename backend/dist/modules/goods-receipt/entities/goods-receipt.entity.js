@@ -40,29 +40,89 @@ __decorate([
     __metadata("design:type", Number)
 ], GoodsReceiptEntity.prototype, "purchaseOrderId", void 0);
 __decorate([
+    (0, typeorm_1.Column)({ name: 'purchase_order_doc_no', type: 'varchar', length: 25, nullable: true }),
+    __metadata("design:type", String)
+], GoodsReceiptEntity.prototype, "purchaseOrderDocNo", void 0);
+__decorate([
+    (0, typeorm_1.Column)({ name: 'quotation_id', nullable: true }),
+    __metadata("design:type", Number)
+], GoodsReceiptEntity.prototype, "quotationId", void 0);
+__decorate([
+    (0, typeorm_1.Column)({ name: 'quotation_doc_no', type: 'varchar', length: 25, nullable: true }),
+    __metadata("design:type", String)
+], GoodsReceiptEntity.prototype, "quotationDocNo", void 0);
+__decorate([
     (0, typeorm_1.Column)({ name: 'supplier_id' }),
     __metadata("design:type", Number)
 ], GoodsReceiptEntity.prototype, "supplierId", void 0);
+__decorate([
+    (0, typeorm_1.Column)({ name: 'supplier_name', type: 'varchar', length: 255, nullable: true }),
+    __metadata("design:type", String)
+], GoodsReceiptEntity.prototype, "supplierName", void 0);
 __decorate([
     (0, typeorm_1.Column)({ name: 'warehouse_id' }),
     __metadata("design:type", Number)
 ], GoodsReceiptEntity.prototype, "warehouseId", void 0);
 __decorate([
+    (0, typeorm_1.Column)({ name: 'warehouse_name', type: 'varchar', length: 100, nullable: true }),
+    __metadata("design:type", String)
+], GoodsReceiptEntity.prototype, "warehouseName", void 0);
+__decorate([
     (0, typeorm_1.Column)({ name: 'doc_date', type: 'date' }),
     __metadata("design:type", Date)
 ], GoodsReceiptEntity.prototype, "docDate", void 0);
+__decorate([
+    (0, typeorm_1.Column)({ name: 'receive_date', type: 'date', nullable: true }),
+    __metadata("design:type", Date)
+], GoodsReceiptEntity.prototype, "receiveDate", void 0);
 __decorate([
     (0, typeorm_1.Column)({ name: 'supplier_invoice_no', type: 'varchar', length: 50, nullable: true }),
     __metadata("design:type", String)
 ], GoodsReceiptEntity.prototype, "supplierInvoiceNo", void 0);
 __decorate([
+    (0, typeorm_1.Column)({ name: 'supplier_invoice_date', type: 'date', nullable: true }),
+    __metadata("design:type", Date)
+], GoodsReceiptEntity.prototype, "supplierInvoiceDate", void 0);
+__decorate([
     (0, typeorm_1.Column)({ type: 'varchar', length: 20, default: 'DRAFT' }),
     __metadata("design:type", String)
 ], GoodsReceiptEntity.prototype, "status", void 0);
 __decorate([
+    (0, typeorm_1.Column)({ type: 'decimal', precision: 15, scale: 4, default: 0 }),
+    __metadata("design:type", Number)
+], GoodsReceiptEntity.prototype, "subtotal", void 0);
+__decorate([
+    (0, typeorm_1.Column)({ name: 'discount_amount', type: 'decimal', precision: 15, scale: 4, default: 0 }),
+    __metadata("design:type", Number)
+], GoodsReceiptEntity.prototype, "discountAmount", void 0);
+__decorate([
+    (0, typeorm_1.Column)({ name: 'tax_amount', type: 'decimal', precision: 15, scale: 4, default: 0 }),
+    __metadata("design:type", Number)
+], GoodsReceiptEntity.prototype, "taxAmount", void 0);
+__decorate([
     (0, typeorm_1.Column)({ name: 'total_amount', type: 'decimal', precision: 15, scale: 4, default: 0 }),
     __metadata("design:type", Number)
 ], GoodsReceiptEntity.prototype, "totalAmount", void 0);
+__decorate([
+    (0, typeorm_1.Column)({ name: 'total_expected_cost', type: 'decimal', precision: 15, scale: 4, default: 0 }),
+    __metadata("design:type", Number)
+], GoodsReceiptEntity.prototype, "totalExpectedCost", void 0);
+__decorate([
+    (0, typeorm_1.Column)({ name: 'total_variance', type: 'decimal', precision: 15, scale: 4, default: 0 }),
+    __metadata("design:type", Number)
+], GoodsReceiptEntity.prototype, "totalVariance", void 0);
+__decorate([
+    (0, typeorm_1.Column)({ name: 'variance_percent', type: 'decimal', precision: 5, scale: 2, default: 0 }),
+    __metadata("design:type", Number)
+], GoodsReceiptEntity.prototype, "variancePercent", void 0);
+__decorate([
+    (0, typeorm_1.Column)({ name: 'has_variance_alert', type: 'boolean', default: false }),
+    __metadata("design:type", Boolean)
+], GoodsReceiptEntity.prototype, "hasVarianceAlert", void 0);
+__decorate([
+    (0, typeorm_1.Column)({ name: 'internal_note', type: 'text', nullable: true }),
+    __metadata("design:type", String)
+], GoodsReceiptEntity.prototype, "internalNote", void 0);
 __decorate([
     (0, typeorm_1.Column)({ type: 'text', nullable: true }),
     __metadata("design:type", String)
@@ -83,6 +143,10 @@ __decorate([
     (0, typeorm_1.Column)({ name: 'cancelled_by', nullable: true }),
     __metadata("design:type", Number)
 ], GoodsReceiptEntity.prototype, "cancelledBy", void 0);
+__decorate([
+    (0, typeorm_1.Column)({ name: 'cancel_reason', type: 'text', nullable: true }),
+    __metadata("design:type", String)
+], GoodsReceiptEntity.prototype, "cancelReason", void 0);
 __decorate([
     (0, typeorm_1.CreateDateColumn)({ name: 'created_at' }),
     __metadata("design:type", Date)

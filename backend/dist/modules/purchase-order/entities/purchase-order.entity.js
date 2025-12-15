@@ -36,9 +36,29 @@ __decorate([
     __metadata("design:type", Boolean)
 ], PurchaseOrderEntity.prototype, "isLatestRevision", void 0);
 __decorate([
+    (0, typeorm_1.Column)({ name: 'quotation_id', nullable: true }),
+    __metadata("design:type", Number)
+], PurchaseOrderEntity.prototype, "quotationId", void 0);
+__decorate([
+    (0, typeorm_1.Column)({ name: 'quotation_doc_no', type: 'varchar', length: 25, nullable: true }),
+    __metadata("design:type", String)
+], PurchaseOrderEntity.prototype, "quotationDocNo", void 0);
+__decorate([
     (0, typeorm_1.Column)({ name: 'supplier_id' }),
     __metadata("design:type", Number)
 ], PurchaseOrderEntity.prototype, "supplierId", void 0);
+__decorate([
+    (0, typeorm_1.Column)({ name: 'supplier_name', type: 'varchar', length: 255, nullable: true }),
+    __metadata("design:type", String)
+], PurchaseOrderEntity.prototype, "supplierName", void 0);
+__decorate([
+    (0, typeorm_1.Column)({ name: 'supplier_address', type: 'text', nullable: true }),
+    __metadata("design:type", String)
+], PurchaseOrderEntity.prototype, "supplierAddress", void 0);
+__decorate([
+    (0, typeorm_1.Column)({ name: 'contact_person', type: 'varchar', length: 100, nullable: true }),
+    __metadata("design:type", String)
+], PurchaseOrderEntity.prototype, "contactPerson", void 0);
 __decorate([
     (0, typeorm_1.Column)({ name: 'doc_date', type: 'date' }),
     __metadata("design:type", Date)
@@ -48,9 +68,21 @@ __decorate([
     __metadata("design:type", Date)
 ], PurchaseOrderEntity.prototype, "deliveryDate", void 0);
 __decorate([
+    (0, typeorm_1.Column)({ name: 'expected_delivery_date', type: 'date', nullable: true }),
+    __metadata("design:type", Date)
+], PurchaseOrderEntity.prototype, "expectedDeliveryDate", void 0);
+__decorate([
     (0, typeorm_1.Column)({ name: 'payment_term_days', type: 'int', default: 30 }),
     __metadata("design:type", Number)
 ], PurchaseOrderEntity.prototype, "paymentTermDays", void 0);
+__decorate([
+    (0, typeorm_1.Column)({ name: 'payment_terms_text', type: 'text', nullable: true }),
+    __metadata("design:type", String)
+], PurchaseOrderEntity.prototype, "paymentTermsText", void 0);
+__decorate([
+    (0, typeorm_1.Column)({ name: 'delivery_terms', type: 'text', nullable: true }),
+    __metadata("design:type", String)
+], PurchaseOrderEntity.prototype, "deliveryTerms", void 0);
 __decorate([
     (0, typeorm_1.Column)({ type: 'varchar', length: 20, default: 'DRAFT' }),
     __metadata("design:type", String)
@@ -60,9 +92,17 @@ __decorate([
     __metadata("design:type", Number)
 ], PurchaseOrderEntity.prototype, "subtotal", void 0);
 __decorate([
+    (0, typeorm_1.Column)({ name: 'discount_percent', type: 'decimal', precision: 5, scale: 2, default: 0 }),
+    __metadata("design:type", Number)
+], PurchaseOrderEntity.prototype, "discountPercent", void 0);
+__decorate([
     (0, typeorm_1.Column)({ name: 'discount_total', type: 'decimal', precision: 15, scale: 4, default: 0 }),
     __metadata("design:type", Number)
 ], PurchaseOrderEntity.prototype, "discountTotal", void 0);
+__decorate([
+    (0, typeorm_1.Column)({ name: 'after_discount', type: 'decimal', precision: 15, scale: 4, default: 0 }),
+    __metadata("design:type", Number)
+], PurchaseOrderEntity.prototype, "afterDiscount", void 0);
 __decorate([
     (0, typeorm_1.Column)({ name: 'tax_rate', type: 'decimal', precision: 5, scale: 2, default: 7 }),
     __metadata("design:type", Number)
@@ -76,9 +116,33 @@ __decorate([
     __metadata("design:type", Number)
 ], PurchaseOrderEntity.prototype, "grandTotal", void 0);
 __decorate([
+    (0, typeorm_1.Column)({ name: 'public_note', type: 'text', nullable: true }),
+    __metadata("design:type", String)
+], PurchaseOrderEntity.prototype, "publicNote", void 0);
+__decorate([
+    (0, typeorm_1.Column)({ name: 'internal_note', type: 'text', nullable: true }),
+    __metadata("design:type", String)
+], PurchaseOrderEntity.prototype, "internalNote", void 0);
+__decorate([
     (0, typeorm_1.Column)({ type: 'text', nullable: true }),
     __metadata("design:type", String)
 ], PurchaseOrderEntity.prototype, "remark", void 0);
+__decorate([
+    (0, typeorm_1.Column)({ name: 'total_items', type: 'int', default: 0 }),
+    __metadata("design:type", Number)
+], PurchaseOrderEntity.prototype, "totalItems", void 0);
+__decorate([
+    (0, typeorm_1.Column)({ name: 'items_received', type: 'int', default: 0 }),
+    __metadata("design:type", Number)
+], PurchaseOrderEntity.prototype, "itemsReceived", void 0);
+__decorate([
+    (0, typeorm_1.Column)({ name: 'items_partial', type: 'int', default: 0 }),
+    __metadata("design:type", Number)
+], PurchaseOrderEntity.prototype, "itemsPartial", void 0);
+__decorate([
+    (0, typeorm_1.Column)({ name: 'receive_percent', type: 'decimal', precision: 5, scale: 2, default: 0 }),
+    __metadata("design:type", Number)
+], PurchaseOrderEntity.prototype, "receivePercent", void 0);
 __decorate([
     (0, typeorm_1.Column)({ name: 'approved_at', type: 'timestamptz', nullable: true }),
     __metadata("design:type", Date)
@@ -88,6 +152,10 @@ __decorate([
     __metadata("design:type", Number)
 ], PurchaseOrderEntity.prototype, "approvedBy", void 0);
 __decorate([
+    (0, typeorm_1.Column)({ name: 'approval_note', type: 'text', nullable: true }),
+    __metadata("design:type", String)
+], PurchaseOrderEntity.prototype, "approvalNote", void 0);
+__decorate([
     (0, typeorm_1.Column)({ name: 'cancelled_at', type: 'timestamptz', nullable: true }),
     __metadata("design:type", Date)
 ], PurchaseOrderEntity.prototype, "cancelledAt", void 0);
@@ -95,6 +163,10 @@ __decorate([
     (0, typeorm_1.Column)({ name: 'cancelled_by', nullable: true }),
     __metadata("design:type", Number)
 ], PurchaseOrderEntity.prototype, "cancelledBy", void 0);
+__decorate([
+    (0, typeorm_1.Column)({ name: 'cancel_reason', type: 'text', nullable: true }),
+    __metadata("design:type", String)
+], PurchaseOrderEntity.prototype, "cancelReason", void 0);
 __decorate([
     (0, typeorm_1.CreateDateColumn)({ name: 'created_at' }),
     __metadata("design:type", Date)

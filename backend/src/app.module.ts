@@ -10,6 +10,8 @@ import { SupplierModule } from './modules/supplier/supplier.module';
 import { WarehouseModule } from './modules/warehouse/warehouse.module';
 import { DocNumberingModule } from './modules/doc-numbering/doc-numbering.module';
 import { FifoModule } from './modules/fifo/fifo.module';
+import { SystemSettingsModule } from './modules/system-settings/system-settings.module';
+import { TempProductModule } from './modules/temp-product/temp-product.module';
 import { QuotationModule } from './modules/quotation/quotation.module';
 import { PurchaseOrderModule } from './modules/purchase-order/purchase-order.module';
 import { GoodsReceiptModule } from './modules/goods-receipt/goods-receipt.module';
@@ -45,6 +47,8 @@ import { UploadModule } from './upload/upload.module';
     WarehouseModule,
     DocNumberingModule,
     FifoModule,
+    SystemSettingsModule,
+    TempProductModule,
     QuotationModule,
     PurchaseOrderModule,
     GoodsReceiptModule,

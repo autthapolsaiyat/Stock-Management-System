@@ -3,11 +3,28 @@ export declare class PurchaseOrderItemEntity {
     id: number;
     purchaseOrderId: number;
     lineNo: number;
+    quotationId: number;
+    quotationItemId: number;
+    sourceType: string;
     productId: number;
+    tempProductId: number;
+    itemCode: string;
+    itemName: string;
+    itemDescription: string;
+    brand: string;
     qty: number;
+    unit: string;
     unitPrice: number;
+    discountPercent: number;
     discountAmount: number;
+    netPrice: number;
     lineTotal: number;
+    qtyOrdered: number;
     qtyReceived: number;
+    qtyRemaining: number;
+    itemStatus: string;
+    actualUnitCost: number;
+    internalNote: string;
+    supplierNote: string;
     purchaseOrder: PurchaseOrderEntity;
 }

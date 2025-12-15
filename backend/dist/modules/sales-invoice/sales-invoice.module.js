@@ -14,6 +14,8 @@ const sales_invoice_service_1 = require("./sales-invoice.service");
 const sales_invoice_controller_1 = require("./sales-invoice.controller");
 const doc_numbering_module_1 = require("../doc-numbering/doc-numbering.module");
 const fifo_module_1 = require("../fifo/fifo.module");
+const quotation_module_1 = require("../quotation/quotation.module");
+const system_settings_module_1 = require("../system-settings/system-settings.module");
 let SalesInvoiceModule = class SalesInvoiceModule {
 };
 exports.SalesInvoiceModule = SalesInvoiceModule;
@@ -23,9 +25,12 @@ exports.SalesInvoiceModule = SalesInvoiceModule = __decorate([
             typeorm_1.TypeOrmModule.forFeature([entities_1.SalesInvoiceEntity, entities_1.SalesInvoiceItemEntity]),
             doc_numbering_module_1.DocNumberingModule,
             fifo_module_1.FifoModule,
+            (0, common_1.forwardRef)(() => quotation_module_1.QuotationModule),
+            system_settings_module_1.SystemSettingsModule,
         ],
         controllers: [sales_invoice_controller_1.SalesInvoiceController],
         providers: [sales_invoice_service_1.SalesInvoiceService],
+        exports: [sales_invoice_service_1.SalesInvoiceService],
     })
 ], SalesInvoiceModule);
 //# sourceMappingURL=sales-invoice.module.js.map

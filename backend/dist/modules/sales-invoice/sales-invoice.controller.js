@@ -21,15 +21,38 @@ let SalesInvoiceController = class SalesInvoiceController {
     constructor(invoiceService) {
         this.invoiceService = invoiceService;
     }
-    findAll(status) { return this.invoiceService.findAll(status); }
-    findOne(id) { return this.invoiceService.findOne(id); }
-    create(dto, req) { return this.invoiceService.create(dto, req.user.sub); }
-    post(id, req) { return this.invoiceService.post(id, req.user.sub); }
-    cancel(id, req) { return this.invoiceService.cancel(id, req.user.sub); }
+    findAll(status) {
+        return this.invoiceService.findAll(status);
+    }
+    findOne(id) {
+        return this.invoiceService.findOne(id);
+    }
+    findByQuotation(quotationId) {
+        return this.invoiceService.findByQuotation(quotationId);
+    }
+    getProfitReport(id) {
+        return this.invoiceService.getProfitReport(id);
+    }
+    create(dto, req) {
+        return this.invoiceService.create(dto, req.user.sub);
+    }
+    createFromQuotation(quotationId, dto, req) {
+        return this.invoiceService.createFromQuotation(quotationId, dto, req.user.sub);
+    }
+    approvePriceVariance(id, req) {
+        return this.invoiceService.approvePriceVariance(id, req.user.sub);
+    }
+    post(id, req) {
+        return this.invoiceService.post(id, req.user.sub);
+    }
+    cancel(id, reason, req) {
+        return this.invoiceService.cancel(id, req.user.sub, reason);
+    }
 };
 exports.SalesInvoiceController = SalesInvoiceController;
 __decorate([
     (0, common_1.Get)(),
+    (0, swagger_1.ApiQuery)({ name: 'status', required: false }),
     __param(0, (0, common_1.Query)('status')),
     __metadata("design:type", Function),
     __metadata("design:paramtypes", [String]),
@@ -43,6 +66,20 @@ __decorate([
     __metadata("design:returntype", void 0)
 ], SalesInvoiceController.prototype, "findOne", null);
 __decorate([
+    (0, common_1.Get)('quotation/:quotationId'),
+    __param(0, (0, common_1.Param)('quotationId', common_1.ParseIntPipe)),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [Number]),
+    __metadata("design:returntype", void 0)
+], SalesInvoiceController.prototype, "findByQuotation", null);
+__decorate([
+    (0, common_1.Get)(':id/profit-report'),
+    __param(0, (0, common_1.Param)('id', common_1.ParseIntPipe)),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [Number]),
+    __metadata("design:returntype", void 0)
+], SalesInvoiceController.prototype, "getProfitReport", null);
+__decorate([
     (0, common_1.Post)(),
     __param(0, (0, common_1.Body)()),
     __param(1, (0, common_1.Request)()),
@@ -50,6 +87,23 @@ __decorate([
     __metadata("design:paramtypes", [Object, Object]),
     __metadata("design:returntype", void 0)
 ], SalesInvoiceController.prototype, "create", null);
+__decorate([
+    (0, common_1.Post)('from-quotation/:quotationId'),
+    __param(0, (0, common_1.Param)('quotationId', common_1.ParseIntPipe)),
+    __param(1, (0, common_1.Body)()),
+    __param(2, (0, common_1.Request)()),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [Number, Object, Object]),
+    __metadata("design:returntype", void 0)
+], SalesInvoiceController.prototype, "createFromQuotation", null);
+__decorate([
+    (0, common_1.Post)(':id/approve-variance'),
+    __param(0, (0, common_1.Param)('id', common_1.ParseIntPipe)),
+    __param(1, (0, common_1.Request)()),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [Number, Object]),
+    __metadata("design:returntype", void 0)
+], SalesInvoiceController.prototype, "approvePriceVariance", null);
 __decorate([
     (0, common_1.Post)(':id/post'),
     __param(0, (0, common_1.Param)('id', common_1.ParseIntPipe)),
@@ -61,9 +115,10 @@ __decorate([
 __decorate([
     (0, common_1.Post)(':id/cancel'),
     __param(0, (0, common_1.Param)('id', common_1.ParseIntPipe)),
-    __param(1, (0, common_1.Request)()),
+    __param(1, (0, common_1.Body)('reason')),
+    __param(2, (0, common_1.Request)()),
     __metadata("design:type", Function),
-    __metadata("design:paramtypes", [Number, Object]),
+    __metadata("design:paramtypes", [Number, String, Object]),
     __metadata("design:returntype", void 0)
 ], SalesInvoiceController.prototype, "cancel", null);
 exports.SalesInvoiceController = SalesInvoiceController = __decorate([

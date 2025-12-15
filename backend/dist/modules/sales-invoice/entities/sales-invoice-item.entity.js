@@ -28,21 +28,53 @@ __decorate([
     __metadata("design:type", Number)
 ], SalesInvoiceItemEntity.prototype, "lineNo", void 0);
 __decorate([
+    (0, typeorm_1.Column)({ name: 'quotation_item_id', nullable: true }),
+    __metadata("design:type", Number)
+], SalesInvoiceItemEntity.prototype, "quotationItemId", void 0);
+__decorate([
     (0, typeorm_1.Column)({ name: 'product_id' }),
     __metadata("design:type", Number)
 ], SalesInvoiceItemEntity.prototype, "productId", void 0);
+__decorate([
+    (0, typeorm_1.Column)({ name: 'item_code', type: 'varchar', length: 50, nullable: true }),
+    __metadata("design:type", String)
+], SalesInvoiceItemEntity.prototype, "itemCode", void 0);
+__decorate([
+    (0, typeorm_1.Column)({ name: 'item_name', type: 'varchar', length: 255, nullable: true }),
+    __metadata("design:type", String)
+], SalesInvoiceItemEntity.prototype, "itemName", void 0);
+__decorate([
+    (0, typeorm_1.Column)({ name: 'item_description', type: 'text', nullable: true }),
+    __metadata("design:type", String)
+], SalesInvoiceItemEntity.prototype, "itemDescription", void 0);
+__decorate([
+    (0, typeorm_1.Column)({ type: 'varchar', length: 100, nullable: true }),
+    __metadata("design:type", String)
+], SalesInvoiceItemEntity.prototype, "brand", void 0);
 __decorate([
     (0, typeorm_1.Column)({ type: 'decimal', precision: 15, scale: 4 }),
     __metadata("design:type", Number)
 ], SalesInvoiceItemEntity.prototype, "qty", void 0);
 __decorate([
+    (0, typeorm_1.Column)({ type: 'varchar', length: 20, default: 'ea' }),
+    __metadata("design:type", String)
+], SalesInvoiceItemEntity.prototype, "unit", void 0);
+__decorate([
     (0, typeorm_1.Column)({ name: 'unit_price', type: 'decimal', precision: 15, scale: 4 }),
     __metadata("design:type", Number)
 ], SalesInvoiceItemEntity.prototype, "unitPrice", void 0);
 __decorate([
+    (0, typeorm_1.Column)({ name: 'discount_percent', type: 'decimal', precision: 5, scale: 2, default: 0 }),
+    __metadata("design:type", Number)
+], SalesInvoiceItemEntity.prototype, "discountPercent", void 0);
+__decorate([
     (0, typeorm_1.Column)({ name: 'discount_amount', type: 'decimal', precision: 15, scale: 4, default: 0 }),
     __metadata("design:type", Number)
 ], SalesInvoiceItemEntity.prototype, "discountAmount", void 0);
+__decorate([
+    (0, typeorm_1.Column)({ name: 'net_price', type: 'decimal', precision: 15, scale: 4, default: 0 }),
+    __metadata("design:type", Number)
+], SalesInvoiceItemEntity.prototype, "netPrice", void 0);
 __decorate([
     (0, typeorm_1.Column)({ name: 'line_total', type: 'decimal', precision: 15, scale: 4 }),
     __metadata("design:type", Number)
@@ -55,6 +87,38 @@ __decorate([
     (0, typeorm_1.Column)({ name: 'cost_total', type: 'decimal', precision: 15, scale: 4, default: 0 }),
     __metadata("design:type", Number)
 ], SalesInvoiceItemEntity.prototype, "costTotal", void 0);
+__decorate([
+    (0, typeorm_1.Column)({ name: 'profit_amount', type: 'decimal', precision: 15, scale: 4, default: 0 }),
+    __metadata("design:type", Number)
+], SalesInvoiceItemEntity.prototype, "profitAmount", void 0);
+__decorate([
+    (0, typeorm_1.Column)({ name: 'profit_percent', type: 'decimal', precision: 5, scale: 2, default: 0 }),
+    __metadata("design:type", Number)
+], SalesInvoiceItemEntity.prototype, "profitPercent", void 0);
+__decorate([
+    (0, typeorm_1.Column)({ name: 'quoted_price', type: 'decimal', precision: 15, scale: 4, nullable: true }),
+    __metadata("design:type", Number)
+], SalesInvoiceItemEntity.prototype, "quotedPrice", void 0);
+__decorate([
+    (0, typeorm_1.Column)({ name: 'price_variance', type: 'decimal', precision: 15, scale: 4, nullable: true }),
+    __metadata("design:type", Number)
+], SalesInvoiceItemEntity.prototype, "priceVariance", void 0);
+__decorate([
+    (0, typeorm_1.Column)({ name: 'price_variance_percent', type: 'decimal', precision: 5, scale: 2, nullable: true }),
+    __metadata("design:type", Number)
+], SalesInvoiceItemEntity.prototype, "priceVariancePercent", void 0);
+__decorate([
+    (0, typeorm_1.Column)({ name: 'has_price_variance', type: 'boolean', default: false }),
+    __metadata("design:type", Boolean)
+], SalesInvoiceItemEntity.prototype, "hasPriceVariance", void 0);
+__decorate([
+    (0, typeorm_1.Column)({ name: 'price_adjustment_reason', type: 'text', nullable: true }),
+    __metadata("design:type", String)
+], SalesInvoiceItemEntity.prototype, "priceAdjustmentReason", void 0);
+__decorate([
+    (0, typeorm_1.Column)({ name: 'internal_note', type: 'text', nullable: true }),
+    __metadata("design:type", String)
+], SalesInvoiceItemEntity.prototype, "internalNote", void 0);
 __decorate([
     (0, typeorm_1.ManyToOne)(() => sales_invoice_entity_1.SalesInvoiceEntity, invoice => invoice.items),
     (0, typeorm_1.JoinColumn)({ name: 'sales_invoice_id' }),

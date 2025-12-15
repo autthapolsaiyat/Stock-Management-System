@@ -4,72 +4,156 @@ import { Repository, DataSource } from 'typeorm';
 import { GoodsReceiptEntity, GoodsReceiptItemEntity } from './entities';
 import { DocNumberingService } from '../doc-numbering/doc-numbering.service';
 import { FifoService } from '../fifo/fifo.service';
+import { PurchaseOrderService } from '../purchase-order/purchase-order.service';
+import { TempProductService } from '../temp-product/temp-product.service';
+import { SystemSettingsService } from '../system-settings/system-settings.service';
 
 @Injectable()
 export class GoodsReceiptService {
   constructor(
     @InjectRepository(GoodsReceiptEntity)
-    private grnRepository: Repository<GoodsReceiptEntity>,
+    private grRepository: Repository<GoodsReceiptEntity>,
     @InjectRepository(GoodsReceiptItemEntity)
     private itemRepository: Repository<GoodsReceiptItemEntity>,
     private docNumberingService: DocNumberingService,
     private fifoService: FifoService,
+    private poService: PurchaseOrderService,
+    private tempProductService: TempProductService,
+    private settingsService: SystemSettingsService,
     private dataSource: DataSource,
   ) {}
 
   async findAll(status?: string) {
     const where: any = { isLatestRevision: true };
     if (status) where.status = status;
-    return this.grnRepository.find({ where, order: { createdAt: 'DESC' }, relations: ['items'] });
+    return this.grRepository.find({
+      where,
+      order: { createdAt: 'DESC' },
+      relations: ['items'],
+    });
   }
 
   async findOne(id: number) {
-    const grn = await this.grnRepository.findOne({ where: { id }, relations: ['items'] });
-    if (!grn) throw new NotFoundException('GRN not found');
-    return grn;
+    const gr = await this.grRepository.findOne({
+      where: { id },
+      relations: ['items'],
+    });
+    if (!gr) throw new NotFoundException('Goods receipt not found');
+    return gr;
+  }
+
+  async findByPO(purchaseOrderId: number) {
+    return this.grRepository.find({
+      where: { purchaseOrderId, isLatestRevision: true },
+      relations: ['items'],
+      order: { createdAt: 'DESC' },
+    });
+  }
+
+  async findByQuotation(quotationId: number) {
+    return this.grRepository.find({
+      where: { quotationId, isLatestRevision: true },
+      relations: ['items'],
+      order: { createdAt: 'DESC' },
+    });
   }
 
   async create(dto: any, userId: number) {
     const queryRunner = this.dataSource.createQueryRunner();
     await queryRunner.connect();
     await queryRunner.startTransaction();
-    
+
     try {
       const { docBaseNo, docFullNo } = await this.docNumberingService.generateDocNumber('GR', queryRunner);
-      
-      const grn = queryRunner.manager.create(GoodsReceiptEntity, {
-        docBaseNo, docFullNo, docRevision: 1, isLatestRevision: true,
-        docDate: dto.docDate || new Date(),
-        supplierId: dto.supplierId,
-        warehouseId: dto.warehouseId,
+      const varianceThreshold = await this.settingsService.getVarianceAlertPercent();
+
+      const gr = queryRunner.manager.create(GoodsReceiptEntity, {
+        docBaseNo,
+        docFullNo,
+        docRevision: 1,
+        isLatestRevision: true,
         purchaseOrderId: dto.purchaseOrderId,
+        purchaseOrderDocNo: dto.purchaseOrderDocNo,
+        quotationId: dto.quotationId,
+        quotationDocNo: dto.quotationDocNo,
+        supplierId: dto.supplierId,
+        supplierName: dto.supplierName,
+        warehouseId: dto.warehouseId,
+        warehouseName: dto.warehouseName,
+        docDate: dto.docDate || new Date(),
+        receiveDate: dto.receiveDate || new Date(),
+        supplierInvoiceNo: dto.supplierInvoiceNo,
+        supplierInvoiceDate: dto.supplierInvoiceDate,
+        internalNote: dto.internalNote,
+        remark: dto.remark,
         status: 'DRAFT',
         createdBy: userId,
       });
-      const savedGrn = await queryRunner.manager.save(grn);
-      
-      let totalAmount = 0;
+
+      const savedGR = await queryRunner.manager.save(gr);
+
+      let subtotal = 0;
+      let totalExpectedCost = 0;
+      let hasVarianceAlert = false;
+
       for (let i = 0; i < dto.items.length; i++) {
         const item = dto.items[i];
         const lineTotal = item.qty * item.unitCost;
-        totalAmount += lineTotal;
-        
-        const grnItem = queryRunner.manager.create(GoodsReceiptItemEntity, {
-          goodsReceiptId: savedGrn.id,
+        subtotal += lineTotal;
+
+        // Calculate variance
+        const expectedUnitCost = item.expectedUnitCost || item.unitCost;
+        const costVariance = item.unitCost - expectedUnitCost;
+        const variancePercent = expectedUnitCost > 0 ? (costVariance / expectedUnitCost) * 100 : 0;
+        const itemHasAlert = Math.abs(variancePercent) > varianceThreshold;
+
+        if (itemHasAlert) hasVarianceAlert = true;
+        totalExpectedCost += item.qty * expectedUnitCost;
+
+        const grItem = queryRunner.manager.create(GoodsReceiptItemEntity, {
+          goodsReceiptId: savedGR.id,
           lineNo: i + 1,
-          productId: item.productId,
+          poItemId: item.poItemId,
+          quotationItemId: item.quotationItemId,
+          sourceType: item.sourceType || 'MASTER',
+          productId: item.sourceType === 'MASTER' ? item.productId : null,
+          tempProductId: item.sourceType === 'TEMP' ? item.tempProductId : null,
+          itemCode: item.itemCode,
+          itemName: item.itemName,
+          itemDescription: item.itemDescription,
+          brand: item.brand,
           qty: item.qty,
+          unit: item.unit || 'ea',
           unitCost: item.unitCost,
-          lineTotal,
+          lineTotal: lineTotal,
+          expectedUnitCost: expectedUnitCost,
+          costVariance: costVariance,
+          variancePercent: variancePercent,
+          hasVarianceAlert: itemHasAlert,
+          lotNo: item.lotNo,
+          expiryDate: item.expiryDate,
+          locationCode: item.locationCode,
+          internalNote: item.internalNote,
         });
-        await queryRunner.manager.save(grnItem);
+
+        await queryRunner.manager.save(grItem);
       }
-      
-      savedGrn.totalAmount = totalAmount;
-      await queryRunner.manager.save(savedGrn);
-      
+
+      // Calculate totals
+      const totalVariance = subtotal - totalExpectedCost;
+      const overallVariancePercent = totalExpectedCost > 0 ? (totalVariance / totalExpectedCost) * 100 : 0;
+
+      savedGR.subtotal = subtotal;
+      savedGR.totalAmount = subtotal;
+      savedGR.totalExpectedCost = totalExpectedCost;
+      savedGR.totalVariance = totalVariance;
+      savedGR.variancePercent = overallVariancePercent;
+      savedGR.hasVarianceAlert = hasVarianceAlert;
+
+      await queryRunner.manager.save(savedGR);
       await queryRunner.commitTransaction();
-      return this.findOne(savedGrn.id);
+
+      return this.findOne(savedGR.id);
     } catch (error) {
       await queryRunner.rollbackTransaction();
       throw error;
@@ -78,92 +162,181 @@ export class GoodsReceiptService {
     }
   }
 
-  async update(id: number, dto: any, userId: number) {
-    const grn = await this.findOne(id);
-    if (grn.status !== 'DRAFT') {
-      throw new BadRequestException('Only draft GRN can be updated');
+  async createFromPO(purchaseOrderId: number, dto: any, userId: number) {
+    const poData = await this.poService.getItemsForGR(purchaseOrderId);
+
+    if (poData.pendingItems.length === 0) {
+      throw new BadRequestException('No pending items to receive');
     }
 
-    const queryRunner = this.dataSource.createQueryRunner();
-    await queryRunner.connect();
-    await queryRunner.startTransaction();
+    const itemsToReceive = poData.pendingItems.filter(item =>
+      !dto.itemIds || dto.itemIds.includes(item.id)
+    );
 
-    try {
-      // Delete old items
-      await queryRunner.manager.delete(GoodsReceiptItemEntity, { goodsReceiptId: id });
+    const grDto = {
+      purchaseOrderId: poData.purchaseOrder.id,
+      purchaseOrderDocNo: poData.purchaseOrder.docFullNo,
+      quotationId: poData.purchaseOrder.quotationId,
+      quotationDocNo: poData.purchaseOrder.quotationDocNo,
+      supplierId: poData.purchaseOrder.supplierId,
+      supplierName: poData.purchaseOrder.supplierName,
+      warehouseId: dto.warehouseId,
+      warehouseName: dto.warehouseName,
+      docDate: dto.docDate || new Date(),
+      receiveDate: dto.receiveDate || new Date(),
+      supplierInvoiceNo: dto.supplierInvoiceNo,
+      supplierInvoiceDate: dto.supplierInvoiceDate,
+      internalNote: dto.internalNote,
+      remark: dto.remark,
+      items: itemsToReceive.map(item => ({
+        poItemId: item.id,
+        quotationItemId: item.quotationItemId,
+        sourceType: item.sourceType,
+        productId: item.productId,
+        tempProductId: item.tempProductId,
+        itemCode: item.itemCode,
+        itemName: item.itemName,
+        itemDescription: item.itemDescription,
+        brand: item.brand,
+        qty: dto.quantities?.[item.id] || item.qtyRemaining,
+        unit: item.unit,
+        unitCost: dto.unitCosts?.[item.id] || item.unitPrice,
+        expectedUnitCost: item.unitPrice,
+        lotNo: dto.lotNos?.[item.id],
+        expiryDate: dto.expiryDates?.[item.id],
+        locationCode: dto.locationCodes?.[item.id],
+      })),
+    };
 
-      // Create new items
-      let totalAmount = 0;
-      if (dto.items && dto.items.length > 0) {
-        for (let i = 0; i < dto.items.length; i++) {
-          const item = dto.items[i];
-          const lineTotal = (item.qty || 0) * (item.unitCost || 0);
-          totalAmount += lineTotal;
-
-          await queryRunner.manager
-            .createQueryBuilder()
-            .insert()
-            .into(GoodsReceiptItemEntity)
-            .values({
-              goodsReceiptId: id,
-              lineNo: i + 1,
-              productId: item.productId,
-              qty: item.qty,
-              unitCost: item.unitCost,
-              lineTotal,
-            })
-            .execute();
-        }
-      }
-
-      // Update GRN header
-      await queryRunner.manager.update(GoodsReceiptEntity, id, {
-        supplierId: dto.supplierId ?? grn.supplierId,
-        warehouseId: dto.warehouseId ?? grn.warehouseId,
-        docDate: dto.docDate ?? grn.docDate,
-        purchaseOrderId: dto.purchaseOrderId ?? grn.purchaseOrderId,
-        remark: dto.remark ?? grn.remark,
-        updatedBy: userId,
-        totalAmount,
-      });
-
-      await queryRunner.commitTransaction();
-      return this.findOne(id);
-    } catch (error) {
-      await queryRunner.rollbackTransaction();
-      throw error;
-    } finally {
-      await queryRunner.release();
-    }
+    return this.create(grDto, userId);
   }
 
   async post(id: number, userId: number) {
-    const grn = await this.findOne(id);
-    if (grn.status !== 'DRAFT') throw new BadRequestException('Only draft GRN can be posted');
-    
+    const gr = await this.findOne(id);
+
+    if (gr.status !== 'DRAFT') {
+      throw new BadRequestException('Only draft GR can be posted');
+    }
+
     const queryRunner = this.dataSource.createQueryRunner();
     await queryRunner.connect();
     await queryRunner.startTransaction();
-    
+
     try {
-      for (const item of grn.items) {
-        await this.fifoService.createLayer({
-          productId: item.productId,
-          warehouseId: grn.warehouseId,
-          qty: Number(item.qty),
-          unitCost: Number(item.unitCost),
-          referenceType: 'GRN',
-          referenceId: grn.id,
-          referenceItemId: item.id,
-        }, queryRunner);
+      for (const item of gr.items) {
+        // Handle Temp Product activation
+        if (item.sourceType === 'TEMP' && item.tempProductId) {
+          // Create real product from temp
+          const newProduct = await queryRunner.manager.insert('products', {
+            code: `PRD-${Date.now()}`,
+            name: item.itemName,
+            description: item.itemDescription,
+            brand: item.brand,
+            unit: item.unit,
+            isActive: true,
+            createdBy: userId,
+            createdAt: new Date(),
+            updatedAt: new Date(),
+          });
+
+          const newProductId = newProduct.identifiers[0].id;
+
+          // Update temp product
+          await queryRunner.manager.update('temp_products', item.tempProductId, {
+            status: 'ACTIVATED',
+            activatedToProductId: newProductId,
+            activatedFromGrId: gr.id,
+            activatedAt: new Date(),
+            activatedBy: userId,
+          });
+
+          // Update GR item with new product
+          item.activatedProductId = newProductId;
+          item.productId = newProductId;
+          await queryRunner.manager.save(item);
+
+          // Add to FIFO with new product
+          await this.fifoService.createLayer(
+            {
+              productId: newProductId,
+              warehouseId: gr.warehouseId,
+              qty: item.qty,
+              unitCost: item.unitCost,
+              referenceType: 'GR',
+              referenceId: gr.id,
+            },
+            queryRunner,
+          );
+        } else if (item.productId) {
+          // Normal product - add to FIFO
+          await this.fifoService.createLayer(
+            {
+              productId: item.productId,
+              warehouseId: gr.warehouseId,
+              qty: item.qty,
+              unitCost: item.unitCost,
+              referenceType: 'GR',
+              referenceId: gr.id,
+            },
+            queryRunner,
+          );
+        }
+
+        // Update PO Item
+        if (item.poItemId) {
+          await queryRunner.manager.query(`
+            UPDATE purchase_order_items 
+            SET qty_received = qty_received + $1,
+                qty_remaining = qty_remaining - $1,
+                actual_unit_cost = $2,
+                item_status = CASE 
+                  WHEN qty_remaining - $1 <= 0 THEN 'RECEIVED'
+                  ELSE 'PARTIAL'
+                END
+            WHERE id = $3
+          `, [item.qty, item.unitCost, item.poItemId]);
+        }
+
+        // Update Quotation Item
+        if (item.quotationItemId) {
+          await queryRunner.manager.query(`
+            UPDATE quotation_items 
+            SET qty_received = qty_received + $1,
+                actual_cost = $2,
+                actual_margin_amount = unit_price - $2,
+                actual_margin_percent = CASE 
+                  WHEN unit_price > 0 THEN ((unit_price - $2) / unit_price) * 100
+                  ELSE 0
+                END,
+                cost_variance_amount = $2 - COALESCE(estimated_cost, 0),
+                cost_variance_percent = CASE 
+                  WHEN COALESCE(estimated_cost, 0) > 0 THEN (($2 - estimated_cost) / estimated_cost) * 100
+                  ELSE 0
+                END,
+                item_status = CASE 
+                  WHEN qty_received + $1 >= qty_quoted THEN 'RECEIVED'
+                  ELSE 'ORDERED'
+                END,
+                gr_item_id = $3
+            WHERE id = $4
+          `, [item.qty, item.unitCost, item.id, item.quotationItemId]);
+        }
       }
-      
-      grn.status = 'POSTED';
-      grn.postedAt = new Date();
-      grn.postedBy = userId;
-      await queryRunner.manager.save(grn);
-      
+
+      // Update PO receive status
+      if (gr.purchaseOrderId) {
+        await this.poService.updateReceiveStatus(gr.purchaseOrderId);
+      }
+
+      // Update GR status
+      gr.status = 'POSTED';
+      gr.postedAt = new Date();
+      gr.postedBy = userId;
+      gr.updatedBy = userId;
+
+      await queryRunner.manager.save(gr);
       await queryRunner.commitTransaction();
+
       return this.findOne(id);
     } catch (error) {
       await queryRunner.rollbackTransaction();
@@ -173,13 +346,46 @@ export class GoodsReceiptService {
     }
   }
 
-  async cancel(id: number, userId: number) {
-    const grn = await this.findOne(id);
-    if (grn.status === 'POSTED') throw new BadRequestException('Posted GRN cannot be cancelled');
-    
-    grn.status = 'CANCELLED';
-    grn.cancelledAt = new Date();
-    grn.cancelledBy = userId;
-    return this.grnRepository.save(grn);
+  async cancel(id: number, userId: number, reason?: string) {
+    const gr = await this.findOne(id);
+
+    if (gr.status === 'CANCELLED') {
+      throw new BadRequestException('GR is already cancelled');
+    }
+
+    if (gr.status === 'POSTED') {
+      throw new BadRequestException('Posted GR cannot be cancelled');
+    }
+
+    gr.status = 'CANCELLED';
+    gr.cancelledAt = new Date();
+    gr.cancelledBy = userId;
+    gr.cancelReason = reason;
+    gr.updatedBy = userId;
+
+    return this.grRepository.save(gr);
+  }
+
+  async getVarianceReport(id: number) {
+    const gr = await this.findOne(id);
+
+    const itemsWithVariance = gr.items.filter(item => item.hasVarianceAlert);
+
+    return {
+      goodsReceipt: {
+        id: gr.id,
+        docFullNo: gr.docFullNo,
+        totalExpectedCost: gr.totalExpectedCost,
+        totalAmount: gr.totalAmount,
+        totalVariance: gr.totalVariance,
+        variancePercent: gr.variancePercent,
+      },
+      itemsWithVariance,
+      summary: {
+        totalItems: gr.items.length,
+        itemsWithAlert: itemsWithVariance.length,
+        hasAlert: gr.hasVarianceAlert,
+      },
+    };
   }
 }

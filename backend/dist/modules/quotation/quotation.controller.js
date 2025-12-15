@@ -21,29 +21,55 @@ let QuotationController = class QuotationController {
     constructor(quotationService) {
         this.quotationService = quotationService;
     }
-    findAll(status) {
-        return this.quotationService.findAll(status);
+    findAll(status, qtType) {
+        return this.quotationService.findAll(status, qtType);
     }
     findOne(id) {
         return this.quotationService.findOne(id);
     }
+    getItemsForPO(id) {
+        return this.quotationService.getItemsForPO(id);
+    }
+    getItemsForInvoice(id) {
+        return this.quotationService.getItemsForInvoice(id);
+    }
     create(dto, req) {
         return this.quotationService.create(dto, req.user.sub);
+    }
+    update(id, dto, req) {
+        return this.quotationService.update(id, dto, req.user.sub);
+    }
+    submitForApproval(id, req) {
+        return this.quotationService.submitForApproval(id, req.user.sub);
+    }
+    approve(id, note, req) {
+        return this.quotationService.approve(id, req.user.sub, note);
+    }
+    approveMargin(id, note, req) {
+        return this.quotationService.approveMargin(id, req.user.sub, note);
+    }
+    send(id, req) {
+        return this.quotationService.send(id, req.user.sub);
     }
     confirm(id, req) {
         return this.quotationService.confirm(id, req.user.sub);
     }
-    cancel(id, req) {
-        return this.quotationService.cancel(id, req.user.sub);
+    cancel(id, reason, req) {
+        return this.quotationService.cancel(id, req.user.sub, reason);
+    }
+    cancelItem(id, itemId, reason, req) {
+        return this.quotationService.cancelItem(id, itemId, req.user.sub, reason);
     }
 };
 exports.QuotationController = QuotationController;
 __decorate([
     (0, common_1.Get)(),
     (0, swagger_1.ApiQuery)({ name: 'status', required: false }),
+    (0, swagger_1.ApiQuery)({ name: 'qtType', required: false }),
     __param(0, (0, common_1.Query)('status')),
+    __param(1, (0, common_1.Query)('qtType')),
     __metadata("design:type", Function),
-    __metadata("design:paramtypes", [String]),
+    __metadata("design:paramtypes", [String, String]),
     __metadata("design:returntype", void 0)
 ], QuotationController.prototype, "findAll", null);
 __decorate([
@@ -54,6 +80,20 @@ __decorate([
     __metadata("design:returntype", void 0)
 ], QuotationController.prototype, "findOne", null);
 __decorate([
+    (0, common_1.Get)(':id/items-for-po'),
+    __param(0, (0, common_1.Param)('id', common_1.ParseIntPipe)),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [Number]),
+    __metadata("design:returntype", void 0)
+], QuotationController.prototype, "getItemsForPO", null);
+__decorate([
+    (0, common_1.Get)(':id/items-for-invoice'),
+    __param(0, (0, common_1.Param)('id', common_1.ParseIntPipe)),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [Number]),
+    __metadata("design:returntype", void 0)
+], QuotationController.prototype, "getItemsForInvoice", null);
+__decorate([
     (0, common_1.Post)(),
     __param(0, (0, common_1.Body)()),
     __param(1, (0, common_1.Request)()),
@@ -61,6 +101,49 @@ __decorate([
     __metadata("design:paramtypes", [Object, Object]),
     __metadata("design:returntype", void 0)
 ], QuotationController.prototype, "create", null);
+__decorate([
+    (0, common_1.Put)(':id'),
+    __param(0, (0, common_1.Param)('id', common_1.ParseIntPipe)),
+    __param(1, (0, common_1.Body)()),
+    __param(2, (0, common_1.Request)()),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [Number, Object, Object]),
+    __metadata("design:returntype", void 0)
+], QuotationController.prototype, "update", null);
+__decorate([
+    (0, common_1.Post)(':id/submit'),
+    __param(0, (0, common_1.Param)('id', common_1.ParseIntPipe)),
+    __param(1, (0, common_1.Request)()),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [Number, Object]),
+    __metadata("design:returntype", void 0)
+], QuotationController.prototype, "submitForApproval", null);
+__decorate([
+    (0, common_1.Post)(':id/approve'),
+    __param(0, (0, common_1.Param)('id', common_1.ParseIntPipe)),
+    __param(1, (0, common_1.Body)('note')),
+    __param(2, (0, common_1.Request)()),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [Number, String, Object]),
+    __metadata("design:returntype", void 0)
+], QuotationController.prototype, "approve", null);
+__decorate([
+    (0, common_1.Post)(':id/approve-margin'),
+    __param(0, (0, common_1.Param)('id', common_1.ParseIntPipe)),
+    __param(1, (0, common_1.Body)('note')),
+    __param(2, (0, common_1.Request)()),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [Number, String, Object]),
+    __metadata("design:returntype", void 0)
+], QuotationController.prototype, "approveMargin", null);
+__decorate([
+    (0, common_1.Post)(':id/send'),
+    __param(0, (0, common_1.Param)('id', common_1.ParseIntPipe)),
+    __param(1, (0, common_1.Request)()),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [Number, Object]),
+    __metadata("design:returntype", void 0)
+], QuotationController.prototype, "send", null);
 __decorate([
     (0, common_1.Post)(':id/confirm'),
     __param(0, (0, common_1.Param)('id', common_1.ParseIntPipe)),
@@ -72,11 +155,22 @@ __decorate([
 __decorate([
     (0, common_1.Post)(':id/cancel'),
     __param(0, (0, common_1.Param)('id', common_1.ParseIntPipe)),
-    __param(1, (0, common_1.Request)()),
+    __param(1, (0, common_1.Body)('reason')),
+    __param(2, (0, common_1.Request)()),
     __metadata("design:type", Function),
-    __metadata("design:paramtypes", [Number, Object]),
+    __metadata("design:paramtypes", [Number, String, Object]),
     __metadata("design:returntype", void 0)
 ], QuotationController.prototype, "cancel", null);
+__decorate([
+    (0, common_1.Post)(':id/items/:itemId/cancel'),
+    __param(0, (0, common_1.Param)('id', common_1.ParseIntPipe)),
+    __param(1, (0, common_1.Param)('itemId', common_1.ParseIntPipe)),
+    __param(2, (0, common_1.Body)('reason')),
+    __param(3, (0, common_1.Request)()),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [Number, Number, String, Object]),
+    __metadata("design:returntype", void 0)
+], QuotationController.prototype, "cancelItem", null);
 exports.QuotationController = QuotationController = __decorate([
     (0, swagger_1.ApiTags)('Quotations'),
     (0, swagger_1.ApiBearerAuth)(),
