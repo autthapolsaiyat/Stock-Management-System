@@ -6,15 +6,11 @@ import {
 } from 'antd';
 import {
   SaveOutlined, SendOutlined, PlusOutlined, DeleteOutlined,
-  SettingOutlined, CalculatorOutlined,
-
+  SettingOutlined, CalculatorOutlined
 } from '@ant-design/icons';
 import dayjs from 'dayjs';
 import { quotationsApi, customersApi, productsApi, systemSettingsApi } from '../../services/api';
-import type { 
-  QuotationItem, QuotationImage, 
-  SourceType 
-} from '../../types/quotation';
+import type { QuotationItem, QuotationImage, SourceType } from '../../types/quotation';
 import SettingsModal from '../../components/quotation/SettingsModal';
 import TempProductModal from '../../components/quotation/TempProductModal';
 import QuickCalculator from '../../components/quotation/QuickCalculator';
@@ -36,7 +32,7 @@ const QuotationForm: React.FC = () => {
   const [images, setImages] = useState<QuotationImage[]>([]);
   const [customers, setCustomers] = useState<any[]>([]);
   const [products, setProducts] = useState<any[]>([]);
-  const [settings, setSettings] = useState<any>(null);
+  const [settings, setSettings] = useState<any>({});
 
   // Modals
   const [settingsModalOpen, setSettingsModalOpen] = useState(false);
@@ -66,43 +62,49 @@ const QuotationForm: React.FC = () => {
     if (isEdit && id) {
       loadQuotation(parseInt(id));
     }
-  }, [id]);
+  }, [id, isEdit]);
 
-  // Recalculate on items/discount change
+  // Recalculate on items change
   useEffect(() => {
     calculateSummary();
-  }, [items, form.getFieldValue('discountPercent'), form.getFieldValue('discountAmount')]);
+  }, [items]);
 
   const loadInitialData = async () => {
     try {
-      const [customersRes, productsRes, settingsRes] = await Promise.all([
+      const [customersRes, productsRes] = await Promise.all([
         customersApi.getAll(),
         productsApi.getAll(),
-        systemSettingsApi.getAll('QUOTATION'),
       ]);
-      setCustomers(customersRes.data);
-      setProducts(productsRes.data);
+      setCustomers(customersRes.data || []);
+      setProducts(productsRes.data || []);
       
-      // Parse settings
-      const settingsMap: any = {};
-      settingsRes.data.forEach((s: any) => {
-        settingsMap[s.settingKey] = s.settingValue;
-      });
-      setSettings(settingsMap);
+      // Try to load settings
+      try {
+        const settingsRes = await systemSettingsApi.getAll('QUOTATION');
+        const settingsMap: any = {};
+        (settingsRes.data || []).forEach((s: any) => {
+          settingsMap[s.settingKey] = s.settingValue;
+        });
+        setSettings(settingsMap);
+      } catch (e) {
+        console.log('Settings not available, using defaults');
+        setSettings({});
+      }
 
       // Set defaults for new quotation
       if (!isEdit) {
         form.setFieldsValue({
           quotationType: 'STANDARD',
           docDate: dayjs(),
-          validDays: parseInt(settingsMap.QT_VALID_DAYS || '30'),
-          deliveryDays: parseInt(settingsMap.QT_DELIVERY_DAYS || '120'),
-          creditTermDays: parseInt(settingsMap.QT_CREDIT_TERM_DAYS || '30'),
+          validDays: 30,
+          deliveryDays: 120,
+          creditTermDays: 30,
           taxRate: 7,
           discountDisplayMode: 'SHOW',
         });
       }
     } catch (error) {
+      console.error('Load error:', error);
       message.error('ไม่สามารถโหลดข้อมูลได้');
     }
   };
@@ -193,9 +195,9 @@ const QuotationForm: React.FC = () => {
         qty: 1,
         unit: product.unit || 'ea',
         unitPrice: product.sellingPrice || 0,
-        estimatedCost: product.cost || 0,
+        estimatedCost: product.cost || product.standardCost || 0,
         expectedMarginPercent: product.sellingPrice > 0 
-          ? ((product.sellingPrice - (product.cost || 0)) / product.sellingPrice) * 100 
+          ? ((product.sellingPrice - (product.cost || product.standardCost || 0)) / product.sellingPrice) * 100 
           : 0,
         lineTotal: product.sellingPrice || 0,
         itemStatus: 'PENDING',
@@ -247,7 +249,6 @@ const QuotationForm: React.FC = () => {
 
   const handleRemoveItem = (index: number) => {
     const newItems = items.filter((_, i) => i !== index);
-    // Reorder line numbers
     newItems.forEach((item, i) => item.lineNo = i + 1);
     setItems(newItems);
   };
@@ -290,6 +291,13 @@ const QuotationForm: React.FC = () => {
     } finally {
       setSaving(false);
     }
+  };
+
+  const getMarginColor = (percent: number) => {
+    const minMargin = parseFloat(settings?.QT_MIN_MARGIN_PERCENT || '10');
+    if (percent < minMargin) return 'warning';
+    if (percent >= 20) return 'green';
+    return 'blue';
   };
 
   const itemColumns = [
@@ -356,7 +364,7 @@ const QuotationForm: React.FC = () => {
         const percent = Number(val || 0);
         const minMargin = parseFloat(settings?.QT_MIN_MARGIN_PERCENT || '10');
         return (
-          <Tag color={percent < minMargin ? 'warning' : percent >= 20 ? 'green' : 'blue'}>
+          <Tag color={getMarginColor(percent)}>
             {percent.toFixed(1)}%
             {percent < minMargin && ' ⚠️'}
           </Tag>
@@ -418,7 +426,7 @@ const QuotationForm: React.FC = () => {
                   </Form.Item>
                 </Col>
                 <Col xs={24} md={12}>
-                  <Form.Item label="ลูกค้า" name="customerId" rules={[{ required: true }]}>
+                  <Form.Item label="ลูกค้า" name="customerId" rules={[{ required: true, message: 'กรุณาเลือกลูกค้า' }]}>
                     <Select
                       showSearch
                       placeholder="เลือกลูกค้า"
@@ -496,7 +504,6 @@ const QuotationForm: React.FC = () => {
             <Row gutter={24}>
               <Col xs={24} md={12}>
                 <Form form={form}>
-                  {/* Discount Section */}
                   <div style={{ padding: 16, background: '#f5f5f5', borderRadius: 8, marginBottom: 16 }}>
                     <div style={{ fontWeight: 500, marginBottom: 12 }}>💰 ส่วนลด</div>
                     <Row gutter={12}>
@@ -569,7 +576,7 @@ const QuotationForm: React.FC = () => {
                   </div>
                   <div style={{ display: 'flex', justifyContent: 'space-between' }}>
                     <span>Margin:</span>
-                    <Tag color={summary.requiresApproval ? 'warning' : summary.marginPercent >= 20 ? 'green' : 'blue'}>
+                    <Tag color={getMarginColor(summary.marginPercent)}>
                       {summary.marginPercent.toFixed(1)}% (฿{summary.marginAmount.toLocaleString()})
                       {summary.requiresApproval && ' ⚠️'}
                     </Tag>
