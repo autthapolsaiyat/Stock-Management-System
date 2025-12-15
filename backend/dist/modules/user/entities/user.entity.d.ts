@@ -6,6 +6,7 @@ export declare class UserEntity {
     fullName: string;
     email: string;
     isActive: boolean;
+    quotationType: string;
     lastLoginAt: Date;
     createdAt: Date;
     updatedAt: Date;

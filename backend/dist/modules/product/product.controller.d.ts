@@ -3,7 +3,7 @@ import { CreateProductDto, UpdateProductDto, CreateCategoryDto, CreateUnitDto } 
 export declare class ProductController {
     private productService;
     constructor(productService: ProductService);
-    findAll(categoryId?: string): Promise<import("./entities").ProductEntity[]>;
+    findAll(categoryId?: string, quotationType?: string): Promise<import("./entities").ProductEntity[]>;
     findAllCategories(): Promise<import("./entities").ProductCategoryEntity[]>;
     createCategory(dto: CreateCategoryDto): Promise<import("./entities").ProductCategoryEntity>;
     findAllUnits(): Promise<import("./entities").UnitEntity[]>;

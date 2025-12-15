@@ -14,6 +14,7 @@ export declare class ProductEntity {
     reorderPoint: number;
     standardCost: number;
     sellingPrice: number;
+    quotationType: string;
     isActive: boolean;
     createdAt: Date;
     updatedAt: Date;

@@ -20,19 +20,19 @@ __decorate([
     __metadata("design:type", Number)
 ], UserEntity.prototype, "id", void 0);
 __decorate([
-    (0, typeorm_1.Column)({ length: 50, unique: true }),
+    (0, typeorm_1.Column)({ unique: true }),
     __metadata("design:type", String)
 ], UserEntity.prototype, "username", void 0);
 __decorate([
-    (0, typeorm_1.Column)({ name: 'password_hash', length: 255 }),
+    (0, typeorm_1.Column)({ name: 'password_hash' }),
     __metadata("design:type", String)
 ], UserEntity.prototype, "passwordHash", void 0);
 __decorate([
-    (0, typeorm_1.Column)({ name: 'full_name', length: 100 }),
+    (0, typeorm_1.Column)({ name: 'full_name', nullable: true }),
     __metadata("design:type", String)
 ], UserEntity.prototype, "fullName", void 0);
 __decorate([
-    (0, typeorm_1.Column)({ length: 100, nullable: true }),
+    (0, typeorm_1.Column)({ nullable: true }),
     __metadata("design:type", String)
 ], UserEntity.prototype, "email", void 0);
 __decorate([
@@ -40,15 +40,19 @@ __decorate([
     __metadata("design:type", Boolean)
 ], UserEntity.prototype, "isActive", void 0);
 __decorate([
-    (0, typeorm_1.Column)({ name: 'last_login_at', type: 'timestamptz', nullable: true }),
+    (0, typeorm_1.Column)({ name: 'quotation_type', nullable: true }),
+    __metadata("design:type", String)
+], UserEntity.prototype, "quotationType", void 0);
+__decorate([
+    (0, typeorm_1.Column)({ name: 'last_login_at', nullable: true }),
     __metadata("design:type", Date)
 ], UserEntity.prototype, "lastLoginAt", void 0);
 __decorate([
-    (0, typeorm_1.CreateDateColumn)({ name: 'created_at', type: 'timestamptz' }),
+    (0, typeorm_1.CreateDateColumn)({ name: 'created_at' }),
     __metadata("design:type", Date)
 ], UserEntity.prototype, "createdAt", void 0);
 __decorate([
-    (0, typeorm_1.UpdateDateColumn)({ name: 'updated_at', type: 'timestamptz' }),
+    (0, typeorm_1.UpdateDateColumn)({ name: 'updated_at' }),
     __metadata("design:type", Date)
 ], UserEntity.prototype, "updatedAt", void 0);
 __decorate([
@@ -60,7 +64,7 @@ __decorate([
     __metadata("design:type", Number)
 ], UserEntity.prototype, "updatedBy", void 0);
 __decorate([
-    (0, typeorm_1.OneToMany)(() => user_role_entity_1.UserRoleEntity, userRole => userRole.user),
+    (0, typeorm_1.OneToMany)(() => user_role_entity_1.UserRoleEntity, (userRole) => userRole.user),
     __metadata("design:type", Array)
 ], UserEntity.prototype, "userRoles", void 0);
 exports.UserEntity = UserEntity = __decorate([

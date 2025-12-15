@@ -53,7 +53,8 @@ export const usersApi = {
 
 // Products API
 export const productsApi = {
-  getAll: () => api.get('/api/products'),
+  getAll: (categoryId?: number, quotationType?: string) => 
+    api.get('/api/products', { params: { categoryId, quotationType } }),
   getById: (id: number) => api.get(`/api/products/${id}`),
   create: (data: any) => api.post('/api/products', data),
   update: (id: number, data: any) => api.put(`/api/products/${id}`, data),
@@ -92,7 +93,7 @@ export const warehousesApi = {
   update: (id: number, data: any) => api.put(`/api/warehouses/${id}`, data),
 };
 
-// Quotations API (Enhanced)
+// Quotations API
 export const quotationsApi = {
   getAll: (params?: { status?: string; type?: string }) => 
     api.get('/api/quotations', { params }),
@@ -105,17 +106,12 @@ export const quotationsApi = {
   send: (id: number) => api.post(`/api/quotations/${id}/send`),
   confirm: (id: number) => api.post(`/api/quotations/${id}/confirm`),
   cancel: (id: number, reason?: string) => api.post(`/api/quotations/${id}/cancel`, { reason }),
-  cancelItem: (id: number, itemId: number, data: any) => 
-    api.post(`/api/quotations/${id}/items/${itemId}/cancel`, data),
-  getItemsForPO: (id: number) => api.get(`/api/quotations/${id}/items-for-po`),
-  getItemsForInvoice: (id: number) => api.get(`/api/quotations/${id}/items-for-invoice`),
 };
 
 // Temp Products API
 export const tempProductsApi = {
   getAll: (params?: { status?: string }) => api.get('/api/temp-products', { params }),
   getById: (id: number) => api.get(`/api/temp-products/${id}`),
-  getByQuotation: (quotationId: number) => api.get(`/api/temp-products/quotation/${quotationId}`),
   create: (data: any) => api.post('/api/temp-products', data),
   update: (id: number, data: any) => api.put(`/api/temp-products/${id}`, data),
   activate: (id: number, productData: any) => api.post(`/api/temp-products/${id}/activate`, productData),
@@ -131,7 +127,7 @@ export const systemSettingsApi = {
     api.put('/api/system-settings/bulk', { settings }),
 };
 
-// Purchase Orders API (Enhanced)
+// Purchase Orders API
 export const purchaseOrdersApi = {
   getAll: () => api.get('/api/purchase-orders'),
   getById: (id: number) => api.get(`/api/purchase-orders/${id}`),
@@ -141,10 +137,9 @@ export const purchaseOrdersApi = {
   update: (id: number, data: any) => api.put(`/api/purchase-orders/${id}`, data),
   approve: (id: number) => api.post(`/api/purchase-orders/${id}/approve`),
   cancel: (id: number) => api.post(`/api/purchase-orders/${id}/cancel`),
-  getItemsForGR: (id: number) => api.get(`/api/purchase-orders/${id}/items-for-gr`),
 };
 
-// Goods Receipts API (Enhanced)
+// Goods Receipts API
 export const goodsReceiptsApi = {
   getAll: () => api.get('/api/goods-receipts'),
   getById: (id: number) => api.get(`/api/goods-receipts/${id}`),
@@ -154,8 +149,6 @@ export const goodsReceiptsApi = {
   update: (id: number, data: any) => api.put(`/api/goods-receipts/${id}`, data),
   post: (id: number) => api.post(`/api/goods-receipts/${id}/post`),
   cancel: (id: number) => api.post(`/api/goods-receipts/${id}/cancel`),
-  getVarianceReport: (id: number) => api.get(`/api/goods-receipts/${id}/variance-report`),
-  getByQuotation: (quotationId: number) => api.get(`/api/goods-receipts/quotation/${quotationId}`),
 };
 
 // Stock Issues API
@@ -174,7 +167,7 @@ export const stockTransfersApi = {
   post: (id: number) => api.post(`/api/stock-transfers/${id}/post`),
 };
 
-// Sales Invoices API (Enhanced)
+// Sales Invoices API
 export const salesInvoicesApi = {
   getAll: (params?: { status?: string }) => api.get('/api/sales-invoices', { params }),
   getById: (id: number) => api.get(`/api/sales-invoices/${id}`),
@@ -182,11 +175,8 @@ export const salesInvoicesApi = {
   createFromQuotation: (quotationId: number, data?: any) => 
     api.post(`/api/sales-invoices/from-quotation/${quotationId}`, data),
   update: (id: number, data: any) => api.put(`/api/sales-invoices/${id}`, data),
-  approvePriceVariance: (id: number) => api.post(`/api/sales-invoices/${id}/approve-variance`),
   post: (id: number) => api.post(`/api/sales-invoices/${id}/post`),
   cancel: (id: number, reason?: string) => api.post(`/api/sales-invoices/${id}/cancel`, { reason }),
-  getProfitReport: (id: number) => api.get(`/api/sales-invoices/${id}/profit-report`),
-  getByQuotation: (quotationId: number) => api.get(`/api/sales-invoices/quotation/${quotationId}`),
 };
 
 // Stock API

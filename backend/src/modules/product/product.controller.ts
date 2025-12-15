@@ -14,8 +14,15 @@ export class ProductController {
   @Get()
   @ApiOperation({ summary: 'Get all products' })
   @ApiQuery({ name: 'categoryId', required: false })
-  findAll(@Query('categoryId') categoryId?: string) {
-    return this.productService.findAll(categoryId ? parseInt(categoryId) : undefined);
+  @ApiQuery({ name: 'quotationType', required: false, description: 'STANDARD, FORENSIC, MAINTENANCE' })
+  findAll(
+    @Query('categoryId') categoryId?: string,
+    @Query('quotationType') quotationType?: string,
+  ) {
+    return this.productService.findAll(
+      categoryId ? parseInt(categoryId) : undefined,
+      quotationType || undefined,
+    );
   }
 
   @Get('categories')

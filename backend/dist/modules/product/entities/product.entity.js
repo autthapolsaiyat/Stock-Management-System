@@ -69,6 +69,10 @@ __decorate([
     __metadata("design:type", Number)
 ], ProductEntity.prototype, "sellingPrice", void 0);
 __decorate([
+    (0, typeorm_1.Column)({ name: 'quotation_type', length: 20, default: 'STANDARD' }),
+    __metadata("design:type", String)
+], ProductEntity.prototype, "quotationType", void 0);
+__decorate([
     (0, typeorm_1.Column)({ name: 'is_active', default: true }),
     __metadata("design:type", Boolean)
 ], ProductEntity.prototype, "isActive", void 0);

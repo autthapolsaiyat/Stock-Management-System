@@ -25,10 +25,12 @@ let ProductService = class ProductService {
         this.categoryRepository = categoryRepository;
         this.unitRepository = unitRepository;
     }
-    async findAll(categoryId) {
+    async findAll(categoryId, quotationType) {
         const where = { isActive: true };
         if (categoryId)
             where.categoryId = categoryId;
+        if (quotationType)
+            where.quotationType = quotationType;
         return this.productRepository.find({ where, relations: ['category', 'unit'], order: { id: 'DESC' } });
     }
     async findOne(id) {

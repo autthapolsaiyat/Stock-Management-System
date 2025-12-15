@@ -25,7 +25,7 @@ export class ProductEntity {
   @Column({ length: 50, nullable: true })
   barcode: string;
  
- @Column({ name: 'image_url', length: 500, nullable: true })
+  @Column({ name: 'image_url', length: 500, nullable: true })
   imageUrl: string;
 
   @Column({ name: 'min_stock', type: 'decimal', precision: 15, scale: 4, default: 0 })
@@ -42,6 +42,9 @@ export class ProductEntity {
 
   @Column({ name: 'selling_price', type: 'decimal', precision: 15, scale: 4, default: 0 })
   sellingPrice: number;
+
+  @Column({ name: 'quotation_type', length: 20, default: 'STANDARD' })
+  quotationType: string; // STANDARD, FORENSIC, MAINTENANCE
 
   @Column({ name: 'is_active', default: true })
   isActive: boolean;

@@ -9,9 +9,11 @@ export declare class AuthController {
             username: string;
             fullName: string;
             email: string;
+            quotationType: string;
         };
         accessToken: string;
         roles: string[];
         permissions: string[];
+        quotationType: string;
     }>;
 }

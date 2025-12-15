@@ -9,6 +9,7 @@ interface User {
   fullName: string;
   roles: string[];
   permissions: string[];
+  quotationType: string | null; // STANDARD, FORENSIC, MAINTENANCE, null = all
 }
 
 interface AuthContextType {
@@ -20,6 +21,8 @@ interface AuthContextType {
   logout: () => void;
   hasRole: (role: string) => boolean;
   hasPermission: (permission: string) => boolean;
+  isSalesOnly: () => boolean;
+  getQuotationType: () => string | null;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -30,7 +33,6 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
-    // Check for existing token on mount
     const storedToken = localStorage.getItem('token');
     const storedUser = localStorage.getItem('user');
     
@@ -44,9 +46,8 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
   const login = async (username: string, password: string): Promise<boolean> => {
     try {
       const response = await authApi.login(username, password);
-      const { accessToken, user: userData, roles, permissions } = response.data;
+      const { accessToken, user: userData, roles, permissions, quotationType } = response.data;
       
-      // Combine user data with roles and permissions
       const fullUser: User = {
         id: userData.id,
         username: userData.username,
@@ -54,6 +55,7 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
         fullName: userData.fullName,
         roles: roles || [],
         permissions: permissions || [],
+        quotationType: quotationType || null,
       };
       
       localStorage.setItem('token', accessToken);
@@ -87,6 +89,19 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     return user?.permissions?.includes(permission) || false;
   };
 
+  // Check if user is sales-only (limited menu)
+  const isSalesOnly = (): boolean => {
+    const salesRoles = ['SALES_STANDARD', 'SALES_FORENSIC', 'SALES_MAINTENANCE'];
+    return user?.roles?.some(r => salesRoles.includes(r)) && 
+           !user?.roles?.includes('ADMIN') && 
+           !user?.roles?.includes('MANAGER') || false;
+  };
+
+  // Get user's quotation type
+  const getQuotationType = (): string | null => {
+    return user?.quotationType || null;
+  };
+
   return (
     <AuthContext.Provider
       value={{
@@ -98,6 +113,8 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
         logout,
         hasRole,
         hasPermission,
+        isSalesOnly,
+        getQuotationType,
       }}
     >
       {children}

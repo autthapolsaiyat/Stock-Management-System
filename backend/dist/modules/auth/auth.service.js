@@ -35,12 +35,25 @@ let AuthService = class AuthService {
         await this.userRepository.update(user.id, { lastLoginAt: new Date() });
         const roles = user.userRoles.map(ur => ur.role.code);
         const permissions = [...new Set(user.userRoles.flatMap(ur => ur.role.rolePermissions.map(rp => rp.permission.code)))];
-        const payload = { sub: user.id, username: user.username, roles, permissions };
+        const payload = {
+            sub: user.id,
+            username: user.username,
+            roles,
+            permissions,
+            quotationType: user.quotationType,
+        };
         return {
-            user: { id: user.id, username: user.username, fullName: user.fullName, email: user.email },
+            user: {
+                id: user.id,
+                username: user.username,
+                fullName: user.fullName,
+                email: user.email,
+                quotationType: user.quotationType,
+            },
             accessToken: this.jwtService.sign(payload),
             roles,
             permissions,
+            quotationType: user.quotationType,
         };
     }
     async validateUser(payload) {

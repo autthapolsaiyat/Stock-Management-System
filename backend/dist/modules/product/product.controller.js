@@ -22,8 +22,8 @@ let ProductController = class ProductController {
     constructor(productService) {
         this.productService = productService;
     }
-    findAll(categoryId) {
-        return this.productService.findAll(categoryId ? parseInt(categoryId) : undefined);
+    findAll(categoryId, quotationType) {
+        return this.productService.findAll(categoryId ? parseInt(categoryId) : undefined, quotationType || undefined);
     }
     findAllCategories() {
         return this.productService.findAllCategories();
@@ -55,9 +55,11 @@ __decorate([
     (0, common_1.Get)(),
     (0, swagger_1.ApiOperation)({ summary: 'Get all products' }),
     (0, swagger_1.ApiQuery)({ name: 'categoryId', required: false }),
+    (0, swagger_1.ApiQuery)({ name: 'quotationType', required: false, description: 'STANDARD, FORENSIC, MAINTENANCE' }),
     __param(0, (0, common_1.Query)('categoryId')),
+    __param(1, (0, common_1.Query)('quotationType')),
     __metadata("design:type", Function),
-    __metadata("design:paramtypes", [String]),
+    __metadata("design:paramtypes", [String, String]),
     __metadata("design:returntype", void 0)
 ], ProductController.prototype, "findAll", null);
 __decorate([

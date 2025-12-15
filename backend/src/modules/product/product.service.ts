@@ -14,9 +14,10 @@ export class ProductService {
     @InjectRepository(UnitEntity) private unitRepository: Repository<UnitEntity>,
   ) {}
 
-  async findAll(categoryId?: number) {
+  async findAll(categoryId?: number, quotationType?: string) {
     const where: any = { isActive: true };
     if (categoryId) where.categoryId = categoryId;
+    if (quotationType) where.quotationType = quotationType;
     return this.productRepository.find({ where, relations: ['category', 'unit'], order: { id: 'DESC' } });
   }
 

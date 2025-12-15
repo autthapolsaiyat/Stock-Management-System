@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { Outlet, useNavigate, useLocation } from 'react-router-dom';
-import { Layout, Menu, Avatar, Dropdown, Button, Switch } from 'antd';
+import { Layout, Menu, Avatar, Dropdown, Button, Switch, Tag } from 'antd';
 import {
   DashboardOutlined,
   ShoppingOutlined,
@@ -27,14 +27,24 @@ import { useTheme } from '../contexts/ThemeContext';
 
 const { Sider, Content, Header, Footer } = Layout;
 
+const quotationTypeLabels: Record<string, { text: string; icon: string; color: string }> = {
+  STANDARD: { text: 'ทั่วไป', icon: '📦', color: 'blue' },
+  FORENSIC: { text: 'นิติวิทย์', icon: '🔬', color: 'purple' },
+  MAINTENANCE: { text: 'บำรุงรักษา', icon: '🔧', color: 'green' },
+};
+
 const MainLayout: React.FC = () => {
   const [collapsed, setCollapsed] = useState(false);
   const navigate = useNavigate();
   const location = useLocation();
-  const { user, logout } = useAuth();
+  const { user, logout, isSalesOnly, getQuotationType } = useAuth();
   const { mode, toggleTheme } = useTheme();
 
-  const menuItems = [
+  const salesOnly = isSalesOnly();
+  const quotationType = getQuotationType();
+
+  // Full menu for admin/manager
+  const fullMenuItems = [
     {
       key: '/',
       icon: <DashboardOutlined />,
@@ -82,6 +92,17 @@ const MainLayout: React.FC = () => {
     },
   ];
 
+  // Limited menu for sales users
+  const salesMenuItems = [
+    {
+      key: '/quotations',
+      icon: <FileTextOutlined />,
+      label: 'ใบเสนอราคา',
+    },
+  ];
+
+  const menuItems = salesOnly ? salesMenuItems : fullMenuItems;
+
   const userMenuItems = [
     {
       key: 'profile',
@@ -104,6 +125,8 @@ const MainLayout: React.FC = () => {
       navigate('/profile');
     }
   };
+
+  const typeConfig = quotationType ? quotationTypeLabels[quotationType] : null;
 
   return (
     <Layout className="bg-hologram bg-grid" style={{ minHeight: '100vh' }}>
@@ -138,12 +161,21 @@ const MainLayout: React.FC = () => {
           )}
         </div>
 
+        {/* User Type Badge */}
+        {!collapsed && typeConfig && (
+          <div style={{ padding: '12px 16px', borderBottom: '1px solid var(--border-color)' }}>
+            <Tag color={typeConfig.color} style={{ width: '100%', textAlign: 'center', padding: '4px 8px' }}>
+              {typeConfig.icon} กลุ่ม{typeConfig.text}
+            </Tag>
+          </div>
+        )}
+
         {/* Menu */}
         <Menu
           theme="dark"
           mode="inline"
           selectedKeys={[location.pathname]}
-          defaultOpenKeys={['master', 'sales', 'purchase', 'stock']}
+          defaultOpenKeys={salesOnly ? [] : ['master', 'sales', 'purchase', 'stock']}
           items={menuItems}
           onClick={({ key }) => navigate(key)}
           style={{ borderRight: 0, marginTop: 8 }}
@@ -186,31 +218,38 @@ const MainLayout: React.FC = () => {
             </div>
 
             <Dropdown
-            menu={{ items: userMenuItems, onClick: handleMenuClick }}
-            placement="bottomRight"
-          >
-            <div
-              style={{
-                display: 'flex',
-                alignItems: 'center',
-                gap: 12,
-                cursor: 'pointer',
-                padding: '4px 12px',
-                borderRadius: 8,
-                transition: 'background 0.3s',
-              }}
+              menu={{ items: userMenuItems, onClick: handleMenuClick }}
+              placement="bottomRight"
             >
-              <Avatar
+              <div
                 style={{
-                  background: 'linear-gradient(135deg, #7c3aed, #ec4899)',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: 12,
+                  cursor: 'pointer',
+                  padding: '4px 12px',
+                  borderRadius: 8,
+                  transition: 'background 0.3s',
                 }}
-                icon={<UserOutlined />}
-              />
-              <span style={{ color: 'var(--text-primary)' }}>
-                {user?.fullName || user?.username || 'Admin'}
-              </span>
-            </div>
-          </Dropdown>
+              >
+                <Avatar
+                  style={{
+                    background: 'linear-gradient(135deg, #7c3aed, #ec4899)',
+                  }}
+                  icon={<UserOutlined />}
+                />
+                <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-start' }}>
+                  <span style={{ color: 'var(--text-primary)', lineHeight: 1.2 }}>
+                    {user?.fullName || user?.username || 'Admin'}
+                  </span>
+                  {typeConfig && (
+                    <span style={{ color: 'var(--text-secondary)', fontSize: 11 }}>
+                      {typeConfig.icon} {typeConfig.text}
+                    </span>
+                  )}
+                </div>
+              </div>
+            </Dropdown>
           </div>
         </Header>
 

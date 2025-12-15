@@ -11,6 +11,7 @@ import {
 import dayjs from 'dayjs';
 import { quotationsApi, customersApi, productsApi, systemSettingsApi } from '../../services/api';
 import type { QuotationItem, QuotationImage, SourceType } from '../../types/quotation';
+import { useAuth } from '../../contexts/AuthContext';
 import SettingsModal from '../../components/quotation/SettingsModal';
 import TempProductModal from '../../components/quotation/TempProductModal';
 import QuickCalculator from '../../components/quotation/QuickCalculator';
@@ -24,6 +25,11 @@ const QuotationForm: React.FC = () => {
   const { id } = useParams<{ id: string }>();
   const isEdit = Boolean(id);
   const [form] = Form.useForm();
+  const { getQuotationType, isSalesOnly } = useAuth();
+
+  // Get user's quotation type
+  const userQuotationType = getQuotationType();
+  const salesOnly = isSalesOnly();
 
   // States
   const [, setLoading] = useState(false);
@@ -71,11 +77,14 @@ const QuotationForm: React.FC = () => {
 
   const loadInitialData = async () => {
     try {
-      const [customersRes, productsRes] = await Promise.all([
-        customersApi.getAll(),
-        productsApi.getAll(),
-      ]);
+      // Load customers
+      const customersRes = await customersApi.getAll();
       setCustomers(customersRes.data || []);
+      
+      // Load products - filter by user's quotationType if set
+      const productsRes = userQuotationType 
+        ? await productsApi.getAll(undefined, userQuotationType)
+        : await productsApi.getAll();
       setProducts(productsRes.data || []);
       
       // Try to load settings
@@ -94,7 +103,8 @@ const QuotationForm: React.FC = () => {
       // Set defaults for new quotation
       if (!isEdit) {
         form.setFieldsValue({
-          quotationType: 'STANDARD',
+          // Auto-set quotation type based on user's type
+          quotationType: userQuotationType || 'STANDARD',
           docDate: dayjs(),
           validDays: 30,
           deliveryDays: 120,
@@ -194,7 +204,7 @@ const QuotationForm: React.FC = () => {
         itemDescription: product.description,
         brand: product.brand,
         qty: 1,
-        unit: product.unit || 'ea',
+        unit: product.unit?.name || product.unit || 'ea',
         unitPrice: product.sellingPrice || 0,
         estimatedCost: product.cost || product.standardCost || 0,
         expectedMarginPercent: product.sellingPrice > 0 
@@ -390,17 +400,35 @@ const QuotationForm: React.FC = () => {
     },
   ];
 
+  // Get type label
+  const getTypeLabel = () => {
+    const type = userQuotationType || 'STANDARD';
+    const labels: Record<string, string> = {
+      STANDARD: '📦 ทั่วไป (AccuStandard/PT)',
+      FORENSIC: '🔬 นิติวิทยาศาสตร์',
+      MAINTENANCE: '🔧 บำรุงรักษา',
+    };
+    return labels[type] || type;
+  };
+
   return (
     <div className="page-container">
       {/* Header */}
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 24 }}>
-        <h1 style={{ margin: 0, fontSize: 24 }}>
-          📝 {isEdit ? 'แก้ไขใบเสนอราคา' : 'สร้างใบเสนอราคา'}
-        </h1>
+        <div>
+          <h1 style={{ margin: 0, fontSize: 24 }}>
+            📝 {isEdit ? 'แก้ไขใบเสนอราคา' : 'สร้างใบเสนอราคา'}
+          </h1>
+          {salesOnly && (
+            <Tag color="blue" style={{ marginTop: 8 }}>{getTypeLabel()}</Tag>
+          )}
+        </div>
         <Space>
-          <Button icon={<SettingOutlined />} onClick={() => setSettingsModalOpen(true)}>
-            ตั้งค่า
-          </Button>
+          {!salesOnly && (
+            <Button icon={<SettingOutlined />} onClick={() => setSettingsModalOpen(true)}>
+              ตั้งค่า
+            </Button>
+          )}
           <Button onClick={() => handleSave(false)} loading={saving}>
             <SaveOutlined /> บันทึกร่าง
           </Button>
@@ -417,15 +445,24 @@ const QuotationForm: React.FC = () => {
           <Card title="ข้อมูลทั่วไป" style={{ marginBottom: 16 }}>
             <Form form={form} layout="vertical">
               <Row gutter={16}>
-                <Col span={24}>
-                  <Form.Item label="ประเภท" name="quotationType">
-                    <Radio.Group>
-                      <Radio.Button value="STANDARD">📦 ทั่วไป</Radio.Button>
-                      <Radio.Button value="FORENSIC">🔬 นิติวิทยาศาสตร์</Radio.Button>
-                      <Radio.Button value="MAINTENANCE">🔧 บำรุงรักษา</Radio.Button>
-                    </Radio.Group>
+                {/* Show type selector only for admin/manager */}
+                {!salesOnly && (
+                  <Col span={24}>
+                    <Form.Item label="ประเภท" name="quotationType">
+                      <Radio.Group>
+                        <Radio.Button value="STANDARD">📦 ทั่วไป</Radio.Button>
+                        <Radio.Button value="FORENSIC">🔬 นิติวิทยาศาสตร์</Radio.Button>
+                        <Radio.Button value="MAINTENANCE">🔧 บำรุงรักษา</Radio.Button>
+                      </Radio.Group>
+                    </Form.Item>
+                  </Col>
+                )}
+                {/* Hidden field for sales users */}
+                {salesOnly && (
+                  <Form.Item name="quotationType" hidden>
+                    <Input />
                   </Form.Item>
-                </Col>
+                )}
                 <Col xs={24} md={12}>
                   <Form.Item label="ลูกค้า" name="customerId" rules={[{ required: true, message: 'กรุณาเลือกลูกค้า' }]}>
                     <Select
@@ -471,7 +508,7 @@ const QuotationForm: React.FC = () => {
 
           {/* Items */}
           <Card 
-            title="รายการสินค้า" 
+            title={`รายการสินค้า ${userQuotationType ? `(กลุ่ม${getTypeLabel().replace(/[📦🔬🔧]/g, '').trim()})` : ''}`}
             style={{ marginBottom: 16 }}
             extra={
               <Space>
@@ -506,7 +543,7 @@ const QuotationForm: React.FC = () => {
             <Row gutter={24}>
               <Col xs={24} md={12}>
                 <Form form={form}>
-                  {/* Discount Section - Fixed styling */}
+                  {/* Discount Section */}
                   <div style={{ 
                     padding: 16, 
                     background: 'rgba(255,255,255,0.1)', 
@@ -646,7 +683,7 @@ const QuotationForm: React.FC = () => {
 
       {/* Product Selection Modal */}
       <Modal
-        title="เลือกสินค้า"
+        title={`เลือกสินค้า ${userQuotationType ? `(กลุ่ม${getTypeLabel().replace(/[📦🔬🔧]/g, '').trim()})` : ''}`}
         open={productModalOpen}
         onCancel={() => setProductModalOpen(false)}
         footer={null}
@@ -671,6 +708,7 @@ const QuotationForm: React.FC = () => {
             { title: 'ราคา', dataIndex: 'sellingPrice', width: 120, 
               render: (v: number) => `฿${Number(v || 0).toLocaleString()}` },
           ]}
+          locale={{ emptyText: 'ยังไม่มีสินค้าในกลุ่มนี้' }}
         />
       </Modal>
 

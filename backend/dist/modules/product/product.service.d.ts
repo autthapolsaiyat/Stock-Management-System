@@ -8,7 +8,7 @@ export declare class ProductService {
     private categoryRepository;
     private unitRepository;
     constructor(productRepository: Repository<ProductEntity>, categoryRepository: Repository<ProductCategoryEntity>, unitRepository: Repository<UnitEntity>);
-    findAll(categoryId?: number): Promise<ProductEntity[]>;
+    findAll(categoryId?: number, quotationType?: string): Promise<ProductEntity[]>;
     findOne(id: number): Promise<ProductEntity>;
     create(dto: CreateProductDto): Promise<ProductEntity>;
     update(id: number, dto: UpdateProductDto): Promise<ProductEntity>;
