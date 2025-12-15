@@ -6,7 +6,7 @@ import {
 } from 'antd';
 import {
   SaveOutlined, SendOutlined, PlusOutlined, DeleteOutlined,
-  SettingOutlined, CalculatorOutlined
+  SettingOutlined, CalculatorOutlined, EyeOutlined
 } from '@ant-design/icons';
 import dayjs from 'dayjs';
 import { quotationsApi, customersApi, productsApi, systemSettingsApi } from '../../services/api';
@@ -27,7 +27,6 @@ const QuotationForm: React.FC = () => {
   const [form] = Form.useForm();
   const { getQuotationType, isSalesOnly } = useAuth();
 
-  // Get user's quotation type
   const userQuotationType = getQuotationType();
   const salesOnly = isSalesOnly();
 
@@ -39,12 +38,14 @@ const QuotationForm: React.FC = () => {
   const [customers, setCustomers] = useState<any[]>([]);
   const [products, setProducts] = useState<any[]>([]);
   const [settings, setSettings] = useState<any>({});
+  const [selectedCustomer, setSelectedCustomer] = useState<any>(null);
 
   // Modals
   const [settingsModalOpen, setSettingsModalOpen] = useState(false);
   const [tempProductModalOpen, setTempProductModalOpen] = useState(false);
   const [calculatorOpen, setCalculatorOpen] = useState(false);
   const [productModalOpen, setProductModalOpen] = useState(false);
+  const [previewOpen, setPreviewOpen] = useState(false);
 
   // Calculated values
   const [summary, setSummary] = useState({
@@ -70,24 +71,58 @@ const QuotationForm: React.FC = () => {
     }
   }, [id, isEdit]);
 
-  // Recalculate on items change
   useEffect(() => {
     calculateSummary();
   }, [items]);
 
+  // Handle paste from clipboard for images
+  useEffect(() => {
+    const handlePaste = async (e: ClipboardEvent) => {
+      const items = e.clipboardData?.items;
+      if (!items) return;
+
+      for (let i = 0; i < items.length; i++) {
+        if (items[i].type.indexOf('image') !== -1) {
+          const blob = items[i].getAsFile();
+          if (blob) {
+            const reader = new FileReader();
+            reader.onload = (event) => {
+              const base64 = event.target?.result as string;
+              if (base64) {
+                addImageFromClipboard(base64);
+              }
+            };
+            reader.readAsDataURL(blob);
+          }
+        }
+      }
+    };
+
+    document.addEventListener('paste', handlePaste);
+    return () => document.removeEventListener('paste', handlePaste);
+  }, [images]);
+
+  const addImageFromClipboard = (base64: string) => {
+    const newImage: QuotationImage = {
+      imageUrl: base64,
+      sortOrder: images.length + 1,
+      caption: `รูปจาก Clipboard ${images.length + 1}`,
+    };
+    setImages([...images, newImage]);
+    message.success('วางรูปจาก Clipboard สำเร็จ');
+  };
+
   const loadInitialData = async () => {
     try {
-      // Load customers
-      const customersRes = await customersApi.getAll();
+      const [customersRes, productsRes] = await Promise.all([
+        customersApi.getAll(),
+        userQuotationType 
+          ? productsApi.getAll(undefined, userQuotationType)
+          : productsApi.getAll(),
+      ]);
       setCustomers(customersRes.data || []);
-      
-      // Load products - filter by user's quotationType if set
-      const productsRes = userQuotationType 
-        ? await productsApi.getAll(undefined, userQuotationType)
-        : await productsApi.getAll();
       setProducts(productsRes.data || []);
       
-      // Try to load settings
       try {
         const settingsRes = await systemSettingsApi.getAll('QUOTATION');
         const settingsMap: any = {};
@@ -96,14 +131,11 @@ const QuotationForm: React.FC = () => {
         });
         setSettings(settingsMap);
       } catch (e) {
-        console.log('Settings not available, using defaults');
         setSettings({});
       }
 
-      // Set defaults for new quotation
       if (!isEdit) {
         form.setFieldsValue({
-          // Auto-set quotation type based on user's type
           quotationType: userQuotationType || 'STANDARD',
           docDate: dayjs(),
           validDays: 30,
@@ -114,7 +146,6 @@ const QuotationForm: React.FC = () => {
         });
       }
     } catch (error) {
-      console.error('Load error:', error);
       message.error('ไม่สามารถโหลดข้อมูลได้');
     }
   };
@@ -155,7 +186,6 @@ const QuotationForm: React.FC = () => {
     const marginAmount = afterDiscount - totalCost;
     const marginPercent = afterDiscount > 0 ? (marginAmount / afterDiscount) * 100 : 0;
     const minMargin = parseFloat(settings?.QT_MIN_MARGIN_PERCENT || '10');
-    // Only require approval if there are items AND margin is low
     const requiresApproval = items.length > 0 && marginPercent < minMargin;
 
     setSummary({
@@ -174,12 +204,14 @@ const QuotationForm: React.FC = () => {
   const handleCustomerChange = (customerId: number) => {
     const customer = customers.find(c => c.id === customerId);
     if (customer) {
+      setSelectedCustomer(customer);
       form.setFieldsValue({
         customerName: customer.name,
         customerAddress: customer.address,
-        contactPerson: customer.contactPerson,
-        contactPhone: customer.phone,
-        contactEmail: customer.email,
+        contactPerson: customer.contactPerson || '',
+        contactPhone: customer.contactPhone || customer.phone || '',
+        contactEmail: customer.contactEmail || customer.email || '',
+        creditTermDays: customer.creditTermDays || 30,
       });
     }
   };
@@ -245,7 +277,6 @@ const QuotationForm: React.FC = () => {
     const newItems = [...items];
     (newItems[index] as any)[field] = value;
 
-    // Recalculate
     if (['qty', 'unitPrice', 'discountAmount'].includes(field)) {
       const item = newItems[index];
       const netPrice = item.unitPrice - (item.discountAmount || 0);
@@ -309,6 +340,16 @@ const QuotationForm: React.FC = () => {
     if (percent < minMargin) return 'warning';
     if (percent >= 20) return 'green';
     return 'blue';
+  };
+
+  const getTypeLabel = () => {
+    const type = userQuotationType || 'STANDARD';
+    const labels: Record<string, string> = {
+      STANDARD: '📦 ทั่วไป (AccuStandard/PT)',
+      FORENSIC: '🔬 นิติวิทยาศาสตร์',
+      MAINTENANCE: '🔧 บำรุงรักษา',
+    };
+    return labels[type] || type;
   };
 
   const itemColumns = [
@@ -400,17 +441,6 @@ const QuotationForm: React.FC = () => {
     },
   ];
 
-  // Get type label
-  const getTypeLabel = () => {
-    const type = userQuotationType || 'STANDARD';
-    const labels: Record<string, string> = {
-      STANDARD: '📦 ทั่วไป (AccuStandard/PT)',
-      FORENSIC: '🔬 นิติวิทยาศาสตร์',
-      MAINTENANCE: '🔧 บำรุงรักษา',
-    };
-    return labels[type] || type;
-  };
-
   return (
     <div className="page-container">
       {/* Header */}
@@ -424,6 +454,9 @@ const QuotationForm: React.FC = () => {
           )}
         </div>
         <Space>
+          <Button icon={<EyeOutlined />} onClick={() => setPreviewOpen(true)}>
+            ดูตัวอย่าง
+          </Button>
           {!salesOnly && (
             <Button icon={<SettingOutlined />} onClick={() => setSettingsModalOpen(true)}>
               ตั้งค่า
@@ -445,7 +478,6 @@ const QuotationForm: React.FC = () => {
           <Card title="ข้อมูลทั่วไป" style={{ marginBottom: 16 }}>
             <Form form={form} layout="vertical">
               <Row gutter={16}>
-                {/* Show type selector only for admin/manager */}
                 {!salesOnly && (
                   <Col span={24}>
                     <Form.Item label="ประเภท" name="quotationType">
@@ -457,7 +489,6 @@ const QuotationForm: React.FC = () => {
                     </Form.Item>
                   </Col>
                 )}
-                {/* Hidden field for sales users */}
                 {salesOnly && (
                   <Form.Item name="quotationType" hidden>
                     <Input />
@@ -470,6 +501,9 @@ const QuotationForm: React.FC = () => {
                       placeholder="เลือกลูกค้า"
                       optionFilterProp="children"
                       onChange={handleCustomerChange}
+                      filterOption={(input, option) =>
+                        (option?.children as unknown as string)?.toLowerCase().includes(input.toLowerCase())
+                      }
                     >
                       {customers.map(c => (
                         <Option key={c.id} value={c.id}>{c.name}</Option>
@@ -479,7 +513,17 @@ const QuotationForm: React.FC = () => {
                 </Col>
                 <Col xs={24} md={12}>
                   <Form.Item label="ผู้ติดต่อ" name="contactPerson">
-                    <Input />
+                    <Input placeholder="ชื่อผู้ติดต่อ" />
+                  </Form.Item>
+                </Col>
+                <Col xs={12} md={6}>
+                  <Form.Item label="เบอร์โทร" name="contactPhone">
+                    <Input placeholder="เบอร์โทรผู้ติดต่อ" />
+                  </Form.Item>
+                </Col>
+                <Col xs={12} md={6}>
+                  <Form.Item label="อีเมล" name="contactEmail">
+                    <Input placeholder="อีเมลผู้ติดต่อ" />
                   </Form.Item>
                 </Col>
                 <Col xs={12} md={6}>
@@ -530,7 +574,6 @@ const QuotationForm: React.FC = () => {
               locale={{ emptyText: 'ยังไม่มีรายการสินค้า' }}
             />
             
-            {/* Only show warning if there are items and margin is low */}
             {items.length > 0 && summary.requiresApproval && (
               <div style={{ marginTop: 16, padding: 12, background: '#fff7e6', borderRadius: 8, border: '1px solid #ffe58f' }}>
                 ⚠️ มีรายการที่ Margin ต่ำกว่า {settings?.QT_MIN_MARGIN_PERCENT || 10}% ต้องขออนุมัติพิเศษ
@@ -543,7 +586,6 @@ const QuotationForm: React.FC = () => {
             <Row gutter={24}>
               <Col xs={24} md={12}>
                 <Form form={form}>
-                  {/* Discount Section */}
                   <div style={{ 
                     padding: 16, 
                     background: 'rgba(255,255,255,0.1)', 
@@ -657,6 +699,7 @@ const QuotationForm: React.FC = () => {
           <ImageGallery 
             images={images} 
             onChange={setImages}
+            onPasteHint={true}
           />
 
           {/* Quick Calculator */}
@@ -751,6 +794,94 @@ const QuotationForm: React.FC = () => {
           setCalculatorOpen(false);
         }}
       />
+
+      {/* Preview Modal */}
+      <Modal
+        title="ตัวอย่างใบเสนอราคา"
+        open={previewOpen}
+        onCancel={() => setPreviewOpen(false)}
+        width={900}
+        footer={[
+          <Button key="close" onClick={() => setPreviewOpen(false)}>
+            ปิด
+          </Button>,
+          <Button key="print" type="primary" onClick={() => window.print()}>
+            🖨️ พิมพ์
+          </Button>,
+        ]}
+      >
+        <div style={{ padding: 20, background: '#fff', color: '#000' }}>
+          {/* Company Header */}
+          <div style={{ textAlign: 'center', marginBottom: 24, borderBottom: '2px solid #000', paddingBottom: 16 }}>
+            <h2 style={{ margin: 0, color: '#000' }}>บริษัท เอสวีเอส สต๊อก จำกัด</h2>
+            <p style={{ margin: '4px 0', color: '#333' }}>SVS Stock Co., Ltd.</p>
+            <p style={{ margin: '4px 0', fontSize: 12, color: '#666' }}>
+              123 ถนนสุขุมวิท แขวงคลองเตย เขตคลองเตย กรุงเทพฯ 10110
+            </p>
+          </div>
+
+          <h3 style={{ textAlign: 'center', color: '#000' }}>ใบเสนอราคา / QUOTATION</h3>
+
+          {/* Customer Info */}
+          <Row gutter={16} style={{ marginBottom: 16 }}>
+            <Col span={12}>
+              <p style={{ color: '#000' }}><strong>ลูกค้า:</strong> {selectedCustomer?.name || form.getFieldValue('customerName') || '-'}</p>
+              <p style={{ color: '#000' }}><strong>ผู้ติดต่อ:</strong> {form.getFieldValue('contactPerson') || '-'}</p>
+              <p style={{ color: '#000' }}><strong>โทร:</strong> {form.getFieldValue('contactPhone') || '-'}</p>
+            </Col>
+            <Col span={12} style={{ textAlign: 'right' }}>
+              <p style={{ color: '#000' }}><strong>วันที่:</strong> {form.getFieldValue('docDate')?.format('DD/MM/YYYY') || '-'}</p>
+              <p style={{ color: '#000' }}><strong>ยืนราคา:</strong> {form.getFieldValue('validDays')} วัน</p>
+              <p style={{ color: '#000' }}><strong>เครดิต:</strong> {form.getFieldValue('creditTermDays')} วัน</p>
+            </Col>
+          </Row>
+
+          {/* Items Table */}
+          <table style={{ width: '100%', borderCollapse: 'collapse', marginBottom: 16 }}>
+            <thead>
+              <tr style={{ background: '#f0f0f0' }}>
+                <th style={{ border: '1px solid #000', padding: 8, color: '#000' }}>#</th>
+                <th style={{ border: '1px solid #000', padding: 8, color: '#000' }}>รายการ</th>
+                <th style={{ border: '1px solid #000', padding: 8, color: '#000' }}>จำนวน</th>
+                <th style={{ border: '1px solid #000', padding: 8, color: '#000' }}>ราคา/หน่วย</th>
+                <th style={{ border: '1px solid #000', padding: 8, color: '#000' }}>รวม</th>
+              </tr>
+            </thead>
+            <tbody>
+              {items.map((item, idx) => (
+                <tr key={idx}>
+                  <td style={{ border: '1px solid #000', padding: 8, textAlign: 'center', color: '#000' }}>{idx + 1}</td>
+                  <td style={{ border: '1px solid #000', padding: 8, color: '#000' }}>
+                    {item.itemName}
+                    <br/><small style={{ color: '#666' }}>{item.itemCode}</small>
+                  </td>
+                  <td style={{ border: '1px solid #000', padding: 8, textAlign: 'center', color: '#000' }}>{item.qty}</td>
+                  <td style={{ border: '1px solid #000', padding: 8, textAlign: 'right', color: '#000' }}>฿{Number(item.unitPrice).toLocaleString()}</td>
+                  <td style={{ border: '1px solid #000', padding: 8, textAlign: 'right', color: '#000' }}>฿{Number(item.lineTotal).toLocaleString()}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+
+          {/* Summary */}
+          <div style={{ textAlign: 'right' }}>
+            <p style={{ color: '#000' }}>รวม: ฿{summary.subtotal.toLocaleString('th-TH', { minimumFractionDigits: 2 })}</p>
+            {summary.discountAmount > 0 && (
+              <p style={{ color: '#f00' }}>ส่วนลด: -฿{summary.discountAmount.toLocaleString('th-TH', { minimumFractionDigits: 2 })}</p>
+            )}
+            <p style={{ color: '#000' }}>VAT 7%: ฿{summary.taxAmount.toLocaleString('th-TH', { minimumFractionDigits: 2 })}</p>
+            <p style={{ fontSize: 18, fontWeight: 'bold', color: '#000' }}>ยอดสุทธิ: ฿{summary.grandTotal.toLocaleString('th-TH', { minimumFractionDigits: 2 })}</p>
+          </div>
+
+          {/* Notes */}
+          {form.getFieldValue('publicNote') && (
+            <div style={{ marginTop: 16, padding: 12, background: '#f9f9f9', borderRadius: 4 }}>
+              <strong style={{ color: '#000' }}>หมายเหตุ:</strong>
+              <p style={{ color: '#000' }}>{form.getFieldValue('publicNote')}</p>
+            </div>
+          )}
+        </div>
+      </Modal>
     </div>
   );
 };

@@ -86,6 +86,7 @@ export interface QuotationImage {
   imageUrl: string;
   fileName?: string;
   sortOrder: number;
+  caption?: string;
 }
 
 // Temp Product

@@ -1,5 +1,4 @@
-import { Entity, Column, OneToMany, PrimaryGeneratedColumn, CreateDateColumn, UpdateDateColumn } from 'typeorm';
-import { CustomerContactEntity } from './customer-contact.entity';
+import { Entity, Column, PrimaryGeneratedColumn, CreateDateColumn, UpdateDateColumn } from 'typeorm';
 
 @Entity('customers')
 export class CustomerEntity {
@@ -21,10 +20,19 @@ export class CustomerEntity {
   @Column({ length: 50, nullable: true })
   phone: string;
 
-  @Column({ length: 100, nullable: true })
+  @Column({ length: 200, nullable: true })
   email: string;
 
-  @Column({ name: 'credit_limit', type: 'decimal', precision: 15, scale: 4, default: 0 })
+  @Column({ name: 'contact_person', length: 200, nullable: true })
+  contactPerson: string;
+
+  @Column({ name: 'contact_phone', length: 50, nullable: true })
+  contactPhone: string;
+
+  @Column({ name: 'contact_email', length: 200, nullable: true })
+  contactEmail: string;
+
+  @Column({ name: 'credit_limit', type: 'decimal', precision: 15, scale: 2, default: 0 })
   creditLimit: number;
 
   @Column({ name: 'credit_term_days', default: 30 })
@@ -38,7 +46,4 @@ export class CustomerEntity {
 
   @UpdateDateColumn({ name: 'updated_at', type: 'timestamptz' })
   updatedAt: Date;
-
-  @OneToMany(() => CustomerContactEntity, contact => contact.customer)
-  contacts: CustomerContactEntity[];
 }
