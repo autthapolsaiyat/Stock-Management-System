@@ -57,12 +57,10 @@ export const productsApi = {
   create: (data: any) => api.post('/api/products', data),
   update: (id: number, data: any) => api.put(`/api/products/${id}`, data),
   delete: (id: number) => api.delete(`/api/products/${id}`),
-  // Categories
   getCategories: () => api.get('/api/products/categories'),
   createCategory: (data: any) => api.post('/api/products/categories', data),
   updateCategory: (id: number, data: any) => api.put(`/api/products/categories/${id}`, data),
   deleteCategory: (id: number) => api.delete(`/api/products/categories/${id}`),
-  // Units
   getUnits: () => api.get('/api/products/units'),
   createUnit: (data: any) => api.post('/api/products/units', data),
   updateUnit: (id: number, data: any) => api.put(`/api/products/units/${id}`, data),
@@ -93,33 +91,72 @@ export const warehousesApi = {
   update: (id: number, data: any) => api.put(`/api/warehouses/${id}`, data),
 };
 
-// Quotations API
+// Quotations API (Enhanced)
 export const quotationsApi = {
-  getAll: () => api.get('/api/quotations'),
+  getAll: (params?: { status?: string; type?: string }) => 
+    api.get('/api/quotations', { params }),
   getById: (id: number) => api.get(`/api/quotations/${id}`),
   create: (data: any) => api.post('/api/quotations', data),
+  update: (id: number, data: any) => api.put(`/api/quotations/${id}`, data),
+  // Workflow
+  submitForApproval: (id: number) => api.post(`/api/quotations/${id}/submit`),
+  approve: (id: number) => api.post(`/api/quotations/${id}/approve`),
+  approveMargin: (id: number) => api.post(`/api/quotations/${id}/approve-margin`),
+  send: (id: number) => api.post(`/api/quotations/${id}/send`),
   confirm: (id: number) => api.post(`/api/quotations/${id}/confirm`),
-  cancel: (id: number) => api.post(`/api/quotations/${id}/cancel`),
+  cancel: (id: number, reason?: string) => api.post(`/api/quotations/${id}/cancel`, { reason }),
+  cancelItem: (id: number, itemId: number, data: any) => 
+    api.post(`/api/quotations/${id}/items/${itemId}/cancel`, data),
+  // Related
+  getItemsForPO: (id: number) => api.get(`/api/quotations/${id}/items-for-po`),
+  getItemsForInvoice: (id: number) => api.get(`/api/quotations/${id}/items-for-invoice`),
 };
 
-// Purchase Orders API
+// Temp Products API
+export const tempProductsApi = {
+  getAll: (params?: { status?: string }) => api.get('/api/temp-products', { params }),
+  getById: (id: number) => api.get(`/api/temp-products/${id}`),
+  getByQuotation: (quotationId: number) => api.get(`/api/temp-products/quotation/${quotationId}`),
+  create: (data: any) => api.post('/api/temp-products', data),
+  update: (id: number, data: any) => api.put(`/api/temp-products/${id}`, data),
+  activate: (id: number, productData: any) => api.post(`/api/temp-products/${id}/activate`, productData),
+  cancel: (id: number) => api.post(`/api/temp-products/${id}/cancel`),
+};
+
+// System Settings API
+export const systemSettingsApi = {
+  getAll: (category?: string) => api.get('/api/system-settings', { params: { category } }),
+  getByKey: (key: string) => api.get(`/api/system-settings/${key}`),
+  update: (key: string, value: any) => api.put(`/api/system-settings/${key}`, { value }),
+  updateBulk: (settings: { key: string; value: any }[]) => 
+    api.put('/api/system-settings/bulk', { settings }),
+};
+
+// Purchase Orders API (Enhanced)
 export const purchaseOrdersApi = {
   getAll: () => api.get('/api/purchase-orders'),
   getById: (id: number) => api.get(`/api/purchase-orders/${id}`),
   create: (data: any) => api.post('/api/purchase-orders', data),
+  createFromQuotation: (quotationId: number, data?: any) => 
+    api.post(`/api/purchase-orders/from-quotation/${quotationId}`, data),
+  update: (id: number, data: any) => api.put(`/api/purchase-orders/${id}`, data),
   approve: (id: number) => api.post(`/api/purchase-orders/${id}/approve`),
   cancel: (id: number) => api.post(`/api/purchase-orders/${id}/cancel`),
-  update: (id: number, data: any) => api.put(`/api/purchase-orders/${id}`, data),
+  getItemsForGR: (id: number) => api.get(`/api/purchase-orders/${id}/items-for-gr`),
 };
 
-// Goods Receipts API
+// Goods Receipts API (Enhanced)
 export const goodsReceiptsApi = {
   getAll: () => api.get('/api/goods-receipts'),
   getById: (id: number) => api.get(`/api/goods-receipts/${id}`),
   create: (data: any) => api.post('/api/goods-receipts', data),
+  createFromPO: (poId: number, data?: any) => 
+    api.post(`/api/goods-receipts/from-po/${poId}`, data),
+  update: (id: number, data: any) => api.put(`/api/goods-receipts/${id}`, data),
   post: (id: number) => api.post(`/api/goods-receipts/${id}/post`),
   cancel: (id: number) => api.post(`/api/goods-receipts/${id}/cancel`),
-  update: (id: number, data: any) => api.put(`/api/goods-receipts/${id}`, data),
+  getVarianceReport: (id: number) => api.get(`/api/goods-receipts/${id}/variance-report`),
+  getByQuotation: (quotationId: number) => api.get(`/api/goods-receipts/quotation/${quotationId}`),
 };
 
 // Stock Issues API
@@ -138,13 +175,19 @@ export const stockTransfersApi = {
   post: (id: number) => api.post(`/api/stock-transfers/${id}/post`),
 };
 
-// Sales Invoices API
+// Sales Invoices API (Enhanced)
 export const salesInvoicesApi = {
-  getAll: () => api.get('/api/sales-invoices'),
+  getAll: (params?: { status?: string }) => api.get('/api/sales-invoices', { params }),
   getById: (id: number) => api.get(`/api/sales-invoices/${id}`),
   create: (data: any) => api.post('/api/sales-invoices', data),
+  createFromQuotation: (quotationId: number, data?: any) => 
+    api.post(`/api/sales-invoices/from-quotation/${quotationId}`, data),
+  update: (id: number, data: any) => api.put(`/api/sales-invoices/${id}`, data),
+  approvePriceVariance: (id: number) => api.post(`/api/sales-invoices/${id}/approve-variance`),
   post: (id: number) => api.post(`/api/sales-invoices/${id}/post`),
-  cancel: (id: number) => api.post(`/api/sales-invoices/${id}/cancel`),
+  cancel: (id: number, reason?: string) => api.post(`/api/sales-invoices/${id}/cancel`, { reason }),
+  getProfitReport: (id: number) => api.get(`/api/sales-invoices/${id}/profit-report`),
+  getByQuotation: (quotationId: number) => api.get(`/api/sales-invoices/quotation/${quotationId}`),
 };
 
 // Stock API
@@ -159,6 +202,14 @@ export const stockApi = {
 export const uploadApi = {
   uploadBase64: (image: string, folder: string = 'products') =>
     api.post('/api/upload/base64', { image, folder }),
+  uploadFile: (file: File, folder: string = 'uploads') => {
+    const formData = new FormData();
+    formData.append('file', file);
+    formData.append('folder', folder);
+    return api.post('/api/upload/file', formData, {
+      headers: { 'Content-Type': 'multipart/form-data' },
+    });
+  },
 };
 
 export default api;

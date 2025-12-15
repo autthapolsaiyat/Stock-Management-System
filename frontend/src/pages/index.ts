@@ -11,3 +11,6 @@ export { default as PurchaseOrdersPage } from './PurchaseOrdersPage';
 export { default as GoodsReceiptsPage } from './GoodsReceiptsPage';
 export { default as StockIssuesPage } from './StockIssuesPage';
 export { default as StockTransfersPage } from './StockTransfersPage';
+
+// Quotations
+export { QuotationList, QuotationForm, QuotationDetail } from './quotations';

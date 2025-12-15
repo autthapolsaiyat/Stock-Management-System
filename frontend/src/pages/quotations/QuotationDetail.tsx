@@ -1,0 +1,470 @@
+import React, { useState, useEffect } from 'react';
+import { useNavigate, useParams } from 'react-router-dom';
+import {
+  Card, Button, Tag, Space, Descriptions, Table, Divider,
+  message, Popconfirm, Row, Col, Progress
+} from 'antd';
+import {
+  EditOutlined, SendOutlined, CheckCircleOutlined,
+  CloseCircleOutlined, FileTextOutlined, ShoppingCartOutlined,
+  ArrowLeftOutlined, ExclamationCircleOutlined, FilePdfOutlined
+} from '@ant-design/icons';
+import { quotationsApi, purchaseOrdersApi, salesInvoicesApi } from '../../services/api';
+import type { Quotation, QuotationItem, QuotationType, QuotationStatus } from '../../types/quotation';
+
+const typeLabels: Record<QuotationType, { text: string; color: string; icon: string }> = {
+  STANDARD: { text: 'ทั่วไป', color: 'blue', icon: '📦' },
+  FORENSIC: { text: 'นิติวิทยาศาสตร์', color: 'purple', icon: '🔬' },
+  MAINTENANCE: { text: 'บำรุงรักษา', color: 'green', icon: '🔧' },
+};
+
+const statusLabels: Record<QuotationStatus, { text: string; color: string }> = {
+  DRAFT: { text: 'ร่าง', color: 'default' },
+  PENDING: { text: 'รออนุมัติ', color: 'orange' },
+  APPROVED: { text: 'อนุมัติแล้ว', color: 'green' },
+  SENT: { text: 'ส่งแล้ว', color: 'blue' },
+  CONFIRMED: { text: 'ยืนยันแล้ว', color: 'cyan' },
+  PARTIALLY_CLOSED: { text: 'ปิดบางส่วน', color: 'geekblue' },
+  CLOSED: { text: 'ปิดแล้ว', color: 'green' },
+  CANCELLED: { text: 'ยกเลิก', color: 'red' },
+};
+
+const itemStatusLabels: Record<string, { text: string; color: string }> = {
+  PENDING: { text: 'รอสั่งซื้อ', color: 'default' },
+  ORDERED: { text: 'สั่งซื้อแล้ว', color: 'processing' },
+  PARTIAL: { text: 'รับบางส่วน', color: 'warning' },
+  RECEIVED: { text: 'รับครบ', color: 'success' },
+  SOLD: { text: 'ขายแล้ว', color: 'green' },
+  CANCELLED: { text: 'ยกเลิก', color: 'error' },
+};
+
+const QuotationDetail: React.FC = () => {
+  const navigate = useNavigate();
+  const { id } = useParams<{ id: string }>();
+  const [quotation, setQuotation] = useState<Quotation | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [relatedDocs] = useState<{
+    purchaseOrders: any[];
+    goodsReceipts: any[];
+    invoices: any[];
+  }>({ purchaseOrders: [], goodsReceipts: [], invoices: [] });
+
+  useEffect(() => {
+    if (id) {
+      loadQuotation(parseInt(id));
+    }
+  }, [id]);
+
+  const loadQuotation = async (quotationId: number) => {
+    setLoading(true);
+    try {
+      const response = await quotationsApi.getById(quotationId);
+      setQuotation(response.data);
+      
+      // Load related documents
+      // TODO: Load from API when available
+    } catch (error) {
+      message.error('ไม่สามารถโหลดข้อมูลได้');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleApprove = async () => {
+    try {
+      await quotationsApi.approve(parseInt(id!));
+      message.success('อนุมัติสำเร็จ');
+      loadQuotation(parseInt(id!));
+    } catch (error) {
+      message.error('ไม่สามารถอนุมัติได้');
+    }
+  };
+
+  const handleApproveMargin = async () => {
+    try {
+      await quotationsApi.approveMargin(parseInt(id!));
+      message.success('อนุมัติ Margin ต่ำสำเร็จ');
+      loadQuotation(parseInt(id!));
+    } catch (error) {
+      message.error('ไม่สามารถอนุมัติได้');
+    }
+  };
+
+  const handleSend = async () => {
+    try {
+      await quotationsApi.send(parseInt(id!));
+      message.success('ส่งใบเสนอราคาสำเร็จ');
+      loadQuotation(parseInt(id!));
+    } catch (error) {
+      message.error('ไม่สามารถส่งได้');
+    }
+  };
+
+  const handleConfirm = async () => {
+    try {
+      await quotationsApi.confirm(parseInt(id!));
+      message.success('ยืนยันใบเสนอราคาสำเร็จ');
+      loadQuotation(parseInt(id!));
+    } catch (error) {
+      message.error('ไม่สามารถยืนยันได้');
+    }
+  };
+
+  const handleCancel = async () => {
+    try {
+      await quotationsApi.cancel(parseInt(id!));
+      message.success('ยกเลิกใบเสนอราคาสำเร็จ');
+      loadQuotation(parseInt(id!));
+    } catch (error) {
+      message.error('ไม่สามารถยกเลิกได้');
+    }
+  };
+
+  const handleCreatePO = async () => {
+    try {
+      const response = await purchaseOrdersApi.createFromQuotation(parseInt(id!));
+      message.success('สร้างใบสั่งซื้อสำเร็จ');
+      navigate(`/purchase-orders/${response.data.id}`);
+    } catch (error: any) {
+      message.error(error.response?.data?.message || 'ไม่สามารถสร้างใบสั่งซื้อได้');
+    }
+  };
+
+  const handleCreateInvoice = async () => {
+    try {
+      const response = await salesInvoicesApi.createFromQuotation(parseInt(id!));
+      message.success('สร้างใบแจ้งหนี้สำเร็จ');
+      navigate(`/sales-invoices/${response.data.id}`);
+    } catch (error: any) {
+      message.error(error.response?.data?.message || 'ไม่สามารถสร้างใบแจ้งหนี้ได้');
+    }
+  };
+
+  if (loading || !quotation) {
+    return <div style={{ padding: 24, textAlign: 'center' }}>กำลังโหลด...</div>;
+  }
+
+  const typeConfig = typeLabels[quotation.quotationType];
+  const statusConfig = statusLabels[quotation.status];
+
+  // Calculate fulfillment
+  const totalItems = quotation.items?.length || 0;
+  const soldItems = quotation.items?.filter(i => i.itemStatus === 'SOLD').length || 0;
+  const fulfillmentPercent = totalItems > 0 ? (soldItems / totalItems) * 100 : 0;
+
+  const itemColumns = [
+    {
+      title: '#',
+      dataIndex: 'lineNo',
+      width: 50,
+      align: 'center' as const,
+    },
+    {
+      title: 'สินค้า',
+      dataIndex: 'itemName',
+      render: (text: string, record: QuotationItem) => (
+        <div>
+          <div style={{ fontWeight: 500 }}>
+            {record.sourceType === 'TEMP' && <Tag color="orange">🔶</Tag>}
+            {text}
+          </div>
+          <div style={{ fontSize: 12, color: '#888' }}>{record.itemCode}</div>
+        </div>
+      ),
+    },
+    {
+      title: 'จำนวน',
+      dataIndex: 'qty',
+      width: 80,
+      align: 'center' as const,
+      render: (val: number, record: QuotationItem) => (
+        <span>{val} {record.unit}</span>
+      ),
+    },
+    {
+      title: 'ราคา/หน่วย',
+      dataIndex: 'unitPrice',
+      width: 120,
+      align: 'right' as const,
+      render: (val: number) => `฿${Number(val || 0).toLocaleString()}`,
+    },
+    {
+      title: 'Margin',
+      dataIndex: 'expectedMarginPercent',
+      width: 80,
+      align: 'center' as const,
+      render: (val: number) => {
+        const percent = Number(val || 0);
+        return (
+          <Tag color={percent < 10 ? 'warning' : percent >= 20 ? 'green' : 'blue'}>
+            {percent.toFixed(1)}%
+          </Tag>
+        );
+      },
+    },
+    {
+      title: 'รวม',
+      dataIndex: 'lineTotal',
+      width: 120,
+      align: 'right' as const,
+      render: (val: number) => `฿${Number(val || 0).toLocaleString()}`,
+    },
+    {
+      title: 'สถานะ',
+      dataIndex: 'itemStatus',
+      width: 100,
+      render: (status: string) => {
+        const config = itemStatusLabels[status] || { text: status, color: 'default' };
+        return <Tag color={config.color}>{config.text}</Tag>;
+      },
+    },
+  ];
+
+  return (
+    <div className="page-container">
+      {/* Header */}
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 24 }}>
+        <div>
+          <Button 
+            type="text" 
+            icon={<ArrowLeftOutlined />} 
+            onClick={() => navigate('/quotations')}
+            style={{ marginBottom: 8 }}
+          >
+            กลับ
+          </Button>
+          <h1 style={{ margin: 0, fontSize: 24 }}>
+            📋 {quotation.docFullNo}
+          </h1>
+          <Space style={{ marginTop: 8 }}>
+            <Tag color={typeConfig.color}>{typeConfig.icon} {typeConfig.text}</Tag>
+            <Tag color={statusConfig.color}>{statusConfig.text}</Tag>
+            {quotation.requiresMarginApproval && !quotation.marginApproved && (
+              <Tag color="warning">⚠️ ต้องอนุมัติ Margin</Tag>
+            )}
+          </Space>
+        </div>
+        
+        {/* Actions */}
+        <Space wrap>
+          {quotation.status === 'DRAFT' && (
+            <Button icon={<EditOutlined />} onClick={() => navigate(`/quotations/${id}/edit`)}>
+              แก้ไข
+            </Button>
+          )}
+          
+          {quotation.status === 'PENDING' && (
+            <>
+              {quotation.requiresMarginApproval && !quotation.marginApproved && (
+                <Popconfirm title="อนุมัติ Margin ต่ำ?" onConfirm={handleApproveMargin}>
+                  <Button type="primary" danger icon={<ExclamationCircleOutlined />}>
+                    อนุมัติ Margin
+                  </Button>
+                </Popconfirm>
+              )}
+              <Popconfirm title="อนุมัติใบเสนอราคา?" onConfirm={handleApprove}>
+                <Button type="primary" icon={<CheckCircleOutlined />}>
+                  อนุมัติ
+                </Button>
+              </Popconfirm>
+            </>
+          )}
+          
+          {quotation.status === 'APPROVED' && (
+            <>
+              <Button icon={<SendOutlined />} onClick={handleSend}>
+                ส่งลูกค้า
+              </Button>
+              <Button type="primary" icon={<FileTextOutlined />} onClick={handleCreatePO}>
+                สร้าง PO
+              </Button>
+            </>
+          )}
+          
+          {quotation.status === 'SENT' && (
+            <Popconfirm title="ลูกค้ายืนยัน?" onConfirm={handleConfirm}>
+              <Button type="primary" icon={<CheckCircleOutlined />}>
+                ยืนยันรับงาน
+              </Button>
+            </Popconfirm>
+          )}
+          
+          {['CONFIRMED', 'PARTIALLY_CLOSED'].includes(quotation.status) && (
+            <Button type="primary" icon={<ShoppingCartOutlined />} onClick={handleCreateInvoice}>
+              สร้างใบแจ้งหนี้
+            </Button>
+          )}
+          
+          {['DRAFT', 'PENDING'].includes(quotation.status) && (
+            <Popconfirm title="ยกเลิกใบเสนอราคา?" onConfirm={handleCancel}>
+              <Button danger icon={<CloseCircleOutlined />}>
+                ยกเลิก
+              </Button>
+            </Popconfirm>
+          )}
+          
+          <Button icon={<FilePdfOutlined />}>
+            พิมพ์ PDF
+          </Button>
+        </Space>
+      </div>
+
+      <Row gutter={24}>
+        {/* Main Content */}
+        <Col xs={24} lg={16}>
+          {/* Customer Info */}
+          <Card title="ข้อมูลลูกค้า" style={{ marginBottom: 16 }}>
+            <Descriptions column={{ xs: 1, sm: 2 }}>
+              <Descriptions.Item label="ลูกค้า">{quotation.customerName}</Descriptions.Item>
+              <Descriptions.Item label="ผู้ติดต่อ">{quotation.contactPerson}</Descriptions.Item>
+              <Descriptions.Item label="โทรศัพท์">{quotation.contactPhone}</Descriptions.Item>
+              <Descriptions.Item label="อีเมล">{quotation.contactEmail}</Descriptions.Item>
+              <Descriptions.Item label="ที่อยู่" span={2}>{quotation.customerAddress}</Descriptions.Item>
+            </Descriptions>
+          </Card>
+
+          {/* Items */}
+          <Card title="รายการสินค้า" style={{ marginBottom: 16 }}>
+            <Table
+              columns={itemColumns}
+              dataSource={quotation.items}
+              rowKey="id"
+              pagination={false}
+              size="small"
+            />
+          </Card>
+
+          {/* Summary */}
+          <Card title="สรุปยอด">
+            <Row gutter={24}>
+              <Col xs={24} md={12}>
+                <Descriptions column={1} size="small">
+                  <Descriptions.Item label="วันที่">
+                    {new Date(quotation.docDate).toLocaleDateString('th-TH')}
+                  </Descriptions.Item>
+                  <Descriptions.Item label="ยืนราคา">{quotation.validDays} วัน</Descriptions.Item>
+                  <Descriptions.Item label="กำหนดส่งมอบ">{quotation.deliveryDays} วัน</Descriptions.Item>
+                  <Descriptions.Item label="เครดิต">{quotation.creditTermDays} วัน</Descriptions.Item>
+                </Descriptions>
+              </Col>
+              <Col xs={24} md={12}>
+                <div style={{ fontSize: 16 }}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 8 }}>
+                    <span>รวมสินค้า:</span>
+                    <span>฿{Number(quotation.subtotal || 0).toLocaleString()}</span>
+                  </div>
+                  {Number(quotation.discountAmount || 0) > 0 && (
+                    <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 8, color: '#f5222d' }}>
+                      <span>ส่วนลด:</span>
+                      <span>-฿{Number(quotation.discountAmount).toLocaleString()}</span>
+                    </div>
+                  )}
+                  <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 8 }}>
+                    <span>VAT {quotation.taxRate}%:</span>
+                    <span>฿{Number(quotation.taxAmount || 0).toLocaleString()}</span>
+                  </div>
+                  <Divider style={{ margin: '8px 0' }} />
+                  <div style={{ display: 'flex', justifyContent: 'space-between', fontWeight: 'bold', fontSize: 18 }}>
+                    <span>ยอดสุทธิ:</span>
+                    <span>฿{Number(quotation.grandTotal || 0).toLocaleString()}</span>
+                  </div>
+                  <Divider style={{ margin: '8px 0' }} />
+                  <div style={{ display: 'flex', justifyContent: 'space-between', color: '#888' }}>
+                    <span>ต้นทุนรวม:</span>
+                    <span>฿{Number(quotation.totalEstimatedCost || 0).toLocaleString()}</span>
+                  </div>
+                  <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+                    <span>Margin:</span>
+                    <Tag color={
+                      Number(quotation.expectedMarginPercent || 0) < 10 ? 'warning' : 
+                      Number(quotation.expectedMarginPercent || 0) >= 20 ? 'green' : 'blue'
+                    }>
+                      {Number(quotation.expectedMarginPercent || 0).toFixed(1)}%
+                    </Tag>
+                  </div>
+                </div>
+              </Col>
+            </Row>
+          </Card>
+        </Col>
+
+        {/* Sidebar */}
+        <Col xs={24} lg={8}>
+          {/* Fulfillment */}
+          <Card title="ความคืบหน้า" style={{ marginBottom: 16 }}>
+            <div style={{ textAlign: 'center', marginBottom: 16 }}>
+              <Progress
+                type="circle"
+                percent={Math.round(fulfillmentPercent)}
+                format={() => `${soldItems}/${totalItems}`}
+              />
+            </div>
+            <div style={{ textAlign: 'center', color: '#888' }}>
+              รายการที่ขายแล้ว
+            </div>
+          </Card>
+
+          {/* Related Documents */}
+          <Card title="เอกสารที่เกี่ยวข้อง" style={{ marginBottom: 16 }}>
+            <div style={{ marginBottom: 12 }}>
+              <strong>📦 ใบสั่งซื้อ (PO):</strong>
+              {relatedDocs.purchaseOrders.length > 0 ? (
+                relatedDocs.purchaseOrders.map(po => (
+                  <Button key={po.id} type="link" size="small">
+                    {po.docFullNo}
+                  </Button>
+                ))
+              ) : (
+                <span style={{ color: '#888', marginLeft: 8 }}>ยังไม่มี</span>
+              )}
+            </div>
+            <div style={{ marginBottom: 12 }}>
+              <strong>📥 ใบรับสินค้า (GR):</strong>
+              {relatedDocs.goodsReceipts.length > 0 ? (
+                relatedDocs.goodsReceipts.map(gr => (
+                  <Button key={gr.id} type="link" size="small">
+                    {gr.docFullNo}
+                  </Button>
+                ))
+              ) : (
+                <span style={{ color: '#888', marginLeft: 8 }}>ยังไม่มี</span>
+              )}
+            </div>
+            <div>
+              <strong>🧾 ใบแจ้งหนี้ (INV):</strong>
+              {relatedDocs.invoices.length > 0 ? (
+                relatedDocs.invoices.map(inv => (
+                  <Button key={inv.id} type="link" size="small">
+                    {inv.docFullNo}
+                  </Button>
+                ))
+              ) : (
+                <span style={{ color: '#888', marginLeft: 8 }}>ยังไม่มี</span>
+              )}
+            </div>
+          </Card>
+
+          {/* Notes */}
+          {(quotation.publicNote || quotation.internalNote) && (
+            <Card title="หมายเหตุ">
+              {quotation.publicNote && (
+                <div style={{ marginBottom: 12 }}>
+                  <strong>สาธารณะ:</strong>
+                  <p style={{ margin: '4px 0', color: '#666' }}>{quotation.publicNote}</p>
+                </div>
+              )}
+              {quotation.internalNote && (
+                <div>
+                  <strong>ภายใน:</strong>
+                  <p style={{ margin: '4px 0', color: '#666' }}>{quotation.internalNote}</p>
+                </div>
+              )}
+            </Card>
+          )}
+        </Col>
+      </Row>
+    </div>
+  );
+};
+
+export default QuotationDetail;

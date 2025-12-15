@@ -1,0 +1,265 @@
+import React, { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
+import {
+  Table, Button, Tag, Space, Input, Select, Card, message, Popconfirm, Tooltip
+} from 'antd';
+import {
+  PlusOutlined, SearchOutlined, EyeOutlined, EditOutlined,
+  CloseCircleOutlined,
+  FileTextOutlined
+} from '@ant-design/icons';
+import { quotationsApi } from '../../services/api';
+import type { Quotation, QuotationType, QuotationStatus } from '../../types/quotation';
+
+const { Option } = Select;
+
+const typeLabels: Record<QuotationType, { text: string; color: string; icon: string }> = {
+  STANDARD: { text: 'ทั่วไป', color: 'blue', icon: '📦' },
+  FORENSIC: { text: 'นิติวิทยาศาสตร์', color: 'purple', icon: '🔬' },
+  MAINTENANCE: { text: 'บำรุงรักษา', color: 'green', icon: '🔧' },
+};
+
+const statusLabels: Record<QuotationStatus, { text: string; color: string }> = {
+  DRAFT: { text: 'ร่าง', color: 'default' },
+  PENDING: { text: 'รออนุมัติ', color: 'orange' },
+  APPROVED: { text: 'อนุมัติแล้ว', color: 'green' },
+  SENT: { text: 'ส่งแล้ว', color: 'blue' },
+  CONFIRMED: { text: 'ยืนยันแล้ว', color: 'cyan' },
+  PARTIALLY_CLOSED: { text: 'ปิดบางส่วน', color: 'geekblue' },
+  CLOSED: { text: 'ปิดแล้ว', color: 'green' },
+  CANCELLED: { text: 'ยกเลิก', color: 'red' },
+};
+
+const QuotationList: React.FC = () => {
+  const navigate = useNavigate();
+  const [quotations, setQuotations] = useState<Quotation[]>([]);
+  const [loading, setLoading] = useState(false);
+  const [searchText, setSearchText] = useState('');
+  const [filterType, setFilterType] = useState<string>('');
+  const [filterStatus, setFilterStatus] = useState<string>('');
+
+  useEffect(() => {
+    fetchQuotations();
+  }, [filterType, filterStatus]);
+
+  const fetchQuotations = async () => {
+    setLoading(true);
+    try {
+      const params: any = {};
+      if (filterType) params.type = filterType;
+      if (filterStatus) params.status = filterStatus;
+      const response = await quotationsApi.getAll(params);
+      setQuotations(response.data);
+    } catch (error) {
+      message.error('ไม่สามารถโหลดข้อมูลได้');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleCancel = async (id: number) => {
+    try {
+      await quotationsApi.cancel(id);
+      message.success('ยกเลิกใบเสนอราคาสำเร็จ');
+      fetchQuotations();
+    } catch (error) {
+      message.error('ไม่สามารถยกเลิกได้');
+    }
+  };
+
+  const filteredData = quotations.filter(q => 
+    !searchText || 
+    q.docFullNo?.toLowerCase().includes(searchText.toLowerCase()) ||
+    q.customerName?.toLowerCase().includes(searchText.toLowerCase())
+  );
+
+  const columns = [
+    {
+      title: 'เลขที่',
+      dataIndex: 'docFullNo',
+      key: 'docFullNo',
+      width: 140,
+      render: (text: string, record: Quotation) => (
+        <Button type="link" onClick={() => navigate(`/quotations/${record.id}`)}>
+          {text}
+        </Button>
+      ),
+    },
+    {
+      title: 'ประเภท',
+      dataIndex: 'quotationType',
+      key: 'quotationType',
+      width: 150,
+      render: (type: QuotationType) => {
+        const config = typeLabels[type];
+        return (
+          <Tag color={config.color}>
+            {config.icon} {config.text}
+          </Tag>
+        );
+      },
+    },
+    {
+      title: 'ลูกค้า',
+      dataIndex: 'customerName',
+      key: 'customerName',
+      ellipsis: true,
+    },
+    {
+      title: 'วันที่',
+      dataIndex: 'docDate',
+      key: 'docDate',
+      width: 110,
+      render: (date: string) => new Date(date).toLocaleDateString('th-TH'),
+    },
+    {
+      title: 'ยอดรวม',
+      dataIndex: 'grandTotal',
+      key: 'grandTotal',
+      width: 130,
+      align: 'right' as const,
+      render: (val: number) => `฿${Number(val || 0).toLocaleString('th-TH', { minimumFractionDigits: 2 })}`,
+    },
+    {
+      title: 'Margin',
+      dataIndex: 'expectedMarginPercent',
+      key: 'expectedMarginPercent',
+      width: 90,
+      align: 'center' as const,
+      render: (val: number, record: Quotation) => {
+        const percent = Number(val || 0);
+        const isLow = record.requiresMarginApproval && !record.marginApproved;
+        return (
+          <Tag color={isLow ? 'warning' : percent >= 20 ? 'green' : 'blue'}>
+            {percent.toFixed(1)}%
+            {isLow && ' ⚠️'}
+          </Tag>
+        );
+      },
+    },
+    {
+      title: 'สถานะ',
+      dataIndex: 'status',
+      key: 'status',
+      width: 120,
+      render: (status: QuotationStatus) => {
+        const config = statusLabels[status];
+        return <Tag color={config.color}>{config.text}</Tag>;
+      },
+    },
+    {
+      title: 'จัดการ',
+      key: 'actions',
+      width: 180,
+      render: (_: any, record: Quotation) => (
+        <Space size="small">
+          <Tooltip title="ดูรายละเอียด">
+            <Button
+              type="text"
+              icon={<EyeOutlined />}
+              onClick={() => navigate(`/quotations/${record.id}`)}
+            />
+          </Tooltip>
+          {record.status === 'DRAFT' && (
+            <Tooltip title="แก้ไข">
+              <Button
+                type="text"
+                icon={<EditOutlined />}
+                onClick={() => navigate(`/quotations/${record.id}/edit`)}
+              />
+            </Tooltip>
+          )}
+          {record.status === 'APPROVED' && (
+            <Tooltip title="สร้าง PO">
+              <Button
+                type="text"
+                icon={<FileTextOutlined />}
+                onClick={() => navigate(`/purchase-orders/new?quotationId=${record.id}`)}
+              />
+            </Tooltip>
+          )}
+          {['DRAFT', 'PENDING'].includes(record.status) && (
+            <Popconfirm
+              title="ยืนยันการยกเลิก?"
+              onConfirm={() => handleCancel(record.id!)}
+            >
+              <Tooltip title="ยกเลิก">
+                <Button type="text" danger icon={<CloseCircleOutlined />} />
+              </Tooltip>
+            </Popconfirm>
+          )}
+        </Space>
+      ),
+    },
+  ];
+
+  return (
+    <div className="page-container">
+      <div className="page-header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 24 }}>
+        <h1 style={{ margin: 0, fontSize: 24 }}>📋 ใบเสนอราคา</h1>
+        <Button
+          type="primary"
+          icon={<PlusOutlined />}
+          size="large"
+          onClick={() => navigate('/quotations/new')}
+        >
+          สร้างใบเสนอราคา
+        </Button>
+      </div>
+
+      <Card style={{ marginBottom: 16 }}>
+        <Space wrap>
+          <Input
+            placeholder="ค้นหา..."
+            prefix={<SearchOutlined />}
+            value={searchText}
+            onChange={(e) => setSearchText(e.target.value)}
+            style={{ width: 250 }}
+            allowClear
+          />
+          <Select
+            placeholder="ประเภท"
+            value={filterType || undefined}
+            onChange={setFilterType}
+            style={{ width: 180 }}
+            allowClear
+          >
+            <Option value="STANDARD">📦 ทั่วไป</Option>
+            <Option value="FORENSIC">🔬 นิติวิทยาศาสตร์</Option>
+            <Option value="MAINTENANCE">🔧 บำรุงรักษา</Option>
+          </Select>
+          <Select
+            placeholder="สถานะ"
+            value={filterStatus || undefined}
+            onChange={setFilterStatus}
+            style={{ width: 150 }}
+            allowClear
+          >
+            <Option value="DRAFT">ร่าง</Option>
+            <Option value="PENDING">รออนุมัติ</Option>
+            <Option value="APPROVED">อนุมัติแล้ว</Option>
+            <Option value="SENT">ส่งแล้ว</Option>
+            <Option value="CONFIRMED">ยืนยันแล้ว</Option>
+            <Option value="CLOSED">ปิดแล้ว</Option>
+            <Option value="CANCELLED">ยกเลิก</Option>
+          </Select>
+        </Space>
+      </Card>
+
+      <Card>
+        <Table
+          columns={columns}
+          dataSource={filteredData}
+          rowKey="id"
+          loading={loading}
+          pagination={{
+            showSizeChanger: true,
+            showTotal: (total, range) => `แสดง ${range[0]}-${range[1]} จาก ${total} รายการ`,
+          }}
+        />
+      </Card>
+    </div>
+  );
+};
+
+export default QuotationList;

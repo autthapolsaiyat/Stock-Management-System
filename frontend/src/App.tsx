@@ -16,6 +16,9 @@ import {
   GoodsReceiptsPage,
   StockIssuesPage,
   StockTransfersPage,
+  QuotationList,
+  QuotationForm,
+  QuotationDetail,
 } from './pages';
 import { useAuth } from './contexts/AuthContext';
 
@@ -46,16 +49,6 @@ const ProtectedRoute: React.FC<{ children: React.ReactNode }> = ({ children }) =
   return <>{children}</>;
 };
 
-// Placeholder pages for routes not yet implemented
-const PlaceholderPage: React.FC<{ title: string }> = ({ title }) => (
-  <div className="page-container">
-    <div className="page-header">
-      <h1 className="text-gradient">{title}</h1>
-      <p>หน้านี้กำลังพัฒนา</p>
-    </div>
-  </div>
-);
-
 const App: React.FC = () => {
   return (
     <Routes>
@@ -80,8 +73,13 @@ const App: React.FC = () => {
         <Route path="suppliers" element={<SuppliersPage />} />
         <Route path="warehouses" element={<WarehousesPage />} />
 
+        {/* Quotations */}
+        <Route path="quotations" element={<QuotationList />} />
+        <Route path="quotations/new" element={<QuotationForm />} />
+        <Route path="quotations/:id" element={<QuotationDetail />} />
+        <Route path="quotations/:id/edit" element={<QuotationForm />} />
+
         {/* Sales */}
-        <Route path="quotations" element={<PlaceholderPage title="ใบเสนอราคา" />} />
         <Route path="sales-invoices" element={<SalesInvoicesPage />} />
 
         {/* Purchase */}
@@ -101,4 +99,3 @@ const App: React.FC = () => {
 };
 
 export default App;
-// CI/CD test
