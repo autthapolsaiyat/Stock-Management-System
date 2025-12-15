@@ -1,6 +1,6 @@
 import axios from 'axios';
 
-const API_URL = import.meta.env.VITE_API_URL || 'https://svs-stock-api.bravetree-eb71039c.southeastasia.azurecontainerapps.io';
+const API_URL = import.meta.env.VITE_API_URL || 'https://svs-stock-api.azurewebsites.net';
 
 const api = axios.create({
   baseURL: API_URL,
