@@ -1,6 +1,7 @@
 import axios from 'axios';
 
-const API_URL = import.meta.env.VITE_API_URL || 'https://svs-stock-api.azurewebsites.net';
+// Hardcode API URL for production
+const API_URL = 'https://svs-stock-api.azurewebsites.net';
 
 const api = axios.create({
   baseURL: API_URL,
@@ -98,7 +99,6 @@ export const quotationsApi = {
   getById: (id: number) => api.get(`/api/quotations/${id}`),
   create: (data: any) => api.post('/api/quotations', data),
   update: (id: number, data: any) => api.put(`/api/quotations/${id}`, data),
-  // Workflow
   submitForApproval: (id: number) => api.post(`/api/quotations/${id}/submit`),
   approve: (id: number) => api.post(`/api/quotations/${id}/approve`),
   approveMargin: (id: number) => api.post(`/api/quotations/${id}/approve-margin`),
@@ -107,7 +107,6 @@ export const quotationsApi = {
   cancel: (id: number, reason?: string) => api.post(`/api/quotations/${id}/cancel`, { reason }),
   cancelItem: (id: number, itemId: number, data: any) => 
     api.post(`/api/quotations/${id}/items/${itemId}/cancel`, data),
-  // Related
   getItemsForPO: (id: number) => api.get(`/api/quotations/${id}/items-for-po`),
   getItemsForInvoice: (id: number) => api.get(`/api/quotations/${id}/items-for-invoice`),
 };
