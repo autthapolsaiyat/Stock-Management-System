@@ -5,21 +5,19 @@ import {
 } from 'antd';
 import {
   PlusOutlined, SearchOutlined, EyeOutlined, EditOutlined,
-  CloseCircleOutlined,
-  FileTextOutlined
+  CloseCircleOutlined, FileTextOutlined
 } from '@ant-design/icons';
 import { quotationsApi } from '../../services/api';
-import type { Quotation, QuotationType, QuotationStatus } from '../../types/quotation';
 
 const { Option } = Select;
 
-const typeLabels: Record<QuotationType, { text: string; color: string; icon: string }> = {
+const typeLabels: Record<string, { text: string; color: string; icon: string }> = {
   STANDARD: { text: 'ทั่วไป', color: 'blue', icon: '📦' },
   FORENSIC: { text: 'นิติวิทยาศาสตร์', color: 'purple', icon: '🔬' },
   MAINTENANCE: { text: 'บำรุงรักษา', color: 'green', icon: '🔧' },
 };
 
-const statusLabels: Record<QuotationStatus, { text: string; color: string }> = {
+const statusLabels: Record<string, { text: string; color: string }> = {
   DRAFT: { text: 'ร่าง', color: 'default' },
   PENDING: { text: 'รออนุมัติ', color: 'orange' },
   APPROVED: { text: 'อนุมัติแล้ว', color: 'green' },
@@ -30,9 +28,22 @@ const statusLabels: Record<QuotationStatus, { text: string; color: string }> = {
   CANCELLED: { text: 'ยกเลิก', color: 'red' },
 };
 
+interface QuotationData {
+  id: number;
+  docFullNo?: string;
+  quotationType?: string;
+  customerName?: string;
+  docDate?: string;
+  grandTotal?: number;
+  expectedMarginPercent?: number;
+  requiresMarginApproval?: boolean;
+  marginApproved?: boolean;
+  status?: string;
+}
+
 const QuotationList: React.FC = () => {
   const navigate = useNavigate();
-  const [quotations, setQuotations] = useState<Quotation[]>([]);
+  const [quotations, setQuotations] = useState<QuotationData[]>([]);
   const [loading, setLoading] = useState(false);
   const [searchText, setSearchText] = useState('');
   const [filterType, setFilterType] = useState<string>('');
@@ -49,9 +60,11 @@ const QuotationList: React.FC = () => {
       if (filterType) params.type = filterType;
       if (filterStatus) params.status = filterStatus;
       const response = await quotationsApi.getAll(params);
-      setQuotations(response.data);
+      setQuotations(response.data || []);
     } catch (error) {
+      console.error('Fetch error:', error);
       message.error('ไม่สามารถโหลดข้อมูลได้');
+      setQuotations([]);
     } finally {
       setLoading(false);
     }
@@ -79,9 +92,9 @@ const QuotationList: React.FC = () => {
       dataIndex: 'docFullNo',
       key: 'docFullNo',
       width: 140,
-      render: (text: string, record: Quotation) => (
+      render: (text: string, record: QuotationData) => (
         <Button type="link" onClick={() => navigate(`/quotations/${record.id}`)}>
-          {text}
+          {text || '-'}
         </Button>
       ),
     },
@@ -90,8 +103,8 @@ const QuotationList: React.FC = () => {
       dataIndex: 'quotationType',
       key: 'quotationType',
       width: 150,
-      render: (type: QuotationType) => {
-        const config = typeLabels[type];
+      render: (type: string) => {
+        const config = typeLabels[type] || { text: type || 'ไม่ระบุ', color: 'default', icon: '📄' };
         return (
           <Tag color={config.color}>
             {config.icon} {config.text}
@@ -104,13 +117,14 @@ const QuotationList: React.FC = () => {
       dataIndex: 'customerName',
       key: 'customerName',
       ellipsis: true,
+      render: (text: string) => text || '-',
     },
     {
       title: 'วันที่',
       dataIndex: 'docDate',
       key: 'docDate',
       width: 110,
-      render: (date: string) => new Date(date).toLocaleDateString('th-TH'),
+      render: (date: string) => date ? new Date(date).toLocaleDateString('th-TH') : '-',
     },
     {
       title: 'ยอดรวม',
@@ -126,7 +140,7 @@ const QuotationList: React.FC = () => {
       key: 'expectedMarginPercent',
       width: 90,
       align: 'center' as const,
-      render: (val: number, record: Quotation) => {
+      render: (val: number, record: QuotationData) => {
         const percent = Number(val || 0);
         const isLow = record.requiresMarginApproval && !record.marginApproved;
         return (
@@ -142,8 +156,8 @@ const QuotationList: React.FC = () => {
       dataIndex: 'status',
       key: 'status',
       width: 120,
-      render: (status: QuotationStatus) => {
-        const config = statusLabels[status];
+      render: (status: string) => {
+        const config = statusLabels[status] || { text: status || 'ไม่ระบุ', color: 'default' };
         return <Tag color={config.color}>{config.text}</Tag>;
       },
     },
@@ -151,7 +165,7 @@ const QuotationList: React.FC = () => {
       title: 'จัดการ',
       key: 'actions',
       width: 180,
-      render: (_: any, record: Quotation) => (
+      render: (_: any, record: QuotationData) => (
         <Space size="small">
           <Tooltip title="ดูรายละเอียด">
             <Button
@@ -178,7 +192,7 @@ const QuotationList: React.FC = () => {
               />
             </Tooltip>
           )}
-          {['DRAFT', 'PENDING'].includes(record.status) && (
+          {['DRAFT', 'PENDING'].includes(record.status || '') && (
             <Popconfirm
               title="ยืนยันการยกเลิก?"
               onConfirm={() => handleCancel(record.id!)}
