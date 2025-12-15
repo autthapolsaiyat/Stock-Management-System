@@ -145,7 +145,8 @@ const QuotationForm: React.FC = () => {
     const marginAmount = afterDiscount - totalCost;
     const marginPercent = afterDiscount > 0 ? (marginAmount / afterDiscount) * 100 : 0;
     const minMargin = parseFloat(settings?.QT_MIN_MARGIN_PERCENT || '10');
-    const requiresApproval = marginPercent < minMargin;
+    // Only require approval if there are items AND margin is low
+    const requiresApproval = items.length > 0 && marginPercent < minMargin;
 
     setSummary({
       subtotal,
@@ -492,8 +493,9 @@ const QuotationForm: React.FC = () => {
               locale={{ emptyText: 'ยังไม่มีรายการสินค้า' }}
             />
             
-            {summary.requiresApproval && (
-              <div style={{ marginTop: 16, padding: 12, background: '#fff7e6', borderRadius: 8 }}>
+            {/* Only show warning if there are items and margin is low */}
+            {items.length > 0 && summary.requiresApproval && (
+              <div style={{ marginTop: 16, padding: 12, background: '#fff7e6', borderRadius: 8, border: '1px solid #ffe58f' }}>
                 ⚠️ มีรายการที่ Margin ต่ำกว่า {settings?.QT_MIN_MARGIN_PERCENT || 10}% ต้องขออนุมัติพิเศษ
               </div>
             )}
@@ -504,7 +506,14 @@ const QuotationForm: React.FC = () => {
             <Row gutter={24}>
               <Col xs={24} md={12}>
                 <Form form={form}>
-                  <div style={{ padding: 16, background: '#f5f5f5', borderRadius: 8, marginBottom: 16 }}>
+                  {/* Discount Section - Fixed styling */}
+                  <div style={{ 
+                    padding: 16, 
+                    background: 'rgba(255,255,255,0.1)', 
+                    borderRadius: 8, 
+                    marginBottom: 16,
+                    border: '1px solid rgba(255,255,255,0.2)'
+                  }}>
                     <div style={{ fontWeight: 500, marginBottom: 12 }}>💰 ส่วนลด</div>
                     <Row gutter={12}>
                       <Col span={12}>
@@ -576,9 +585,9 @@ const QuotationForm: React.FC = () => {
                   </div>
                   <div style={{ display: 'flex', justifyContent: 'space-between' }}>
                     <span>Margin:</span>
-                    <Tag color={getMarginColor(summary.marginPercent)}>
+                    <Tag color={items.length > 0 ? getMarginColor(summary.marginPercent) : 'default'}>
                       {summary.marginPercent.toFixed(1)}% (฿{summary.marginAmount.toLocaleString()})
-                      {summary.requiresApproval && ' ⚠️'}
+                      {items.length > 0 && summary.requiresApproval && ' ⚠️'}
                     </Tag>
                   </div>
                 </div>
