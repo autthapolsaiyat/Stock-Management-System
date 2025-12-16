@@ -48,6 +48,23 @@ let SystemSettingsService = class SystemSettingsService {
         setting.updatedBy = userId;
         return this.settingRepository.save(setting);
     }
+    async upsert(key, value, userId, category, type) {
+        let setting = await this.settingRepository.findOne({ where: { settingKey: key } });
+        if (setting) {
+            setting.settingValue = value;
+            setting.updatedBy = userId;
+        }
+        else {
+            setting = this.settingRepository.create({
+                settingKey: key,
+                settingValue: value,
+                settingType: type || 'STRING',
+                category: category || 'GENERAL',
+                updatedBy: userId,
+            });
+        }
+        return this.settingRepository.save(setting);
+    }
     async createOrUpdate(key, value, type, category, description, userId) {
         let setting = await this.settingRepository.findOne({ where: { settingKey: key } });
         if (setting) {

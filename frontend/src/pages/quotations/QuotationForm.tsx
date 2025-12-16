@@ -16,6 +16,7 @@ import SettingsModal from '../../components/quotation/SettingsModal';
 import TempProductModal from '../../components/quotation/TempProductModal';
 import QuickCalculator from '../../components/quotation/QuickCalculator';
 import ImageGallery from '../../components/quotation/ImageGallery';
+import QuotationPrintPreview from '../../components/quotation/QuotationPrintPreview';
 
 const { Option } = Select;
 const { TextArea } = Input;
@@ -796,92 +797,26 @@ const QuotationForm: React.FC = () => {
       />
 
       {/* Preview Modal */}
-      <Modal
-        title="ตัวอย่างใบเสนอราคา"
+      <QuotationPrintPreview
         open={previewOpen}
-        onCancel={() => setPreviewOpen(false)}
-        width={900}
-        footer={[
-          <Button key="close" onClick={() => setPreviewOpen(false)}>
-            ปิด
-          </Button>,
-          <Button key="print" type="primary" onClick={() => window.print()}>
-            🖨️ พิมพ์
-          </Button>,
-        ]}
-      >
-        <div style={{ padding: 20, background: '#fff', color: '#000' }}>
-          {/* Company Header */}
-          <div style={{ textAlign: 'center', marginBottom: 24, borderBottom: '2px solid #000', paddingBottom: 16 }}>
-            <h2 style={{ margin: 0, color: '#000' }}>บริษัท เอสวีเอส สต๊อก จำกัด</h2>
-            <p style={{ margin: '4px 0', color: '#333' }}>SVS Stock Co., Ltd.</p>
-            <p style={{ margin: '4px 0', fontSize: 12, color: '#666' }}>
-              123 ถนนสุขุมวิท แขวงคลองเตย เขตคลองเตย กรุงเทพฯ 10110
-            </p>
-          </div>
-
-          <h3 style={{ textAlign: 'center', color: '#000' }}>ใบเสนอราคา / QUOTATION</h3>
-
-          {/* Customer Info */}
-          <Row gutter={16} style={{ marginBottom: 16 }}>
-            <Col span={12}>
-              <p style={{ color: '#000' }}><strong>ลูกค้า:</strong> {selectedCustomer?.name || form.getFieldValue('customerName') || '-'}</p>
-              <p style={{ color: '#000' }}><strong>ผู้ติดต่อ:</strong> {form.getFieldValue('contactPerson') || '-'}</p>
-              <p style={{ color: '#000' }}><strong>โทร:</strong> {form.getFieldValue('contactPhone') || '-'}</p>
-            </Col>
-            <Col span={12} style={{ textAlign: 'right' }}>
-              <p style={{ color: '#000' }}><strong>วันที่:</strong> {form.getFieldValue('docDate')?.format('DD/MM/YYYY') || '-'}</p>
-              <p style={{ color: '#000' }}><strong>ยืนราคา:</strong> {form.getFieldValue('validDays')} วัน</p>
-              <p style={{ color: '#000' }}><strong>เครดิต:</strong> {form.getFieldValue('creditTermDays')} วัน</p>
-            </Col>
-          </Row>
-
-          {/* Items Table */}
-          <table style={{ width: '100%', borderCollapse: 'collapse', marginBottom: 16 }}>
-            <thead>
-              <tr style={{ background: '#f0f0f0' }}>
-                <th style={{ border: '1px solid #000', padding: 8, color: '#000' }}>#</th>
-                <th style={{ border: '1px solid #000', padding: 8, color: '#000' }}>รายการ</th>
-                <th style={{ border: '1px solid #000', padding: 8, color: '#000' }}>จำนวน</th>
-                <th style={{ border: '1px solid #000', padding: 8, color: '#000' }}>ราคา/หน่วย</th>
-                <th style={{ border: '1px solid #000', padding: 8, color: '#000' }}>รวม</th>
-              </tr>
-            </thead>
-            <tbody>
-              {items.map((item, idx) => (
-                <tr key={idx}>
-                  <td style={{ border: '1px solid #000', padding: 8, textAlign: 'center', color: '#000' }}>{idx + 1}</td>
-                  <td style={{ border: '1px solid #000', padding: 8, color: '#000' }}>
-                    {item.itemName}
-                    <br/><small style={{ color: '#666' }}>{item.itemCode}</small>
-                  </td>
-                  <td style={{ border: '1px solid #000', padding: 8, textAlign: 'center', color: '#000' }}>{item.qty}</td>
-                  <td style={{ border: '1px solid #000', padding: 8, textAlign: 'right', color: '#000' }}>฿{Number(item.unitPrice).toLocaleString()}</td>
-                  <td style={{ border: '1px solid #000', padding: 8, textAlign: 'right', color: '#000' }}>฿{Number(item.lineTotal).toLocaleString()}</td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-
-          {/* Summary */}
-          <div style={{ textAlign: 'right' }}>
-            <p style={{ color: '#000' }}>รวม: ฿{summary.subtotal.toLocaleString('th-TH', { minimumFractionDigits: 2 })}</p>
-            {summary.discountAmount > 0 && (
-              <p style={{ color: '#f00' }}>ส่วนลด: -฿{summary.discountAmount.toLocaleString('th-TH', { minimumFractionDigits: 2 })}</p>
-            )}
-            <p style={{ color: '#000' }}>VAT 7%: ฿{summary.taxAmount.toLocaleString('th-TH', { minimumFractionDigits: 2 })}</p>
-            <p style={{ fontSize: 18, fontWeight: 'bold', color: '#000' }}>ยอดสุทธิ: ฿{summary.grandTotal.toLocaleString('th-TH', { minimumFractionDigits: 2 })}</p>
-          </div>
-
-          {/* Notes */}
-          {form.getFieldValue('publicNote') && (
-            <div style={{ marginTop: 16, padding: 12, background: '#f9f9f9', borderRadius: 4 }}>
-              <strong style={{ color: '#000' }}>หมายเหตุ:</strong>
-              <p style={{ color: '#000' }}>{form.getFieldValue('publicNote')}</p>
-            </div>
-          )}
-        </div>
-      </Modal>
+        onClose={() => setPreviewOpen(false)}
+        quotation={{
+          docFullNo: form.getFieldValue('docFullNo'),
+          docDate: form.getFieldValue('docDate')?.format('YYYY-MM-DD'),
+          validDays: form.getFieldValue('validDays'),
+          deliveryDays: form.getFieldValue('deliveryDays'),
+          creditTermDays: form.getFieldValue('creditTermDays'),
+          customerName: selectedCustomer?.name,
+          customerAddress: selectedCustomer?.address,
+          contactPerson: form.getFieldValue('contactPerson'),
+          contactPhone: form.getFieldValue('contactPhone'),
+          contactEmail: form.getFieldValue('contactEmail'),
+          publicNote: form.getFieldValue('publicNote'),
+          ...summary,
+        }}
+        items={items}
+        customer={selectedCustomer}
+      />
     </div>
   );
 };

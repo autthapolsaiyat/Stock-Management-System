@@ -40,6 +40,25 @@ export class SystemSettingsService {
     return this.settingRepository.save(setting);
   }
 
+  async upsert(key: string, value: string, userId: number, category?: string, type?: string) {
+    let setting = await this.settingRepository.findOne({ where: { settingKey: key } });
+    
+    if (setting) {
+      setting.settingValue = value;
+      setting.updatedBy = userId;
+    } else {
+      setting = this.settingRepository.create({
+        settingKey: key,
+        settingValue: value,
+        settingType: type || 'STRING',
+        category: category || 'GENERAL',
+        updatedBy: userId,
+      });
+    }
+    
+    return this.settingRepository.save(setting);
+  }
+
   async createOrUpdate(key: string, value: string, type: string, category: string, description: string, userId: number) {
     let setting = await this.settingRepository.findOne({ where: { settingKey: key } });
     

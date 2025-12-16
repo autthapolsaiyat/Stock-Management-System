@@ -33,6 +33,15 @@ let SystemSettingsController = class SystemSettingsController {
     update(key, value, req) {
         return this.settingsService.update(key, value, req.user.sub);
     }
+    async updateBulk(body, req) {
+        const results = [];
+        for (const setting of body.settings) {
+            const value = typeof setting.value === 'string' ? setting.value : JSON.stringify(setting.value);
+            const result = await this.settingsService.upsert(setting.key, value, req.user.sub);
+            results.push(result);
+        }
+        return { success: true, updated: results.length };
+    }
 };
 exports.SystemSettingsController = SystemSettingsController;
 __decorate([
@@ -64,6 +73,14 @@ __decorate([
     __metadata("design:paramtypes", [String, String, Object]),
     __metadata("design:returntype", void 0)
 ], SystemSettingsController.prototype, "update", null);
+__decorate([
+    (0, common_1.Put)('bulk'),
+    __param(0, (0, common_1.Body)()),
+    __param(1, (0, common_1.Request)()),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [Object, Object]),
+    __metadata("design:returntype", Promise)
+], SystemSettingsController.prototype, "updateBulk", null);
 exports.SystemSettingsController = SystemSettingsController = __decorate([
     (0, swagger_1.ApiTags)('System Settings'),
     (0, swagger_1.ApiBearerAuth)(),

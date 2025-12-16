@@ -8,6 +8,7 @@ export declare class SystemSettingsService {
     findByKey(key: string): Promise<SystemSettingEntity>;
     getValue(key: string, defaultValue?: any): Promise<any>;
     update(key: string, value: string, userId: number): Promise<SystemSettingEntity>;
+    upsert(key: string, value: string, userId: number, category?: string, type?: string): Promise<SystemSettingEntity>;
     createOrUpdate(key: string, value: string, type: string, category: string, description: string, userId: number): Promise<SystemSettingEntity>;
     private parseValue;
     getMinMarginPercent(): Promise<number>;
