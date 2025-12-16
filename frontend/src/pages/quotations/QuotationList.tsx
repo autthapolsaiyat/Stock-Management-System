@@ -5,7 +5,7 @@ import {
 } from 'antd';
 import {
   PlusOutlined, SearchOutlined, EyeOutlined, EditOutlined,
-  CloseCircleOutlined, FileTextOutlined
+  CloseCircleOutlined, DeleteOutlined, FileTextOutlined
 } from '@ant-design/icons';
 import { quotationsApi } from '../../services/api';
 
@@ -77,6 +77,16 @@ const QuotationList: React.FC = () => {
       fetchQuotations();
     } catch (error) {
       message.error('ไม่สามารถยกเลิกได้');
+    }
+  };
+
+  const handleDelete = async (id: number) => {
+    try {
+      await quotationsApi.delete(id);
+      message.success('ลบใบเสนอราคาสำเร็จ');
+      fetchQuotations();
+    } catch (error) {
+      message.error('ไม่สามารถลบได้');
     }
   };
 
@@ -187,7 +197,7 @@ const QuotationList: React.FC = () => {
             <Tooltip title="สร้าง PO">
               <Button
                 type="text"
-                icon={<FileTextOutlined />}
+  icon={<FileTextOutlined />}
                 onClick={() => navigate(`/purchase-orders/new?quotationId=${record.id}`)}
               />
             </Tooltip>
@@ -199,6 +209,16 @@ const QuotationList: React.FC = () => {
             >
               <Tooltip title="ยกเลิก">
                 <Button type="text" danger icon={<CloseCircleOutlined />} />
+              </Tooltip>
+            </Popconfirm>
+          )}
+          {record.status === 'CANCELLED' && (
+            <Popconfirm
+              title="ลบใบเสนอราคานี้?"
+              onConfirm={() => handleDelete(record.id!)}
+            >
+              <Tooltip title="ลบ">
+                <Button type="text" danger icon={<DeleteOutlined />} />
               </Tooltip>
             </Popconfirm>
           )}
