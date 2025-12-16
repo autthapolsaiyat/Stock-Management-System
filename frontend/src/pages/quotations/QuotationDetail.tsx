@@ -144,8 +144,8 @@ const QuotationDetail: React.FC = () => {
     return <div style={{ padding: 24, textAlign: 'center' }}>กำลังโหลด...</div>;
   }
 
-  const typeConfig = typeLabels[quotation.quotationType];
-  const statusConfig = statusLabels[quotation.status];
+  const typeConfig = typeLabels[quotation.quotationType] || { text: quotation.quotationType, color: "default", icon: "📄" };
+  const statusConfig = statusLabels[quotation.status] || { text: quotation.status, color: "default" };
 
   // Calculate fulfillment
   const totalItems = quotation.items?.length || 0;
