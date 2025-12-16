@@ -1,4 +1,3 @@
-import { CustomerContactEntity } from './customer-contact.entity';
 export declare class CustomerEntity {
     id: number;
     code: string;
@@ -7,10 +6,12 @@ export declare class CustomerEntity {
     address: string;
     phone: string;
     email: string;
+    contactPerson: string;
+    contactPhone: string;
+    contactEmail: string;
     creditLimit: number;
     creditTermDays: number;
     isActive: boolean;
     createdAt: Date;
     updatedAt: Date;
-    contacts: CustomerContactEntity[];
 }

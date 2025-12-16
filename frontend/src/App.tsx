@@ -19,6 +19,7 @@ import {
   QuotationList,
   QuotationForm,
   QuotationDetail,
+  UserSettingsPage,
 } from './pages';
 import { useAuth } from './contexts/AuthContext';
 
@@ -90,6 +91,9 @@ const App: React.FC = () => {
         <Route path="stock-balance" element={<StockBalancePage />} />
         <Route path="stock-issues" element={<StockIssuesPage />} />
         <Route path="stock-transfers" element={<StockTransfersPage />} />
+        
+        {/* Settings */}
+        <Route path="settings" element={<UserSettingsPage />} />
       </Route>
 
       {/* Catch all */}

@@ -202,3 +202,13 @@ export const uploadApi = {
 };
 
 export default api;
+
+// User Settings API
+export const userSettingsApi = {
+  getAll: () => api.get('/api/user-settings'),
+  getSeller: () => api.get('/api/user-settings/seller'),
+  updateSeller: (data: any) => api.put('/api/user-settings/seller', data),
+  getQuotationDefaults: () => api.get('/api/user-settings/quotation-defaults'),
+  updateQuotationDefaults: (data: any) => api.put('/api/user-settings/quotation-defaults', data),
+};
+

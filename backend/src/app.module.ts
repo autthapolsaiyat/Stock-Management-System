@@ -19,6 +19,7 @@ import { StockIssueModule } from './modules/stock-issue/stock-issue.module';
 import { StockTransferModule } from './modules/stock-transfer/stock-transfer.module';
 import { SalesInvoiceModule } from './modules/sales-invoice/sales-invoice.module';
 import { UploadModule } from './upload/upload.module';
+import { UserSettingsModule } from './modules/user-settings/user-settings.module';
 
 @Module({
   imports: [
@@ -56,6 +57,7 @@ import { UploadModule } from './upload/upload.module';
     StockTransferModule,
     SalesInvoiceModule,
     UploadModule,
+    UserSettingsModule,
   ],
 })
 export class AppModule {}

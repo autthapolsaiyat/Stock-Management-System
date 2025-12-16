@@ -17,7 +17,7 @@ let CustomerModule = class CustomerModule {
 exports.CustomerModule = CustomerModule;
 exports.CustomerModule = CustomerModule = __decorate([
     (0, common_1.Module)({
-        imports: [typeorm_1.TypeOrmModule.forFeature([entities_1.CustomerEntity, entities_1.CustomerContactEntity])],
+        imports: [typeorm_1.TypeOrmModule.forFeature([entities_1.CustomerEntity])],
         controllers: [customer_controller_1.CustomerController],
         providers: [customer_service_1.CustomerService],
         exports: [customer_service_1.CustomerService],

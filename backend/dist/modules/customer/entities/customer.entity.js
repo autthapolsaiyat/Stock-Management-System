@@ -11,7 +11,6 @@ var __metadata = (this && this.__metadata) || function (k, v) {
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.CustomerEntity = void 0;
 const typeorm_1 = require("typeorm");
-const customer_contact_entity_1 = require("./customer-contact.entity");
 let CustomerEntity = class CustomerEntity {
 };
 exports.CustomerEntity = CustomerEntity;
@@ -40,11 +39,23 @@ __decorate([
     __metadata("design:type", String)
 ], CustomerEntity.prototype, "phone", void 0);
 __decorate([
-    (0, typeorm_1.Column)({ length: 100, nullable: true }),
+    (0, typeorm_1.Column)({ length: 200, nullable: true }),
     __metadata("design:type", String)
 ], CustomerEntity.prototype, "email", void 0);
 __decorate([
-    (0, typeorm_1.Column)({ name: 'credit_limit', type: 'decimal', precision: 15, scale: 4, default: 0 }),
+    (0, typeorm_1.Column)({ name: 'contact_person', length: 200, nullable: true }),
+    __metadata("design:type", String)
+], CustomerEntity.prototype, "contactPerson", void 0);
+__decorate([
+    (0, typeorm_1.Column)({ name: 'contact_phone', length: 50, nullable: true }),
+    __metadata("design:type", String)
+], CustomerEntity.prototype, "contactPhone", void 0);
+__decorate([
+    (0, typeorm_1.Column)({ name: 'contact_email', length: 200, nullable: true }),
+    __metadata("design:type", String)
+], CustomerEntity.prototype, "contactEmail", void 0);
+__decorate([
+    (0, typeorm_1.Column)({ name: 'credit_limit', type: 'decimal', precision: 15, scale: 2, default: 0 }),
     __metadata("design:type", Number)
 ], CustomerEntity.prototype, "creditLimit", void 0);
 __decorate([
@@ -63,10 +74,6 @@ __decorate([
     (0, typeorm_1.UpdateDateColumn)({ name: 'updated_at', type: 'timestamptz' }),
     __metadata("design:type", Date)
 ], CustomerEntity.prototype, "updatedAt", void 0);
-__decorate([
-    (0, typeorm_1.OneToMany)(() => customer_contact_entity_1.CustomerContactEntity, contact => contact.customer),
-    __metadata("design:type", Array)
-], CustomerEntity.prototype, "contacts", void 0);
 exports.CustomerEntity = CustomerEntity = __decorate([
     (0, typeorm_1.Entity)('customers')
 ], CustomerEntity);

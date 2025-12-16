@@ -23,6 +23,7 @@ import {
   AppstoreOutlined,
 } from '@ant-design/icons';
 import { useAuth } from '../contexts/AuthContext';
+import { SettingOutlined } from '@ant-design/icons';
 import { useTheme } from '../contexts/ThemeContext';
 
 const { Sider, Content, Header, Footer } = Layout;
@@ -81,6 +82,14 @@ const MainLayout: React.FC = () => {
       ],
     },
     {
+      key: 'settings-menu',
+      icon: <SettingOutlined />,
+      label: 'ตั้งค่า',
+      children: [
+        { key: '/settings', icon: <SettingOutlined />, label: 'ตั้งค่าส่วนตัว' },
+      ],
+    },
+    {
       key: 'stock',
       icon: <InboxOutlined />,
       label: 'คลังสินค้า',
@@ -94,6 +103,11 @@ const MainLayout: React.FC = () => {
 
   // Limited menu for sales users
   const salesMenuItems = [
+    {
+      key: '/settings',
+      icon: <SettingOutlined />,
+      label: 'ตั้งค่าส่วนตัว',
+    },
     {
       key: '/quotations',
       icon: <FileTextOutlined />,
