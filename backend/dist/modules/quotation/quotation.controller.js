@@ -60,6 +60,9 @@ let QuotationController = class QuotationController {
     cancelItem(id, itemId, reason, req) {
         return this.quotationService.cancelItem(id, itemId, req.user.sub, reason);
     }
+    delete(id, req) {
+        return this.quotationService.delete(id, req.user.sub);
+    }
 };
 exports.QuotationController = QuotationController;
 __decorate([
@@ -171,6 +174,14 @@ __decorate([
     __metadata("design:paramtypes", [Number, Number, String, Object]),
     __metadata("design:returntype", void 0)
 ], QuotationController.prototype, "cancelItem", null);
+__decorate([
+    (0, common_1.Delete)(':id'),
+    __param(0, (0, common_1.Param)('id', common_1.ParseIntPipe)),
+    __param(1, (0, common_1.Request)()),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [Number, Object]),
+    __metadata("design:returntype", void 0)
+], QuotationController.prototype, "delete", null);
 exports.QuotationController = QuotationController = __decorate([
     (0, swagger_1.ApiTags)('Quotations'),
     (0, swagger_1.ApiBearerAuth)(),

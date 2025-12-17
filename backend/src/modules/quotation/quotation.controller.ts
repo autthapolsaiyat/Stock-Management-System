@@ -1,4 +1,4 @@
-import { Controller, Get, Post, Put, Body, Param, Query, ParseIntPipe, UseGuards, Request } from '@nestjs/common';
+import { Controller, Get, Post, Put, Delete, Body, Param, Query, ParseIntPipe, UseGuards, Request } from '@nestjs/common';
 import { ApiTags, ApiBearerAuth, ApiQuery } from '@nestjs/swagger';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { QuotationService } from './quotation.service';
@@ -80,5 +80,10 @@ export class QuotationController {
     @Request() req: any,
   ) {
     return this.quotationService.cancelItem(id, itemId, req.user.sub, reason);
+  }
+
+  @Delete(':id')
+  delete(@Param('id', ParseIntPipe) id: number, @Request() req: any) {
+    return this.quotationService.delete(id, req.user.sub);
   }
 }

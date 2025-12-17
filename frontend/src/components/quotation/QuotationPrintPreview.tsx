@@ -49,18 +49,24 @@ const QuotationPrintPreview: React.FC<QuotationPrintPreviewProps> = ({
   const loadSettings = async () => {
     setLoading(true);
     try {
-      const [companyRes, sellerRes] = await Promise.all([
+      // Load all company categories
+      const [companyThRes, companyEnRes, companyRes, sellerRes] = await Promise.all([
+        systemSettingsApi.getByCategory('COMPANY_TH'),
+        systemSettingsApi.getByCategory('COMPANY_EN'),
         systemSettingsApi.getByCategory('COMPANY'),
         userSettingsApi.getSeller(),
       ]);
       
-      // Convert array to object
+      // Convert arrays to object
       const companyMap: any = {};
-      (companyRes.data || []).forEach((s: any) => {
+      [...(companyThRes.data || []), ...(companyEnRes.data || []), ...(companyRes.data || [])].forEach((s: any) => {
         companyMap[s.settingKey] = s.settingValue;
       });
       setCompanySettings(companyMap);
       setSellerSettings(sellerRes.data || {});
+      
+      console.log('Company Settings:', companyMap);
+      console.log('Seller Settings:', sellerRes.data);
     } catch (error) {
       console.error('Load settings error:', error);
     } finally {
@@ -135,7 +141,7 @@ const QuotationPrintPreview: React.FC<QuotationPrintPreviewProps> = ({
       }
       remaining = Math.floor(remaining / 10);
       position++;
-      if (position === 7) position = 1; // Reset after million
+      if (position === 7) position = 1;
     }
     
     result += 'บาท';
@@ -165,11 +171,13 @@ const QuotationPrintPreview: React.FC<QuotationPrintPreviewProps> = ({
     return num.toLocaleString('th-TH', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
   };
 
+  // 3. ชื่อพนักงานขาย
   const getSellerName = () => {
-    if (sellerSettings.nickname && sellerSettings.name) {
-      return `${sellerSettings.name}/${sellerSettings.nickname}`;
-    }
-    return sellerSettings.name || sellerSettings.nickname || '-';
+    const parts = [];
+    if (sellerSettings.name) parts.push(sellerSettings.name);
+    if (sellerSettings.surname) parts.push(sellerSettings.surname);
+    if (sellerSettings.nickname) parts.push(`(${sellerSettings.nickname})`);
+    return parts.length > 0 ? parts.join(' ') : '-';
   };
 
   return (
@@ -190,7 +198,15 @@ const QuotationPrintPreview: React.FC<QuotationPrintPreviewProps> = ({
         <div style={{ textAlign: 'center', padding: 50 }}><Spin size="large" /></div>
       ) : (
         <div id="quotation-print-content" style={{ padding: 20, background: '#fff', color: '#000', fontFamily: 'Sarabun, sans-serif' }}>
-          {/* Header - Company Info */}
+          
+          {/* 2. Header - Logo ตรงกลาง */}
+          {companySettings.COMPANY_LOGO_URL && (
+            <div style={{ textAlign: 'center', marginBottom: 10 }}>
+              <img src={companySettings.COMPANY_LOGO_URL} alt="Company Logo" style={{ maxHeight: 80 }} />
+            </div>
+          )}
+
+          {/* 1. Header - Company Info ครบทั้งไทยและอังกฤษ */}
           <table style={{ width: '100%', borderCollapse: 'collapse', marginBottom: 10 }}>
             <tbody>
               <tr>
@@ -198,21 +214,21 @@ const QuotationPrintPreview: React.FC<QuotationPrintPreviewProps> = ({
                   <div style={{ fontWeight: 'bold', fontSize: 16 }}>
                     {companySettings.COMPANY_NAME_TH || 'บริษัท แสงวิทย์ ซายน์ จำกัด'}
                   </div>
-                  <div>{companySettings.COMPANY_ADDRESS1_TH}</div>
-                  <div>{companySettings.COMPANY_ADDRESS2_TH} {companySettings.COMPANY_ADDRESS3_TH}</div>
-                  <div>โทร. {companySettings.COMPANY_PHONE_TH} แฟกซ์. {companySettings.COMPANY_FAX_TH}</div>
-                  <div>E-mail : {companySettings.COMPANY_EMAIL}</div>
-                  <div>เลขประจำตัวผู้เสียภาษีอากร เลขที่ {companySettings.COMPANY_TAX_ID}</div>
+                  <div>{companySettings.COMPANY_ADDRESS1_TH || '123/4-5 ซอยสมเด็จพระปิ่นเกล้า 9 ถ.สมเด็จพระปิ่นเกล้า'}</div>
+                  <div>{companySettings.COMPANY_ADDRESS2_TH || 'แขวงอรุณอมรินทร์ เขตบางกอกน้อย'} {companySettings.COMPANY_ADDRESS3_TH || 'กรุงเทพฯ 10700'}</div>
+                  <div>โทร. {companySettings.COMPANY_PHONE_TH || '(662) 886-9200-7'} แฟกซ์. {companySettings.COMPANY_FAX_TH || '(662) 433-9168'}</div>
+                  <div>E-mail : {companySettings.COMPANY_EMAIL || 'info@saengvithscience.co.th'}</div>
+                  <div>เลขประจำตัวผู้เสียภาษีอากร เลขที่ {companySettings.COMPANY_TAX_ID || companySettings.COMPANY_TAX_ID_TH || '0105545053424'}</div>
                 </td>
                 <td style={{ width: '50%', verticalAlign: 'top', border: 'none', textAlign: 'right' }}>
                   <div style={{ fontWeight: 'bold', fontSize: 16 }}>
                     {companySettings.COMPANY_NAME_EN || 'Saengvith Science Co.,Ltd.'}
                   </div>
-                  <div>{companySettings.COMPANY_ADDRESS1_EN}</div>
-                  <div>{companySettings.COMPANY_ADDRESS2_EN}</div>
-                  <div>Tel. {companySettings.COMPANY_PHONE_EN} Fax. {companySettings.COMPANY_FAX_EN}</div>
-                  <div>E-mail : {companySettings.COMPANY_EMAIL}</div>
-                  <div>Tax identification number {companySettings.COMPANY_TAX_ID}</div>
+                  <div>{companySettings.COMPANY_ADDRESS1_EN || '123/4-5 Soi Somdetphrapinklao 9, Somdetphrapinklao Road'}</div>
+                  <div>{companySettings.COMPANY_ADDRESS2_EN || 'Arun Amarin, Bangkoknoi, Bangkok 10700 Thailand'}</div>
+                  <div>Tel. {companySettings.COMPANY_PHONE_EN || '(662) 886-9200-7'} Fax. {companySettings.COMPANY_FAX_EN || '(662) 433-9168'}</div>
+                  <div>E-mail : {companySettings.COMPANY_EMAIL || 'info@saengvithscience.co.th'}</div>
+                  <div>Tax ID {companySettings.COMPANY_TAX_ID || companySettings.COMPANY_TAX_ID_EN || '0105545053424'}</div>
                 </td>
               </tr>
             </tbody>
@@ -229,9 +245,9 @@ const QuotationPrintPreview: React.FC<QuotationPrintPreviewProps> = ({
               <tr>
                 <td style={{ width: '60%', verticalAlign: 'top', border: '1px solid #000', padding: 8 }}>
                   <div><strong>เรื่อง</strong> เสนอราคา</div>
-                  <div><strong>เรียน</strong> {customer?.contactPerson || quotation.contactPerson || customer?.name}</div>
-                  <div><strong>ที่อยู่</strong> {customer?.name}</div>
-                  <div style={{ paddingLeft: 30 }}>{customer?.address || quotation.customerAddress}</div>
+                  <div><strong>เรียน</strong> {customer?.contactPerson || quotation.contactPerson || customer?.name || '-'}</div>
+                  <div><strong>ที่อยู่</strong> {customer?.name || quotation.customerName || '-'}</div>
+                  <div style={{ paddingLeft: 30 }}>{customer?.address || quotation.customerAddress || '-'}</div>
                   <div style={{ marginTop: 5 }}>
                     <strong>E-mail :</strong> {customer?.contactEmail || quotation.contactEmail || '-'}
                   </div>
@@ -242,8 +258,8 @@ const QuotationPrintPreview: React.FC<QuotationPrintPreviewProps> = ({
                   </div>
                 </td>
                 <td style={{ width: '40%', verticalAlign: 'top', border: '1px solid #000', padding: 8 }}>
-                  <div><strong>เลขที่/No. :</strong> {quotation.docFullNo || 'SVS-XXX-XX-XX'}</div>
-                  <div><strong>วันที่/Date. :</strong> {formatDate(quotation.docDate)}</div>
+                  <div><strong>เลขที่/No. :</strong> {quotation.docFullNo || 'QT-XXXXXXXX'}</div>
+                  <div><strong>วันที่/Date :</strong> {formatDate(quotation.docDate)}</div>
                   <div><strong>กำหนดยืนราคา/Validity :</strong> {quotation.validDays || 30} วัน</div>
                   <div><strong>กำหนดส่งของ/Delivery :</strong> {quotation.deliveryDays || 60} วัน</div>
                   <div><strong>กำหนดชำระ/Payment Term :</strong> {quotation.creditTermDays || 30} วัน</div>
@@ -260,11 +276,11 @@ const QuotationPrintPreview: React.FC<QuotationPrintPreviewProps> = ({
             <thead>
               <tr style={{ background: '#f0f0f0' }}>
                 <th style={{ border: '1px solid #000', padding: 6, width: 40 }}>ลำดับ<br/>Item</th>
-                <th style={{ border: '1px solid #000', padding: 6, width: 60 }}>จำนวน<br/>Quantity</th>
+                <th style={{ border: '1px solid #000', padding: 6, width: 60 }}>จำนวน<br/>Qty</th>
                 <th style={{ border: '1px solid #000', padding: 6, width: 100 }}>รหัสสินค้า<br/>Part No.</th>
-                <th style={{ border: '1px solid #000', padding: 6 }}>รายการ</th>
-                <th style={{ border: '1px solid #000', padding: 6, width: 100 }}>ราคาต่อหน่วย<br/>Unit Price</th>
-                <th style={{ border: '1px solid #000', padding: 6, width: 100 }}>จำนวนเงิน<br/>Amount (Baht)</th>
+                <th style={{ border: '1px solid #000', padding: 6 }}>รายการ / Description</th>
+                <th style={{ border: '1px solid #000', padding: 6, width: 100 }}>ราคา/หน่วย<br/>Unit Price</th>
+                <th style={{ border: '1px solid #000', padding: 6, width: 100 }}>จำนวนเงิน<br/>Amount</th>
               </tr>
             </thead>
             <tbody>
@@ -272,14 +288,14 @@ const QuotationPrintPreview: React.FC<QuotationPrintPreviewProps> = ({
                 <tr key={idx}>
                   <td style={{ border: '1px solid #000', padding: 6, textAlign: 'center' }}>{idx + 1}</td>
                   <td style={{ border: '1px solid #000', padding: 6, textAlign: 'center' }}>{item.qty} {item.unit}</td>
-                  <td style={{ border: '1px solid #000', padding: 6 }}>{item.itemCode}</td>
+                  <td style={{ border: '1px solid #000', padding: 6, fontSize: 12 }}>{item.itemCode}</td>
                   <td style={{ border: '1px solid #000', padding: 6 }}>{item.itemName}</td>
                   <td style={{ border: '1px solid #000', padding: 6, textAlign: 'right' }}>{formatNumber(item.unitPrice)}</td>
                   <td style={{ border: '1px solid #000', padding: 6, textAlign: 'right' }}>{formatNumber(item.lineTotal)}</td>
                 </tr>
               ))}
               {/* Empty rows for spacing */}
-              {items.length < 10 && [...Array(10 - items.length)].map((_, idx) => (
+              {items.length < 8 && [...Array(8 - items.length)].map((_, idx) => (
                 <tr key={`empty-${idx}`}>
                   <td style={{ border: '1px solid #000', padding: 6, height: 25 }}>&nbsp;</td>
                   <td style={{ border: '1px solid #000', padding: 6 }}>&nbsp;</td>
@@ -298,7 +314,7 @@ const QuotationPrintPreview: React.FC<QuotationPrintPreviewProps> = ({
               <tr>
                 <td style={{ border: '1px solid #000', width: '70%', padding: 6 }} rowSpan={5}>
                   <div style={{ fontWeight: 'bold', textAlign: 'center', fontSize: 16 }}>
-                    {numberToThaiText(quotation.grandTotal)}
+                    ({numberToThaiText(quotation.grandTotal)})
                   </div>
                 </td>
                 <td style={{ border: '1px solid #000', padding: 6, textAlign: 'right' }}>ราคาสินค้ารวม</td>
@@ -317,33 +333,41 @@ const QuotationPrintPreview: React.FC<QuotationPrintPreviewProps> = ({
                 <td style={{ border: '1px solid #000', padding: 6, textAlign: 'right' }}>{formatNumber(quotation.taxAmount)}</td>
               </tr>
               <tr>
-                <td style={{ border: '1px solid #000', padding: 6, textAlign: 'right', fontWeight: 'bold' }}>ราคาสินค้ารวมทั้งสิ้น</td>
+                <td style={{ border: '1px solid #000', padding: 6, textAlign: 'right', fontWeight: 'bold' }}>รวมทั้งสิ้น / Grand Total</td>
                 <td style={{ border: '1px solid #000', padding: 6, textAlign: 'right', fontWeight: 'bold' }}>{formatNumber(quotation.grandTotal)}</td>
               </tr>
             </tbody>
           </table>
 
-          {/* Remark */}
-          <div style={{ border: '1px solid #000', padding: 8, marginBottom: 10, minHeight: 40 }}>
-            <strong>หมายเหตุ/Remark :</strong> {quotation.publicNote || ''}
-          </div>
+          {/* 4. Remark - แสดงเฉพาะเมื่อมีข้อมูล */}
+          {quotation.publicNote && (
+            <div style={{ border: '1px solid #000', padding: 8, marginBottom: 10, minHeight: 40 }}>
+              <strong>หมายเหตุ/Remark :</strong> {quotation.publicNote}
+            </div>
+          )}
 
-          {/* Signatures */}
+          {/* 5. Signatures - ลายเซ็นกรรมการจาก settings */}
           <table style={{ width: '100%', borderCollapse: 'collapse' }}>
             <tbody>
               <tr>
-                <td style={{ width: '50%', border: '1px solid #000', padding: 15, textAlign: 'center', verticalAlign: 'bottom', height: 100 }}>
-                  <div style={{ marginBottom: 30 }}>อนุมัติการสั่งซื้อ</div>
+                <td style={{ width: '50%', border: '1px solid #000', padding: 15, textAlign: 'center', verticalAlign: 'bottom', height: 120 }}>
+                  <div style={{ marginBottom: 40 }}>อนุมัติการสั่งซื้อ / Purchase Approved</div>
                   <div>(..........................................)</div>
-                  <div>วันที่......./......./.......</div>
+                  <div>วันที่/Date ......./......./.......</div>
                 </td>
-                <td style={{ width: '50%', border: '1px solid #000', padding: 15, textAlign: 'center', verticalAlign: 'bottom' }}>
-                  <div style={{ marginBottom: 5 }}>ขอแสดงความนับถืออย่างสูง</div>
-                  {sellerSettings.signatureUrl && (
-                    <img src={sellerSettings.signatureUrl} alt="signature" style={{ maxHeight: 50, marginBottom: 5 }} />
+                <td style={{ width: '50%', border: '1px solid #000', padding: 15, textAlign: 'center', verticalAlign: 'top' }}>
+                  <div style={{ marginBottom: 5 }}>ขอแสดงความนับถืออย่างสูง / Yours Sincerely</div>
+                  <div style={{ marginBottom: 5 }}>
+                    {companySettings.COMPANY_NAME_TH || 'บริษัท แสงวิทย์ ซายน์ จำกัด'}
+                  </div>
+                  {/* ลายเซ็นกรรมการ - จาก Company Settings */}
+                  {companySettings.COMPANY_SIGNATURE_URL ? (
+                    <img src={companySettings.COMPANY_SIGNATURE_URL} alt="MD Signature" style={{ maxHeight: 50, marginBottom: 5 }} />
+                  ) : (
+                    <div style={{ height: 50, marginBottom: 5 }}></div>
                   )}
-                  <div>(นายวิทยา แซ่ตั้ง)</div>
-                  <div>กรรมการผู้จัดการ</div>
+                  <div>({companySettings.COMPANY_MD_NAME || 'นายวิทยา แซ่ตั้ง'})</div>
+                  <div>{companySettings.COMPANY_MD_TITLE || 'กรรมการผู้จัดการ / Managing Director'}</div>
                 </td>
               </tr>
             </tbody>

@@ -38,4 +38,8 @@ export declare class QuotationService {
         withVariance: any[];
         notReady: any[];
     }>;
+    delete(id: number, userId: number): Promise<{
+        success: boolean;
+        message: string;
+    }>;
 }

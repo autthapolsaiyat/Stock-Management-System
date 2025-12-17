@@ -437,6 +437,15 @@ let QuotationService = class QuotationService {
         }
         return { ready, withVariance, notReady };
     }
+    async delete(id, userId) {
+        const quotation = await this.findOne(id);
+        if (!['CANCELLED', 'DRAFT'].includes(quotation.status)) {
+            throw new common_1.BadRequestException('ไม่สามารถลบใบเสนอราคาที่ยังไม่ได้ยกเลิกหรือไม่ใช่ฉบับร่าง');
+        }
+        await this.itemRepository.delete({ quotation: { id } });
+        await this.quotationRepository.delete(id);
+        return { success: true, message: 'ลบใบเสนอราคาสำเร็จ' };
+    }
 };
 exports.QuotationService = QuotationService;
 exports.QuotationService = QuotationService = __decorate([

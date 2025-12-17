@@ -485,4 +485,21 @@ export class QuotationService {
     
     return { ready, withVariance, notReady };
   }
+
+  async delete(id: number, userId: number) {
+    const quotation = await this.findOne(id);
+    
+    // Only allow delete if status is CANCELLED or DRAFT
+    if (!['CANCELLED', 'DRAFT'].includes(quotation.status)) {
+      throw new BadRequestException('ไม่สามารถลบใบเสนอราคาที่ยังไม่ได้ยกเลิกหรือไม่ใช่ฉบับร่าง');
+    }
+    
+    // Delete items first
+    await this.itemRepository.delete({ quotation: { id } });
+    
+    // Delete quotation
+    await this.quotationRepository.delete(id);
+    
+    return { success: true, message: 'ลบใบเสนอราคาสำเร็จ' };
+  }
 }
