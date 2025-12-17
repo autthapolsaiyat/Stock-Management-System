@@ -24,6 +24,12 @@ let UserSettingsController = class UserSettingsController {
     async getAll(req) {
         return this.settingsService.getAll(req.user.id);
     }
+    async getEmployees() {
+        return this.settingsService.getEmployeeList();
+    }
+    async getEmployeeById(id) {
+        return this.settingsService.getEmployeeById(id);
+    }
     async getSellerSettings(req) {
         return this.settingsService.getSellerSettings(req.user.id);
     }
@@ -59,6 +65,21 @@ __decorate([
     __metadata("design:paramtypes", [Object]),
     __metadata("design:returntype", Promise)
 ], UserSettingsController.prototype, "getAll", null);
+__decorate([
+    (0, common_1.Get)('employees'),
+    (0, swagger_1.ApiOperation)({ summary: 'Get all employees for seller selection' }),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", []),
+    __metadata("design:returntype", Promise)
+], UserSettingsController.prototype, "getEmployees", null);
+__decorate([
+    (0, common_1.Get)('employee/:id'),
+    (0, swagger_1.ApiOperation)({ summary: 'Get employee by ID' }),
+    __param(0, (0, common_1.Param)('id', common_1.ParseIntPipe)),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [Number]),
+    __metadata("design:returntype", Promise)
+], UserSettingsController.prototype, "getEmployeeById", null);
 __decorate([
     (0, common_1.Get)('seller'),
     (0, swagger_1.ApiOperation)({ summary: 'Get seller settings' }),

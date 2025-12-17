@@ -18,8 +18,9 @@ const typeorm_1 = require("@nestjs/typeorm");
 const typeorm_2 = require("typeorm");
 const user_setting_entity_1 = require("./entities/user-setting.entity");
 let UserSettingsService = class UserSettingsService {
-    constructor(settingsRepository) {
+    constructor(settingsRepository, dataSource) {
         this.settingsRepository = settingsRepository;
+        this.dataSource = dataSource;
     }
     async getAll(userId) {
         const settings = await this.settingsRepository.find({ where: { userId } });
@@ -72,9 +73,67 @@ let UserSettingsService = class UserSettingsService {
     async delete(userId, key) {
         await this.settingsRepository.delete({ userId, settingKey: key });
     }
+    async getEmployeeList() {
+        const employees = await this.dataSource.query(`SELECT id, employee_code, full_name_th, nickname, position, phone, email, signature_url
+       FROM employees 
+       WHERE is_active = true
+       ORDER BY full_name_th`);
+        return employees;
+    }
+    async getEmployeeById(id) {
+        const employees = await this.dataSource.query(`SELECT id, employee_code, full_name_th, nickname, position, phone, email, signature_url
+       FROM employees 
+       WHERE id = $1`, [id]);
+        if (employees && employees.length > 0) {
+            const emp = employees[0];
+            const nameParts = (emp.full_name_th || '').trim().split(/\s+/);
+            const firstName = nameParts[0] || '';
+            const lastName = nameParts.slice(1).join(' ') || '';
+            return {
+                id: emp.id,
+                employeeCode: emp.employee_code,
+                name: firstName,
+                surname: lastName,
+                nickname: emp.nickname || '',
+                position: emp.position || '',
+                phone: emp.phone || '',
+                email: emp.email || '',
+                signatureUrl: emp.signature_url || '',
+            };
+        }
+        return null;
+    }
     async getSellerSettings(userId) {
         const settings = await this.get(userId, 'seller');
-        return settings || {
+        if (settings && settings.name) {
+            return settings;
+        }
+        const employee = await this.dataSource.query(`SELECT e.full_name_th, e.nickname, e.phone, e.email, e.signature_url, e.position
+       FROM employees e 
+       WHERE e.user_id = $1`, [userId]);
+        if (employee && employee.length > 0) {
+            const emp = employee[0];
+            const nameParts = (emp.full_name_th || '').trim().split(/\s+/);
+            const firstName = nameParts[0] || '';
+            const lastName = nameParts.slice(1).join(' ') || '';
+            return {
+                name: firstName,
+                surname: lastName,
+                nickname: emp.nickname || '',
+                phone: emp.phone || '',
+                email: emp.email || '',
+                signatureUrl: emp.signature_url || '',
+                signaturePosition: emp.position || 'ผู้เสนอราคา',
+                displayOptions: {
+                    fullName: true,
+                    nickname: false,
+                    phone: true,
+                    email: true,
+                    signature: true,
+                },
+            };
+        }
+        return {
             name: '',
             surname: '',
             nickname: '',
@@ -107,6 +166,7 @@ exports.UserSettingsService = UserSettingsService;
 exports.UserSettingsService = UserSettingsService = __decorate([
     (0, common_1.Injectable)(),
     __param(0, (0, typeorm_1.InjectRepository)(user_setting_entity_1.UserSettingEntity)),
-    __metadata("design:paramtypes", [typeorm_2.Repository])
+    __metadata("design:paramtypes", [typeorm_2.Repository,
+        typeorm_2.DataSource])
 ], UserSettingsService);
 //# sourceMappingURL=user-settings.service.js.map

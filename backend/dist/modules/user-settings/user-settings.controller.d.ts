@@ -3,6 +3,8 @@ export declare class UserSettingsController {
     private settingsService;
     constructor(settingsService: UserSettingsService);
     getAll(req: any): Promise<Record<string, any>>;
+    getEmployees(): Promise<any[]>;
+    getEmployeeById(id: number): Promise<any>;
     getSellerSettings(req: any): Promise<any>;
     updateSellerSettings(req: any, body: any): Promise<{
         success: boolean;

@@ -1,4 +1,4 @@
-import { Controller, Get, Put, Delete, Param, Body, UseGuards, Request } from '@nestjs/common';
+import { Controller, Get, Put, Delete, Param, Body, UseGuards, Request, ParseIntPipe } from '@nestjs/common';
 import { ApiTags, ApiBearerAuth, ApiOperation } from '@nestjs/swagger';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { UserSettingsService } from './user-settings.service';
@@ -14,6 +14,18 @@ export class UserSettingsController {
   @ApiOperation({ summary: 'Get all settings for current user' })
   async getAll(@Request() req: any) {
     return this.settingsService.getAll(req.user.id);
+  }
+
+  @Get('employees')
+  @ApiOperation({ summary: 'Get all employees for seller selection' })
+  async getEmployees() {
+    return this.settingsService.getEmployeeList();
+  }
+
+  @Get('employee/:id')
+  @ApiOperation({ summary: 'Get employee by ID' })
+  async getEmployeeById(@Param('id', ParseIntPipe) id: number) {
+    return this.settingsService.getEmployeeById(id);
   }
 
   @Get('seller')

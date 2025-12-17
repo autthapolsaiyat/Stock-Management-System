@@ -186,6 +186,8 @@ export const userSettingsApi = {
   getSeller: () => api.get('/api/user-settings/seller'),
   updateSeller: (data: any) => api.put('/api/user-settings/seller', data),
   getQuotationDefaults: () => api.get('/api/user-settings/quotation-defaults'),
+  getEmployees: () => api.get("/api/user-settings/employees"),
+  getEmployeeById: (id: number) => api.get(`/api/user-settings/employee/${id}`),
   updateQuotationDefaults: (data: any) => api.put('/api/user-settings/quotation-defaults', data),
 };
 

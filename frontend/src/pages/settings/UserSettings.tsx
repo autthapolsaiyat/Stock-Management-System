@@ -1,9 +1,10 @@
 import React, { useState, useEffect } from 'react';
-import { Card, Form, Input, Button, Switch, Row, Col, Upload, message, Tabs, Divider, InputNumber } from 'antd';
+import { Card, Form, Input, Button, Switch, Row, Col, Upload, message, Tabs, Divider, InputNumber, Select } from 'antd';
 import { SaveOutlined, UploadOutlined, UserOutlined, FileTextOutlined } from '@ant-design/icons';
 import { userSettingsApi } from '../../services/api';
 
 const { TextArea } = Input;
+const { Option } = Select;
 
 const UserSettings: React.FC = () => {
   const [sellerForm] = Form.useForm();
@@ -11,10 +12,22 @@ const UserSettings: React.FC = () => {
   const [loading, setLoading] = useState(false);
   const [saving, setSaving] = useState(false);
   const [signatureUrl, setSignatureUrl] = useState<string>('');
+  const [employees, setEmployees] = useState<any[]>([]);
+  const [selectedEmployeeId, setSelectedEmployeeId] = useState<number | null>(null);
 
   useEffect(() => {
     loadSettings();
+    loadEmployees();
   }, []);
+
+  const loadEmployees = async () => {
+    try {
+      const res = await userSettingsApi.getEmployees();
+      setEmployees(res.data || []);
+    } catch (error) {
+      console.error('Load employees error:', error);
+    }
+  };
 
   const loadSettings = async () => {
     setLoading(true);
@@ -34,6 +47,29 @@ const UserSettings: React.FC = () => {
     }
   };
 
+  const handleEmployeeSelect = async (employeeId: number) => {
+    setSelectedEmployeeId(employeeId);
+    try {
+      const res = await userSettingsApi.getEmployeeById(employeeId);
+      if (res.data) {
+        sellerForm.setFieldsValue({
+          name: res.data.name,
+          surname: res.data.surname,
+          nickname: res.data.nickname,
+          phone: res.data.phone,
+          email: res.data.email,
+          signaturePosition: res.data.position || 'ผู้เสนอราคา',
+        });
+        if (res.data.signatureUrl) {
+          setSignatureUrl(res.data.signatureUrl);
+        }
+        message.success('โหลดข้อมูลพนักงานสำเร็จ');
+      }
+    } catch (error) {
+      message.error('ไม่สามารถโหลดข้อมูลพนักงานได้');
+    }
+  };
+
   const handleSaveSeller = async () => {
     try {
       const values = await sellerForm.validateFields();
@@ -42,6 +78,7 @@ const UserSettings: React.FC = () => {
       await userSettingsApi.updateSeller({
         ...values,
         signatureUrl,
+        employeeId: selectedEmployeeId,
       });
       
       message.success('บันทึกข้อมูลผู้ขายสำเร็จ');
@@ -111,6 +148,32 @@ const UserSettings: React.FC = () => {
       label: <span><UserOutlined /> ข้อมูลผู้ขาย</span>,
       children: (
         <Card loading={loading}>
+          {/* Employee Selection */}
+          <div style={{ marginBottom: 24, padding: 16, background: 'rgba(24, 144, 255, 0.1)', borderRadius: 8 }}>
+            <div style={{ marginBottom: 8, fontWeight: 500 }}>
+              🔍 เลือกพนักงานเพื่อโหลดข้อมูล
+            </div>
+            <Select
+              placeholder="เลือกพนักงาน..."
+              style={{ width: '100%' }}
+              showSearch
+              optionFilterProp="children"
+              onChange={handleEmployeeSelect}
+              value={selectedEmployeeId}
+              allowClear
+              onClear={() => setSelectedEmployeeId(null)}
+            >
+              {employees.map((emp) => (
+                <Option key={emp.id} value={emp.id}>
+                  {emp.employee_code} - {emp.full_name_th} {emp.nickname ? `(${emp.nickname})` : ''} - {emp.position || 'ไม่ระบุตำแหน่ง'}
+                </Option>
+              ))}
+            </Select>
+            <div style={{ marginTop: 8, fontSize: 12, color: 'rgba(255,255,255,0.5)' }}>
+              เลือกพนักงานแล้วข้อมูลจะถูกโหลดมาแสดงในฟอร์มด้านล่าง สามารถแก้ไขเพิ่มเติมได้ก่อนบันทึก
+            </div>
+          </div>
+
           <Form form={sellerForm} layout="vertical">
             <Row gutter={16}>
               <Col xs={24} md={8}>
