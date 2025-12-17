@@ -277,6 +277,7 @@ let QuotationService = class QuotationService {
                 quotation.totalItems = dto.items.length;
                 quotation.requiresMarginApproval = hasLowMargin;
             }
+            delete quotation.items;
             await queryRunner.manager.save(quotation);
             await queryRunner.commitTransaction();
             return this.findOne(id);

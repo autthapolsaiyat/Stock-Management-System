@@ -297,6 +297,7 @@ export class QuotationService {
         quotation.requiresMarginApproval = hasLowMargin;
       }
       
+      delete quotation.items;
       await queryRunner.manager.save(quotation);
       await queryRunner.commitTransaction();
       
