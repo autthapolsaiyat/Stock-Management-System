@@ -49,7 +49,6 @@ const QuotationPrintPreview: React.FC<QuotationPrintPreviewProps> = ({
   const loadSettings = async () => {
     setLoading(true);
     try {
-      // Load all company categories
       const [companyThRes, companyEnRes, companyRes, sellerRes] = await Promise.all([
         systemSettingsApi.getByCategory('COMPANY_TH'),
         systemSettingsApi.getByCategory('COMPANY_EN'),
@@ -57,16 +56,12 @@ const QuotationPrintPreview: React.FC<QuotationPrintPreviewProps> = ({
         userSettingsApi.getSeller(),
       ]);
       
-      // Convert arrays to object
       const companyMap: any = {};
       [...(companyThRes.data || []), ...(companyEnRes.data || []), ...(companyRes.data || [])].forEach((s: any) => {
         companyMap[s.settingKey] = s.settingValue;
       });
       setCompanySettings(companyMap);
       setSellerSettings(sellerRes.data || {});
-      
-      console.log('Company Settings:', companyMap);
-      console.log('Seller Settings:', sellerRes.data);
     } catch (error) {
       console.error('Load settings error:', error);
     } finally {
@@ -171,7 +166,6 @@ const QuotationPrintPreview: React.FC<QuotationPrintPreviewProps> = ({
     return num.toLocaleString('th-TH', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
   };
 
-  // 3. ชื่อพนักงานขาย
   const getSellerName = () => {
     const parts = [];
     if (sellerSettings.name) parts.push(sellerSettings.name);
@@ -199,36 +193,34 @@ const QuotationPrintPreview: React.FC<QuotationPrintPreviewProps> = ({
       ) : (
         <div id="quotation-print-content" style={{ padding: 20, background: '#fff', color: '#000', fontFamily: 'Sarabun, sans-serif' }}>
           
-          {/* 2. Header - Logo ตรงกลาง */}
-          {companySettings.COMPANY_LOGO_URL && (
-            <div style={{ textAlign: 'center', marginBottom: 10 }}>
-              <img src={companySettings.COMPANY_LOGO_URL} alt="Company Logo" style={{ maxHeight: 80 }} />
-            </div>
-          )}
-
-          {/* 1. Header - Company Info ครบทั้งไทยและอังกฤษ */}
+          {/* Header - Company Info with Logo in center */}
           <table style={{ width: '100%', borderCollapse: 'collapse', marginBottom: 10 }}>
             <tbody>
               <tr>
-                <td style={{ width: '50%', verticalAlign: 'top', border: 'none', paddingRight: 20 }}>
-                  <div style={{ fontWeight: 'bold', fontSize: 16 }}>
+                <td style={{ width: '40%', verticalAlign: 'top', border: 'none', paddingRight: 10 }}>
+                  <div style={{ fontWeight: 'bold', fontSize: 14 }}>
                     {companySettings.COMPANY_NAME_TH || 'บริษัท แสงวิทย์ ซายน์ จำกัด'}
                   </div>
-                  <div>{companySettings.COMPANY_ADDRESS1_TH || '123/4-5 ซอยสมเด็จพระปิ่นเกล้า 9 ถ.สมเด็จพระปิ่นเกล้า'}</div>
-                  <div>{companySettings.COMPANY_ADDRESS2_TH || 'แขวงอรุณอมรินทร์ เขตบางกอกน้อย'} {companySettings.COMPANY_ADDRESS3_TH || 'กรุงเทพฯ 10700'}</div>
-                  <div>โทร. {companySettings.COMPANY_PHONE_TH || '(662) 886-9200-7'} แฟกซ์. {companySettings.COMPANY_FAX_TH || '(662) 433-9168'}</div>
-                  <div>E-mail : {companySettings.COMPANY_EMAIL || 'info@saengvithscience.co.th'}</div>
-                  <div>เลขประจำตัวผู้เสียภาษีอากร เลขที่ {companySettings.COMPANY_TAX_ID || companySettings.COMPANY_TAX_ID_TH || '0105545053424'}</div>
+                  <div style={{ fontSize: 12 }}>{companySettings.COMPANY_ADDRESS1_TH || '123/4-5 ซอยสมเด็จพระปิ่นเกล้า 9 ถ.สมเด็จพระปิ่นเกล้า'}</div>
+                  <div style={{ fontSize: 12 }}>{companySettings.COMPANY_ADDRESS2_TH || 'แขวงอรุณอมรินทร์ เขตบางกอกน้อย'} {companySettings.COMPANY_ADDRESS3_TH || 'กรุงเทพฯ 10700'}</div>
+                  <div style={{ fontSize: 12 }}>โทร. {companySettings.COMPANY_PHONE_TH || '(662) 886-9200-7'} แฟกซ์. {companySettings.COMPANY_FAX_TH || '(662) 433-9168'}</div>
+                  <div style={{ fontSize: 12 }}>E-mail : {companySettings.COMPANY_EMAIL || 'info@saengvithscience.co.th'}</div>
+                  <div style={{ fontSize: 12 }}>เลขประจำตัวผู้เสียภาษีอากร {companySettings.COMPANY_TAX_ID || '0105545053424'}</div>
                 </td>
-                <td style={{ width: '50%', verticalAlign: 'top', border: 'none', textAlign: 'right' }}>
-                  <div style={{ fontWeight: 'bold', fontSize: 16 }}>
+                <td style={{ width: '20%', verticalAlign: 'middle', border: 'none', textAlign: 'center' }}>
+                  {companySettings.COMPANY_LOGO_URL && (
+                    <img src={companySettings.COMPANY_LOGO_URL} alt="Company Logo" style={{ maxHeight: 90, maxWidth: 130 }} />
+                  )}
+                </td>
+                <td style={{ width: '40%', verticalAlign: 'top', border: 'none', textAlign: 'right', paddingLeft: 10 }}>
+                  <div style={{ fontWeight: 'bold', fontSize: 14 }}>
                     {companySettings.COMPANY_NAME_EN || 'Saengvith Science Co.,Ltd.'}
                   </div>
-                  <div>{companySettings.COMPANY_ADDRESS1_EN || '123/4-5 Soi Somdetphrapinklao 9, Somdetphrapinklao Road'}</div>
-                  <div>{companySettings.COMPANY_ADDRESS2_EN || 'Arun Amarin, Bangkoknoi, Bangkok 10700 Thailand'}</div>
-                  <div>Tel. {companySettings.COMPANY_PHONE_EN || '(662) 886-9200-7'} Fax. {companySettings.COMPANY_FAX_EN || '(662) 433-9168'}</div>
-                  <div>E-mail : {companySettings.COMPANY_EMAIL || 'info@saengvithscience.co.th'}</div>
-                  <div>Tax ID {companySettings.COMPANY_TAX_ID || companySettings.COMPANY_TAX_ID_EN || '0105545053424'}</div>
+                  <div style={{ fontSize: 12 }}>{companySettings.COMPANY_ADDRESS1_EN || '123/4-5 Soi Somdetphrapinklao 9, Somdetphrapinklao Road'}</div>
+                  <div style={{ fontSize: 12 }}>{companySettings.COMPANY_ADDRESS2_EN || 'Arun Amarin, Bangkoknoi, Bangkok 10700 Thailand'}</div>
+                  <div style={{ fontSize: 12 }}>Tel. {companySettings.COMPANY_PHONE_EN || '(662) 886-9200-7'} Fax. {companySettings.COMPANY_FAX_EN || '(662) 433-9168'}</div>
+                  <div style={{ fontSize: 12 }}>E-mail : {companySettings.COMPANY_EMAIL || 'info@saengvithscience.co.th'}</div>
+                  <div style={{ fontSize: 12 }}>Tax ID {companySettings.COMPANY_TAX_ID || '0105545053424'}</div>
                 </td>
               </tr>
             </tbody>
@@ -288,7 +280,7 @@ const QuotationPrintPreview: React.FC<QuotationPrintPreviewProps> = ({
                 <tr key={idx}>
                   <td style={{ border: '1px solid #000', padding: 6, textAlign: 'center' }}>{idx + 1}</td>
                   <td style={{ border: '1px solid #000', padding: 6, textAlign: 'center' }}>{item.qty} {item.unit}</td>
-                  <td style={{ border: '1px solid #000', padding: 6, fontSize: 12 }}>{item.itemCode}</td>
+                  <td style={{ border: '1px solid #000', padding: 6, fontSize: 11 }}>{item.itemCode}</td>
                   <td style={{ border: '1px solid #000', padding: 6 }}>{item.itemName}</td>
                   <td style={{ border: '1px solid #000', padding: 6, textAlign: 'right' }}>{formatNumber(item.unitPrice)}</td>
                   <td style={{ border: '1px solid #000', padding: 6, textAlign: 'right' }}>{formatNumber(item.lineTotal)}</td>
@@ -339,14 +331,14 @@ const QuotationPrintPreview: React.FC<QuotationPrintPreviewProps> = ({
             </tbody>
           </table>
 
-          {/* 4. Remark - แสดงเฉพาะเมื่อมีข้อมูล */}
+          {/* Remark - แสดงเฉพาะเมื่อมีข้อมูล */}
           {quotation.publicNote && (
             <div style={{ border: '1px solid #000', padding: 8, marginBottom: 10, minHeight: 40 }}>
               <strong>หมายเหตุ/Remark :</strong> {quotation.publicNote}
             </div>
           )}
 
-          {/* 5. Signatures - ลายเซ็นกรรมการจาก settings */}
+          {/* Signatures */}
           <table style={{ width: '100%', borderCollapse: 'collapse' }}>
             <tbody>
               <tr>
@@ -360,12 +352,14 @@ const QuotationPrintPreview: React.FC<QuotationPrintPreviewProps> = ({
                   <div style={{ marginBottom: 5 }}>
                     {companySettings.COMPANY_NAME_TH || 'บริษัท แสงวิทย์ ซายน์ จำกัด'}
                   </div>
-                  {/* ลายเซ็นกรรมการ - จาก Company Settings */}
-                  {companySettings.COMPANY_SIGNATURE_URL ? (
-                    <img src={companySettings.COMPANY_SIGNATURE_URL} alt="MD Signature" style={{ maxHeight: 50, marginBottom: 5 }} />
-                  ) : (
-                    <div style={{ height: 50, marginBottom: 5 }}></div>
-                  )}
+                  {/* ลายเซ็นกรรมการ */}
+                  <div style={{ minHeight: 50, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                    {companySettings.COMPANY_SIGNATURE_URL ? (
+                      <img src={companySettings.COMPANY_SIGNATURE_URL} alt="MD Signature" style={{ maxHeight: 50 }} />
+                    ) : (
+                      <div style={{ color: '#ccc', fontSize: 12 }}>(ลายเซ็น)</div>
+                    )}
+                  </div>
                   <div>({companySettings.COMPANY_MD_NAME || 'นายวิทยา แซ่ตั้ง'})</div>
                   <div>{companySettings.COMPANY_MD_TITLE || 'กรรมการผู้จัดการ / Managing Director'}</div>
                 </td>

@@ -22,7 +22,7 @@ let UserSettingsController = class UserSettingsController {
         this.settingsService = settingsService;
     }
     async getAll(req) {
-        return this.settingsService.getAll(req.user.id);
+        return this.settingsService.getAll(req.user.sub);
     }
     async getEmployees() {
         return this.settingsService.getEmployeeList();
@@ -31,28 +31,28 @@ let UserSettingsController = class UserSettingsController {
         return this.settingsService.getEmployeeById(id);
     }
     async getSellerSettings(req) {
-        return this.settingsService.getSellerSettings(req.user.id);
+        return this.settingsService.getSellerSettings(req.user.sub);
     }
     async updateSellerSettings(req, body) {
-        await this.settingsService.set(req.user.id, 'seller', body);
+        await this.settingsService.set(req.user.sub, 'seller', body);
         return { success: true, message: 'บันทึกข้อมูลผู้ขายสำเร็จ' };
     }
     async getQuotationDefaults(req) {
-        return this.settingsService.getQuotationDefaults(req.user.id);
+        return this.settingsService.getQuotationDefaults(req.user.sub);
     }
     async updateQuotationDefaults(req, body) {
-        await this.settingsService.set(req.user.id, 'quotationDefaults', body);
+        await this.settingsService.set(req.user.sub, 'quotationDefaults', body);
         return { success: true, message: 'บันทึกค่าเริ่มต้นสำเร็จ' };
     }
     async get(req, key) {
-        return this.settingsService.get(req.user.id, key);
+        return this.settingsService.get(req.user.sub, key);
     }
     async set(req, key, body) {
-        await this.settingsService.set(req.user.id, key, body.value);
+        await this.settingsService.set(req.user.sub, key, body.value);
         return { success: true };
     }
     async delete(req, key) {
-        await this.settingsService.delete(req.user.id, key);
+        await this.settingsService.delete(req.user.sub, key);
         return { success: true };
     }
 };
