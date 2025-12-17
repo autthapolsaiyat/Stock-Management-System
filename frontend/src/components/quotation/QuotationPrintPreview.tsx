@@ -24,6 +24,7 @@ interface QuotationPrintPreviewProps {
     afterDiscount: number;
     taxAmount: number;
     grandTotal: number;
+    discountDisplayMode?: string;
   };
   items: QuotationItem[];
   customer: any;
@@ -174,6 +175,9 @@ const QuotationPrintPreview: React.FC<QuotationPrintPreviewProps> = ({
     return parts.length > 0 ? parts.join(' ') : '-';
   };
 
+  // Check if discount should be hidden
+  const hideDiscount = quotation.discountDisplayMode === 'HIDE';
+
   return (
     <Modal
       title="ตัวอย่างใบเสนอราคา"
@@ -304,22 +308,28 @@ const QuotationPrintPreview: React.FC<QuotationPrintPreviewProps> = ({
           <table style={{ width: '100%', borderCollapse: 'collapse', marginBottom: 10 }}>
             <tbody>
               <tr>
-                <td style={{ border: '1px solid #000', width: '70%', padding: 6 }} rowSpan={5}>
+                <td style={{ border: '1px solid #000', width: '70%', padding: 6 }} rowSpan={hideDiscount ? 3 : 5}>
                   <div style={{ fontWeight: 'bold', textAlign: 'center', fontSize: 16 }}>
                     ({numberToThaiText(quotation.grandTotal)})
                   </div>
                 </td>
                 <td style={{ border: '1px solid #000', padding: 6, textAlign: 'right' }}>ราคาสินค้ารวม</td>
-                <td style={{ border: '1px solid #000', padding: 6, textAlign: 'right', width: 100 }}>{formatNumber(quotation.subtotal)}</td>
+                <td style={{ border: '1px solid #000', padding: 6, textAlign: 'right', width: 100 }}>
+                  {formatNumber(hideDiscount ? quotation.afterDiscount : quotation.subtotal)}
+                </td>
               </tr>
-              <tr>
-                <td style={{ border: '1px solid #000', padding: 6, textAlign: 'right' }}>ส่วนลด</td>
-                <td style={{ border: '1px solid #000', padding: 6, textAlign: 'right' }}>{formatNumber(quotation.discountAmount)}</td>
-              </tr>
-              <tr>
-                <td style={{ border: '1px solid #000', padding: 6, textAlign: 'right' }}>ราคาหลังหักส่วนลด</td>
-                <td style={{ border: '1px solid #000', padding: 6, textAlign: 'right' }}>{formatNumber(quotation.afterDiscount)}</td>
-              </tr>
+              {!hideDiscount && (
+                <tr>
+                  <td style={{ border: '1px solid #000', padding: 6, textAlign: 'right' }}>ส่วนลด</td>
+                  <td style={{ border: '1px solid #000', padding: 6, textAlign: 'right' }}>{formatNumber(quotation.discountAmount)}</td>
+                </tr>
+              )}
+              {!hideDiscount && (
+                <tr>
+                  <td style={{ border: '1px solid #000', padding: 6, textAlign: 'right' }}>ราคาหลังหักส่วนลด</td>
+                  <td style={{ border: '1px solid #000', padding: 6, textAlign: 'right' }}>{formatNumber(quotation.afterDiscount)}</td>
+                </tr>
+              )}
               <tr>
                 <td style={{ border: '1px solid #000', padding: 6, textAlign: 'right' }}>ภาษีมูลค่าเพิ่ม 7%</td>
                 <td style={{ border: '1px solid #000', padding: 6, textAlign: 'right' }}>{formatNumber(quotation.taxAmount)}</td>

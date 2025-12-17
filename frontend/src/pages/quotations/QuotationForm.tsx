@@ -812,6 +812,7 @@ const QuotationForm: React.FC = () => {
           contactPhone: form.getFieldValue('contactPhone'),
           contactEmail: form.getFieldValue('contactEmail'),
           publicNote: form.getFieldValue('publicNote'),
+          discountDisplayMode: form.getFieldValue('discountDisplayMode'),
           ...summary,
         }}
         items={items}
