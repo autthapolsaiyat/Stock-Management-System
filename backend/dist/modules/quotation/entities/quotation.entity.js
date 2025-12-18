@@ -56,6 +56,14 @@ __decorate([
     __metadata("design:type", String)
 ], QuotationEntity.prototype, "contactPerson", void 0);
 __decorate([
+    (0, typeorm_1.Column)({ name: 'contact_phone', type: 'varchar', length: 50, nullable: true }),
+    __metadata("design:type", String)
+], QuotationEntity.prototype, "contactPhone", void 0);
+__decorate([
+    (0, typeorm_1.Column)({ name: 'contact_email', type: 'varchar', length: 100, nullable: true }),
+    __metadata("design:type", String)
+], QuotationEntity.prototype, "contactEmail", void 0);
+__decorate([
     (0, typeorm_1.Column)({ name: 'doc_date', type: 'date' }),
     __metadata("design:type", Date)
 ], QuotationEntity.prototype, "docDate", void 0);

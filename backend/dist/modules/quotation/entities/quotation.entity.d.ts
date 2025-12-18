@@ -10,6 +10,8 @@ export declare class QuotationEntity {
     customerName: string;
     customerAddress: string;
     contactPerson: string;
+    contactPhone: string;
+    contactEmail: string;
     docDate: Date;
     validUntil: Date;
     priceValidityDays: number;

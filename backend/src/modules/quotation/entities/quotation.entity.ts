@@ -34,6 +34,12 @@ export class QuotationEntity {
   @Column({ name: 'contact_person', type: 'varchar', length: 100, nullable: true })
   contactPerson: string;
 
+  @Column({ name: 'contact_phone', type: 'varchar', length: 50, nullable: true })
+  contactPhone: string;
+
+  @Column({ name: 'contact_email', type: 'varchar', length: 100, nullable: true })
+  contactEmail: string;
+
   @Column({ name: 'doc_date', type: 'date' })
   docDate: Date;
 
