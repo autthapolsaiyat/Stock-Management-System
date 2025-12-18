@@ -14,9 +14,10 @@ import { quotationsApi, purchaseOrdersApi, salesInvoicesApi } from '../../servic
 import type { Quotation, QuotationItem, QuotationType, QuotationStatus } from '../../types/quotation';
 
 const typeLabels: Record<QuotationType, { text: string; color: string; icon: string }> = {
-  STANDARD: { text: 'ทั่วไป', color: 'blue', icon: '📦' },
+  STANDARD: { text: 'Accustandard/PT', color: 'blue', icon: '🧪' },
   FORENSIC: { text: 'นิติวิทยาศาสตร์', color: 'purple', icon: '🔬' },
   MAINTENANCE: { text: 'บำรุงรักษา', color: 'green', icon: '🔧' },
+  LAB: { text: 'เครื่องมือวิทยาศาสตร์', color: 'orange', icon: '🏭' },
 };
 
 const statusLabels: Record<QuotationStatus, { text: string; color: string }> = {

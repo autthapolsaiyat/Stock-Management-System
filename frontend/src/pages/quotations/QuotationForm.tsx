@@ -349,9 +349,10 @@ const QuotationForm: React.FC = () => {
   const getTypeLabel = () => {
     const type = userQuotationType || 'STANDARD';
     const labels: Record<string, string> = {
-      STANDARD: '📦 ทั่วไป (AccuStandard/PT)',
+      STANDARD: '🧪 Accustandard/PT',
       FORENSIC: '🔬 นิติวิทยาศาสตร์',
       MAINTENANCE: '🔧 บำรุงรักษา',
+      LAB: '🏭 เครื่องมือวิทยาศาสตร์',
     };
     return labels[type] || type;
   };
@@ -486,9 +487,10 @@ const QuotationForm: React.FC = () => {
                   <Col span={24}>
                     <Form.Item label="ประเภท" name="quotationType">
                       <Radio.Group>
-                        <Radio.Button value="STANDARD">📦 ทั่วไป</Radio.Button>
+                        <Radio.Button value="STANDARD">🧪 Accustandard/PT</Radio.Button>
                         <Radio.Button value="FORENSIC">🔬 นิติวิทยาศาสตร์</Radio.Button>
                         <Radio.Button value="MAINTENANCE">🔧 บำรุงรักษา</Radio.Button>
+                        <Radio.Button value="LAB">🏭 เครื่องมือวิทยาศาสตร์</Radio.Button>
                       </Radio.Group>
                     </Form.Item>
                   </Col>

@@ -1,5 +1,5 @@
 // Quotation Types
-export type QuotationType = 'STANDARD' | 'FORENSIC' | 'MAINTENANCE';
+export type QuotationType = 'STANDARD' | 'FORENSIC' | 'MAINTENANCE' | 'LAB';
 export type QuotationStatus = 'DRAFT' | 'PENDING' | 'APPROVED' | 'SENT' | 'CONFIRMED' | 'PARTIALLY_CLOSED' | 'CLOSED' | 'CANCELLED';
 export type ItemStatus = 'PENDING' | 'ORDERED' | 'PARTIAL' | 'RECEIVED' | 'SOLD' | 'CANCELLED';
 export type DiscountDisplayMode = 'SHOW' | 'HIDE' | 'NONE';

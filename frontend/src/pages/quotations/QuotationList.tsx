@@ -13,9 +13,10 @@ import { quotationsApi } from '../../services/api';
 const { Option } = Select;
 
 const typeLabels: Record<string, { text: string; color: string; icon: string }> = {
-  STANDARD: { text: 'ทั่วไป', color: 'blue', icon: '📦' },
+  STANDARD: { text: 'Accustandard/PT', color: 'blue', icon: '🧪' },
   FORENSIC: { text: 'นิติวิทยาศาสตร์', color: 'purple', icon: '🔬' },
   MAINTENANCE: { text: 'บำรุงรักษา', color: 'green', icon: '🔧' },
+  LAB: { text: 'เครื่องมือวิทยาศาสตร์', color: 'orange', icon: '🏭' },
 };
 
 const statusLabels: Record<string, { text: string; color: string }> = {
@@ -289,9 +290,10 @@ const QuotationList: React.FC = () => {
             style={{ width: 180 }}
             allowClear
           >
-            <Option value="STANDARD">📦 ทั่วไป</Option>
+            <Option value="STANDARD">🧪 Accustandard/PT</Option>
             <Option value="FORENSIC">🔬 นิติวิทยาศาสตร์</Option>
             <Option value="MAINTENANCE">🔧 บำรุงรักษา</Option>
+            <Option value="LAB">🏭 เครื่องมือวิทยาศาสตร์</Option>
           </Select>
           <Select
             placeholder="สถานะ"
