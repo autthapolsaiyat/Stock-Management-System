@@ -5,8 +5,9 @@ import {
 } from 'antd';
 import {
   PlusOutlined, SearchOutlined, EyeOutlined, EditOutlined,
-  CloseCircleOutlined, DeleteOutlined, FileTextOutlined
+  CloseCircleOutlined, DeleteOutlined, FileTextOutlined, PrinterOutlined
 } from '@ant-design/icons';
+import QuotationPrintPreview from '../../components/quotation/QuotationPrintPreview';
 import { quotationsApi } from '../../services/api';
 
 const { Option } = Select;
@@ -35,10 +36,15 @@ interface QuotationData {
   customerName?: string;
   docDate?: string;
   grandTotal?: number;
+  subtotal?: number;
+  discountAmount?: number;
+  afterDiscount?: number;
+  taxAmount?: number;
   expectedMarginPercent?: number;
   requiresMarginApproval?: boolean;
   marginApproved?: boolean;
   status?: string;
+  items?: any[];
 }
 
 const QuotationList: React.FC = () => {
@@ -48,6 +54,9 @@ const QuotationList: React.FC = () => {
   const [searchText, setSearchText] = useState('');
   const [filterType, setFilterType] = useState<string>('');
   const [filterStatus, setFilterStatus] = useState<string>('');
+  const [printPreviewOpen, setPrintPreviewOpen] = useState(false);
+  const [selectedQuotation, setSelectedQuotation] = useState<QuotationData | null>(null);
+  const [loadingPrint, setLoadingPrint] = useState(false);
 
   useEffect(() => {
     fetchQuotations();
@@ -87,6 +96,20 @@ const QuotationList: React.FC = () => {
       fetchQuotations();
     } catch (error) {
       message.error('ไม่สามารถลบได้');
+    }
+  };
+
+  const handlePrint = async (record: QuotationData) => {
+    setLoadingPrint(true);
+    try {
+      // Fetch full quotation data with items
+      const response = await quotationsApi.getById(record.id);
+      setSelectedQuotation(response.data);
+      setPrintPreviewOpen(true);
+    } catch (error) {
+      message.error('ไม่สามารถโหลดข้อมูลใบเสนอราคาได้');
+    } finally {
+      setLoadingPrint(false);
     }
   };
 
@@ -174,7 +197,7 @@ const QuotationList: React.FC = () => {
     {
       title: 'จัดการ',
       key: 'actions',
-      width: 180,
+      width: 200,
       render: (_: any, record: QuotationData) => (
         <Space size="small">
           <Tooltip title="ดูรายละเอียด">
@@ -182,6 +205,14 @@ const QuotationList: React.FC = () => {
               type="text"
               icon={<EyeOutlined />}
               onClick={() => navigate(`/quotations/${record.id}`)}
+            />
+          </Tooltip>
+          <Tooltip title="พิมพ์">
+            <Button
+              type="text"
+              icon={<PrinterOutlined />}
+              loading={loadingPrint}
+              onClick={() => handlePrint(record)}
             />
           </Tooltip>
           {record.status === 'DRAFT' && (
@@ -197,7 +228,7 @@ const QuotationList: React.FC = () => {
             <Tooltip title="สร้าง PO">
               <Button
                 type="text"
-  icon={<FileTextOutlined />}
+                icon={<FileTextOutlined />}
                 onClick={() => navigate(`/purchase-orders/new?quotationId=${record.id}`)}
               />
             </Tooltip>
@@ -292,6 +323,27 @@ const QuotationList: React.FC = () => {
           }}
         />
       </Card>
+
+      {selectedQuotation && (
+        <QuotationPrintPreview
+          open={printPreviewOpen}
+          onClose={() => {
+            setPrintPreviewOpen(false);
+            setSelectedQuotation(null);
+          }}
+          quotation={{
+            docFullNo: selectedQuotation.docFullNo,
+            docDate: selectedQuotation.docDate,
+            grandTotal: Number(selectedQuotation.grandTotal) || 0,
+            subtotal: Number(selectedQuotation.subtotal) || 0,
+            discountAmount: Number(selectedQuotation.discountAmount) || 0,
+            afterDiscount: Number(selectedQuotation.afterDiscount) || 0,
+            taxAmount: Number(selectedQuotation.taxAmount) || 0,
+          }}
+          items={selectedQuotation.items || []}
+          customer={null}
+        />
+      )}
     </div>
   );
 };
