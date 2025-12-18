@@ -9,6 +9,7 @@ import {
   CloseCircleOutlined, FileTextOutlined, ShoppingCartOutlined,
   ArrowLeftOutlined, ExclamationCircleOutlined, FilePdfOutlined
 } from '@ant-design/icons';
+import QuotationPrintPreview from '../../components/quotation/QuotationPrintPreview';
 import { quotationsApi, purchaseOrdersApi, salesInvoicesApi } from '../../services/api';
 import type { Quotation, QuotationItem, QuotationType, QuotationStatus } from '../../types/quotation';
 
@@ -43,6 +44,7 @@ const QuotationDetail: React.FC = () => {
   const { id } = useParams<{ id: string }>();
   const [quotation, setQuotation] = useState<Quotation | null>(null);
   const [loading, setLoading] = useState(true);
+  const [printPreviewOpen, setPrintPreviewOpen] = useState(false);
   const [relatedDocs] = useState<{
     purchaseOrders: any[];
     goodsReceipts: any[];
@@ -303,7 +305,7 @@ const QuotationDetail: React.FC = () => {
             </Popconfirm>
           )}
           
-          <Button icon={<FilePdfOutlined />}>
+          <Button icon={<FilePdfOutlined />} onClick={() => setPrintPreviewOpen(true)}>
             พิมพ์ PDF
           </Button>
         </Space>
@@ -463,6 +465,28 @@ const QuotationDetail: React.FC = () => {
           )}
         </Col>
       </Row>
+      {quotation && (
+        <QuotationPrintPreview
+          open={printPreviewOpen}
+          onClose={() => setPrintPreviewOpen(false)}
+          quotation={{
+            docFullNo: quotation.docFullNo,
+            docDate: quotation.docDate,
+            validDays: quotation.validDays,
+            deliveryDays: quotation.deliveryDays,
+            creditTermDays: quotation.creditTermDays,
+            contactPerson: quotation.contactPerson,
+            publicNote: quotation.publicNote,
+            subtotal: Number(quotation.subtotal) || 0,
+            discountAmount: Number(quotation.discountAmount) || 0,
+            afterDiscount: Number(quotation.afterDiscount) || 0,
+            taxAmount: Number(quotation.taxAmount) || 0,
+            grandTotal: Number(quotation.grandTotal) || 0,
+          }}
+          items={quotation.items || []}
+          customer={{ name: quotation.customerName, address: quotation.customerAddress }}
+        />
+      )}
     </div>
   );
 };
