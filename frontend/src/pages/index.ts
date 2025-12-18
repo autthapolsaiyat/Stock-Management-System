@@ -15,3 +15,4 @@ export { default as StockTransfersPage } from './StockTransfersPage';
 // Quotations
 export { QuotationList, QuotationForm, QuotationDetail } from './quotations';
 export { default as UserSettingsPage } from './settings/UserSettings';
+export { default as CompanySettingsPage } from './settings/CompanySettings';

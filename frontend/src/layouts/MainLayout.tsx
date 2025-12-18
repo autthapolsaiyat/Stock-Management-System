@@ -87,6 +87,7 @@ const MainLayout: React.FC = () => {
       label: 'ตั้งค่า',
       children: [
         { key: '/settings', icon: <SettingOutlined />, label: 'ตั้งค่าส่วนตัว' },
+        { key: '/settings/company', icon: <SettingOutlined />, label: 'ตั้งค่าบริษัท' },
       ],
     },
     {
