@@ -114,7 +114,7 @@ const QuotationForm: React.FC = () => {
   };
 
   const loadInitialData = async () => {
-    try {
+      try {
       const [customersRes, productsRes] = await Promise.all([
         customersApi.getAll(),
         userQuotationType 
@@ -124,9 +124,10 @@ const QuotationForm: React.FC = () => {
       setCustomers(customersRes.data || []);
       setProducts(productsRes.data || []);
       
+      let settingsMap: any = {};
       try {
         const settingsRes = await systemSettingsApi.getAll('QUOTATION');
-        const settingsMap: any = {};
+        
         (settingsRes.data || []).forEach((s: any) => {
           settingsMap[s.settingKey] = s.settingValue;
         });
@@ -139,9 +140,9 @@ const QuotationForm: React.FC = () => {
         form.setFieldsValue({
           quotationType: userQuotationType || 'STANDARD',
           docDate: dayjs(),
-          validDays: 30,
-          deliveryDays: 120,
-          creditTermDays: 30,
+          validDays: parseInt(settingsMap.QT_VALID_DAYS) || 30,
+          deliveryDays: parseInt(settingsMap.QT_DELIVERY_DAYS) || 120,
+          creditTermDays: parseInt(settingsMap.QT_CREDIT_TERM_DAYS) || 30,
           taxRate: 7,
           discountDisplayMode: 'SHOW',
         });
@@ -153,7 +154,7 @@ const QuotationForm: React.FC = () => {
 
   const loadQuotation = async (quotationId: number) => {
     setLoading(true);
-    try {
+      try {
       const response = await quotationsApi.getById(quotationId);
       const data = response.data;
       
@@ -297,7 +298,7 @@ const QuotationForm: React.FC = () => {
   };
 
   const handleSave = async (submit: boolean = false) => {
-    try {
+      try {
       await form.validateFields();
       setSaving(true);
 
