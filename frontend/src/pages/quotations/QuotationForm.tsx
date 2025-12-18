@@ -303,6 +303,8 @@ const QuotationForm: React.FC = () => {
 
       const values = form.getFieldsValue();
       const payload = {
+        customerName: selectedCustomer?.name,
+        customerAddress: selectedCustomer?.address,
         ...values,
         docDate: values.docDate?.format('YYYY-MM-DD'),
         validUntil: values.validUntil?.format('YYYY-MM-DD'),
