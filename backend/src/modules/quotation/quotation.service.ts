@@ -45,7 +45,7 @@ export class QuotationService {
     await queryRunner.startTransaction();
     
     try {
-      const { docBaseNo, docFullNo } = await this.docNumberingService.generateDocNumber('QT', queryRunner);
+      const { docBaseNo, docFullNo } = await this.docNumberingService.generateDocNumber('QT', queryRunner, dto.quotationType || 'STANDARD');
       const minMargin = await this.settingsService.getMinMarginPercent();
       
       const quotation = queryRunner.manager.create(QuotationEntity, {

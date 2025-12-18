@@ -21,21 +21,45 @@ let DocNumberingService = class DocNumberingService {
     constructor(seqRepository) {
         this.seqRepository = seqRepository;
     }
-    async generateDocNumber(docType, queryRunner) {
+    getQuotationTypeCode(quotationType) {
+        const typeCodeMap = {
+            'STANDARD': 'ACC',
+            'FORENSIC': 'FSC',
+            'LAB': 'LAB',
+            'MAINTENANCE': 'SVC',
+        };
+        return typeCodeMap[quotationType] || 'ACC';
+    }
+    async generateDocNumber(docType, queryRunner, quotationType) {
         const now = new Date();
         const year = now.getFullYear().toString().slice(-2);
         const month = String(now.getMonth() + 1).padStart(2, '0');
-        const yearMonth = `${year}${month}`;
+        const thaiYear = (now.getFullYear() + 543).toString().slice(-2);
         const repo = queryRunner ? queryRunner.manager.getRepository(doc_sequence_entity_1.DocSequenceEntity) : this.seqRepository;
-        let seq = await repo.findOne({ where: { docType, yearMonth } });
+        let seqKey = docType;
+        if (docType === 'QT' && quotationType) {
+            seqKey = `QT-${quotationType}`;
+        }
+        const yearMonth = `${year}${month}`;
+        let seq = await repo.findOne({ where: { docType: seqKey, yearMonth } });
         if (!seq) {
-            seq = repo.create({ docType, yearMonth, lastNumber: 0, prefix: docType });
+            seq = repo.create({ docType: seqKey, yearMonth, lastNumber: 0, prefix: docType });
             await repo.save(seq);
         }
         seq.lastNumber += 1;
         await repo.save(seq);
-        const docBaseNo = `${docType}${yearMonth}${String(seq.lastNumber).padStart(4, '0')}`;
-        const docFullNo = docBaseNo;
+        let docBaseNo;
+        let docFullNo;
+        if (docType === 'QT' && quotationType) {
+            const typeCode = this.getQuotationTypeCode(quotationType);
+            const seqNo = String(seq.lastNumber).padStart(3, '0');
+            docBaseNo = `SVS-${typeCode}-${seqNo}-${month}-${thaiYear}`;
+            docFullNo = docBaseNo;
+        }
+        else {
+            docBaseNo = `${docType}${yearMonth}${String(seq.lastNumber).padStart(4, '0')}`;
+            docFullNo = docBaseNo;
+        }
         return { docNo: docBaseNo, docBaseNo, docFullNo };
     }
 };
