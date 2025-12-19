@@ -9,6 +9,7 @@ import {
   CloseCircleOutlined, FileTextOutlined, ShoppingCartOutlined,
   ArrowLeftOutlined, FilePdfOutlined
 } from '@ant-design/icons';
+import QuotationFlowProgress from '../../components/quotation/QuotationFlowProgress';
 import QuotationPrintPreview from '../../components/quotation/QuotationPrintPreview';
 import { quotationsApi, purchaseOrdersApi, salesInvoicesApi } from '../../services/api';
 import type { Quotation, QuotationItem, QuotationType, QuotationStatus } from '../../types/quotation';
@@ -269,6 +270,40 @@ const QuotationDetail: React.FC = () => {
         </Space>
       </div>
       
+
+      {/* Flow Progress */}
+      <QuotationFlowProgress
+        quotation={{
+          docFullNo: quotation.docFullNo || "",
+          status: quotation.status || "DRAFT",
+          customerName: quotation.customerName || "",
+          grandTotal: Number(quotation.grandTotal),
+          docDate: quotation.docDate || "",
+        }}
+        relatedDocs={{
+          po: relatedDocs.purchaseOrders[0] ? {
+            id: relatedDocs.purchaseOrders[0].id,
+            docNo: relatedDocs.purchaseOrders[0].docFullNo,
+            status: relatedDocs.purchaseOrders[0].status,
+          } : undefined,
+          gr: relatedDocs.goodsReceipts[0] ? {
+            id: relatedDocs.goodsReceipts[0].id,
+            docNo: relatedDocs.goodsReceipts[0].docFullNo,
+            status: relatedDocs.goodsReceipts[0].status,
+          } : undefined,
+          inv: relatedDocs.invoices[0] ? {
+            id: relatedDocs.invoices[0].id,
+            docNo: relatedDocs.invoices[0].docFullNo,
+            status: relatedDocs.invoices[0].status,
+          } : undefined,
+        }}
+        onNavigate={(type, _id) => {
+          if (type === "po") navigate(`/purchase-orders`);
+          if (type === "gr") navigate(`/goods-receipts`);
+          if (type === "inv") navigate(`/sales-invoices`);
+        }}
+      />
+
       <Row gutter={24}>
         <Col xs={24} lg={16}>
           <Card title="ข้อมูลลูกค้า" style={{ marginBottom: 16 }}>
@@ -390,8 +425,8 @@ const QuotationDetail: React.FC = () => {
           open={printPreviewOpen}
           onClose={() => setPrintPreviewOpen(false)}
           quotation={{
-            docFullNo: quotation.docFullNo,
-            docDate: quotation.docDate,
+            docFullNo: quotation.docFullNo || "",
+            docDate: quotation.docDate || "",
             validDays: quotation.validDays,
             deliveryDays: quotation.deliveryDays,
             creditTermDays: quotation.creditTermDays,
