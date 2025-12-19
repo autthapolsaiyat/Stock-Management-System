@@ -63,16 +63,12 @@ const QuotationDetail: React.FC = () => {
     try {
       const response = await quotationsApi.getById(quotationId);
       setQuotation(response.data);
-      
-      // Load related documents
-      // TODO: Load from API when available
     } catch (error) {
       message.error('ไม่สามารถโหลดข้อมูลได้');
     } finally {
       setLoading(false);
     }
   };
-
 
   const handleSend = async () => {
     try {
@@ -131,7 +127,6 @@ const QuotationDetail: React.FC = () => {
   const typeConfig = typeLabels[quotation.quotationType] || { text: quotation.quotationType, color: "default", icon: "📄" };
   const statusConfig = statusLabels[quotation.status] || { text: quotation.status, color: "default" };
 
-  // Calculate fulfillment
   const totalItems = quotation.items?.length || 0;
   const soldItems = quotation.items?.filter(i => i.itemStatus === 'SOLD').length || 0;
   const fulfillmentPercent = totalItems > 0 ? (soldItems / totalItems) * 100 : 0;
@@ -223,9 +218,6 @@ const QuotationDetail: React.FC = () => {
           <Space style={{ marginTop: 8 }}>
             <Tag color={typeConfig.color}>{typeConfig.icon} {typeConfig.text}</Tag>
             <Tag color={statusConfig.color}>{statusConfig.text}</Tag>
-            {quotation.requiresMarginApproval && !quotation.marginApproved && (
-              <Tag color="warning">⚠️ ต้องอนุมัติ Margin</Tag>
-            )}
           </Space>
         </div>
         
@@ -233,7 +225,7 @@ const QuotationDetail: React.FC = () => {
         <Space wrap>
           {quotation.status === 'DRAFT' && (
             <>
-	      <Button icon={<EditOutlined />} onClick={() => navigate(`/quotations/${id}/edit`)}>
+              <Button icon={<EditOutlined />} onClick={() => navigate(`/quotations/${id}/edit`)}>
                 แก้ไข
               </Button>
               <Popconfirm title="ส่งใบเสนอราคาให้ลูกค้า?" onConfirm={handleSend}>
@@ -252,7 +244,7 @@ const QuotationDetail: React.FC = () => {
             </Popconfirm>
           )}
           
-          {['CONFIRMED', 'PARTIALLY_CLOSED'].includes(quotation.status) && (
+          {(['CONFIRMED', 'PARTIALLY_CLOSED'] as string[]).includes(quotation.status) && (
             <>
               <Button type="primary" icon={<FileTextOutlined />} onClick={handleCreatePO}>
                 สร้าง PO
@@ -278,9 +270,7 @@ const QuotationDetail: React.FC = () => {
       </div>
       
       <Row gutter={24}>
-        {/* Main Content */}
         <Col xs={24} lg={16}>
-          {/* Customer Info */}
           <Card title="ข้อมูลลูกค้า" style={{ marginBottom: 16 }}>
             <Descriptions column={{ xs: 1, sm: 2 }}>
               <Descriptions.Item label="ลูกค้า">{quotation.customerName}</Descriptions.Item>
@@ -291,7 +281,6 @@ const QuotationDetail: React.FC = () => {
             </Descriptions>
           </Card>
 
-          {/* Items */}
           <Card title="รายการสินค้า" style={{ marginBottom: 16 }}>
             <Table
               columns={itemColumns}
@@ -302,7 +291,6 @@ const QuotationDetail: React.FC = () => {
             />
           </Card>
 
-          {/* Summary */}
           <Card title="สรุปยอด">
             <Row gutter={24}>
               <Col xs={24} md={12}>
@@ -336,29 +324,13 @@ const QuotationDetail: React.FC = () => {
                     <span>ยอดสุทธิ:</span>
                     <span>฿{Number(quotation.grandTotal || 0).toLocaleString()}</span>
                   </div>
-                  <Divider style={{ margin: '8px 0' }} />
-                  <div style={{ display: 'flex', justifyContent: 'space-between', color: '#888' }}>
-                    <span>ต้นทุนรวม:</span>
-                    <span>฿{Number(quotation.totalEstimatedCost || 0).toLocaleString()}</span>
-                  </div>
-                  <div style={{ display: 'flex', justifyContent: 'space-between' }}>
-                    <span>Margin:</span>
-                    <Tag color={
-                      Number(quotation.expectedMarginPercent || 0) < 10 ? 'warning' : 
-                      Number(quotation.expectedMarginPercent || 0) >= 20 ? 'green' : 'blue'
-                    }>
-                      {Number(quotation.expectedMarginPercent || 0).toFixed(1)}%
-                    </Tag>
-                  </div>
                 </div>
               </Col>
             </Row>
           </Card>
         </Col>
 
-        {/* Sidebar */}
         <Col xs={24} lg={8}>
-          {/* Fulfillment */}
           <Card title="ความคืบหน้า" style={{ marginBottom: 16 }}>
             <div style={{ textAlign: 'center', marginBottom: 16 }}>
               <Progress
@@ -372,7 +344,6 @@ const QuotationDetail: React.FC = () => {
             </div>
           </Card>
 
-          {/* Related Documents */}
           <Card title="เอกสารที่เกี่ยวข้อง" style={{ marginBottom: 16 }}>
             <div style={{ marginBottom: 12 }}>
               <strong>📦 ใบสั่งซื้อ (PO):</strong>
@@ -411,26 +382,9 @@ const QuotationDetail: React.FC = () => {
               )}
             </div>
           </Card>
-
-          {/* Notes */}
-          {(quotation.publicNote || quotation.internalNote) && (
-            <Card title="หมายเหตุ">
-              {quotation.publicNote && (
-                <div style={{ marginBottom: 12 }}>
-                  <strong>สาธารณะ:</strong>
-                  <p style={{ margin: '4px 0', color: '#666' }}>{quotation.publicNote}</p>
-                </div>
-              )}
-              {quotation.internalNote && (
-                <div>
-                  <strong>ภายใน:</strong>
-                  <p style={{ margin: '4px 0', color: '#666' }}>{quotation.internalNote}</p>
-                </div>
-              )}
-            </Card>
-          )}
         </Col>
       </Row>
+      
       {quotation && (
         <QuotationPrintPreview
           open={printPreviewOpen}
