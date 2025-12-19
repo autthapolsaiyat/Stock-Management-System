@@ -308,7 +308,7 @@ let QuotationService = class QuotationService {
         if (quotation.status !== 'PENDING_APPROVAL') {
             throw new common_1.BadRequestException('Quotation is not pending approval');
         }
-        quotation.status = 'APPROVED';
+        quotation.status = 'CONFIRMED';
         quotation.approvedBy = userId;
         quotation.approvedAt = new Date();
         quotation.approvalNote = note;
@@ -340,7 +340,7 @@ let QuotationService = class QuotationService {
         if (!['DRAFT', 'APPROVED', 'SENT'].includes(quotation.status)) {
             throw new common_1.BadRequestException('Quotation cannot be confirmed');
         }
-        quotation.status = 'APPROVED';
+        quotation.status = 'CONFIRMED';
         quotation.confirmedAt = new Date();
         quotation.confirmedBy = userId;
         quotation.updatedBy = userId;
