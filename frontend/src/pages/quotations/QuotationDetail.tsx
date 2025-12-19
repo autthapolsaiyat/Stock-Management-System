@@ -297,13 +297,15 @@ const QuotationDetail: React.FC = () => {
             status: relatedDocs.invoices[0].status,
           } : undefined,
         }}
-        onNavigate={(type, _id) => {
-          if (type === "po") navigate(`/purchase-orders`);
-          if (type === "gr") navigate(`/goods-receipts`);
-          if (type === "inv") navigate(`/sales-invoices`);
+	onNavigate={(type) => {
+          if (type === "po") navigate("/purchase-orders");
+          if (type === "gr") navigate("/goods-receipts");
+          if (type === "inv") navigate("/sales-invoices");
         }}
+        onCreatePO={handleCreatePO}
+        onCreateGR={() => navigate("/goods-receipts")}
+        onCreateInvoice={handleCreateInvoice}
       />
-
       <Row gutter={24}>
         <Col xs={24} lg={16}>
           <Card title="ข้อมูลลูกค้า" style={{ marginBottom: 16 }}>
