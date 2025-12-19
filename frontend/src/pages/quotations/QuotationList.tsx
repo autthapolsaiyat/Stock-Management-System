@@ -225,7 +225,7 @@ const QuotationList: React.FC = () => {
               />
             </Tooltip>
           )}
-          {record.status === 'APPROVED' && (
+          {(['CONFIRMED', 'PARTIALLY_CLOSED'] as string[]).includes(record.status || '') && (
             <Tooltip title="สร้าง PO">
               <Button
                 type="text"
