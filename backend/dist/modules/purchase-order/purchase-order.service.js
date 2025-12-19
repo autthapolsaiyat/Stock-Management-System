@@ -149,7 +149,7 @@ let PurchaseOrderService = class PurchaseOrderService {
     }
     async createFromQuotation(quotationId, supplierId, dto, userId) {
         const quotation = await this.quotationService.findOne(quotationId);
-        if (!['APPROVED', 'SENT', 'PARTIALLY_CLOSED'].includes(quotation.status)) {
+        if (!['APPROVED', 'SENT', 'CONFIRMED', 'PARTIALLY_CLOSED'].includes(quotation.status)) {
             throw new common_1.BadRequestException('Quotation must be approved before creating PO');
         }
         const itemsToOrder = quotation.items.filter(item => item.itemStatus !== 'CANCELLED' &&

@@ -153,7 +153,7 @@ export class PurchaseOrderService {
   async createFromQuotation(quotationId: number, supplierId: number, dto: any, userId: number) {
     const quotation = await this.quotationService.findOne(quotationId);
     
-    if (!['APPROVED', 'SENT', 'PARTIALLY_CLOSED'].includes(quotation.status)) {
+    if (!['APPROVED', 'SENT', 'CONFIRMED', 'PARTIALLY_CLOSED'].includes(quotation.status)) {
       throw new BadRequestException('Quotation must be approved before creating PO');
     }
 
