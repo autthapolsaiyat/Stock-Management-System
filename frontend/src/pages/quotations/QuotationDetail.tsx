@@ -102,9 +102,9 @@ const QuotationDetail: React.FC = () => {
 
   const handleCreatePO = async () => {
     try {
-      const response = await purchaseOrdersApi.createFromQuotation(parseInt(id!));
+      await purchaseOrdersApi.createFromQuotation(parseInt(id!));
       message.success('สร้างใบสั่งซื้อสำเร็จ');
-      navigate(`/purchase-orders/${response.data.id}`);
+      navigate('/purchase-orders');
     } catch (error: any) {
       message.error(error.response?.data?.message || 'ไม่สามารถสร้างใบสั่งซื้อได้');
     }
@@ -112,9 +112,9 @@ const QuotationDetail: React.FC = () => {
 
   const handleCreateInvoice = async () => {
     try {
-      const response = await salesInvoicesApi.createFromQuotation(parseInt(id!));
+      await salesInvoicesApi.createFromQuotation(parseInt(id!));
       message.success('สร้างใบแจ้งหนี้สำเร็จ');
-      navigate(`/sales-invoices/${response.data.id}`);
+      navigate('/sales-invoices');
     } catch (error: any) {
       message.error(error.response?.data?.message || 'ไม่สามารถสร้างใบแจ้งหนี้ได้');
     }
