@@ -126,6 +126,7 @@ export const purchaseOrdersApi = {
   approve: (id: number) => api.post(`/api/purchase-orders/${id}/approve`),
   cancel: (id: number) => api.post(`/api/purchase-orders/${id}/cancel`),
   createFromQuotation: (quotationId: number) => api.post(`/api/purchase-orders/from-quotation/${quotationId}`),
+  getByQuotation: (quotationId: number) => api.get(`/api/purchase-orders/quotation/${quotationId}`),
 };
 
 // Goods Receipts API
@@ -136,6 +137,7 @@ export const goodsReceiptsApi = {
   update: (id: number, data: any) => api.put(`/api/goods-receipts/${id}`, data),
   post: (id: number) => api.post(`/api/goods-receipts/${id}/post`),
   cancel: (id: number) => api.post(`/api/goods-receipts/${id}/cancel`),
+  getByQuotation: (quotationId: number) => api.get(`/api/goods-receipts/quotation/${quotationId}`),
 };
 
 // Sales Invoices API
@@ -146,6 +148,7 @@ export const salesInvoicesApi = {
   post: (id: number) => api.post(`/api/sales-invoices/${id}/post`),
   cancel: (id: number) => api.post(`/api/sales-invoices/${id}/cancel`),
   createFromQuotation: (quotationId: number) => api.post(`/api/sales-invoices/from-quotation/${quotationId}`),
+  getByQuotation: (quotationId: number) => api.get(`/api/sales-invoices/quotation/${quotationId}`),
 };
 
 // Stock Issues API

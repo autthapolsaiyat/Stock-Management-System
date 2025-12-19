@@ -11,7 +11,7 @@ import {
 } from '@ant-design/icons';
 import QuotationFlowProgress from '../../components/quotation/QuotationFlowProgress';
 import QuotationPrintPreview from '../../components/quotation/QuotationPrintPreview';
-import { quotationsApi, purchaseOrdersApi, salesInvoicesApi } from '../../services/api';
+import { quotationsApi, purchaseOrdersApi, salesInvoicesApi, goodsReceiptsApi } from '../../services/api';
 import type { Quotation, QuotationItem, QuotationType, QuotationStatus } from '../../types/quotation';
 
 const typeLabels: Record<QuotationType, { text: string; color: string; icon: string }> = {
@@ -47,7 +47,7 @@ const QuotationDetail: React.FC = () => {
   const [quotation, setQuotation] = useState<Quotation | null>(null);
   const [loading, setLoading] = useState(true);
   const [printPreviewOpen, setPrintPreviewOpen] = useState(false);
-  const [relatedDocs] = useState<{
+  const [relatedDocs, setRelatedDocs] = useState<{
     purchaseOrders: any[];
     goodsReceipts: any[];
     invoices: any[];
@@ -64,6 +64,19 @@ const QuotationDetail: React.FC = () => {
     try {
       const response = await quotationsApi.getById(quotationId);
       setQuotation(response.data);
+      
+      // Load related documents
+      const [poRes, grRes, invRes] = await Promise.all([
+        purchaseOrdersApi.getByQuotation(quotationId).catch(() => ({ data: [] })),
+        goodsReceiptsApi.getByQuotation(quotationId).catch(() => ({ data: [] })),
+        salesInvoicesApi.getByQuotation(quotationId).catch(() => ({ data: [] })),
+      ]);
+      
+      setRelatedDocs({
+        purchaseOrders: Array.isArray(poRes.data) ? poRes.data : [],
+        goodsReceipts: Array.isArray(grRes.data) ? grRes.data : [],
+        invoices: Array.isArray(invRes.data) ? invRes.data : [],
+      });
     } catch (error) {
       message.error('ไม่สามารถโหลดข้อมูลได้');
     } finally {
