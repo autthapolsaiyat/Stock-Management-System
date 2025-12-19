@@ -1,5 +1,5 @@
 import React from 'react';
-import { Card, Progress, Tag, Tooltip } from 'antd';
+import { Card, Progress, Tag, Tooltip, Button } from 'antd';
 import { 
   FileTextOutlined, 
   ShoppingCartOutlined, 
@@ -8,7 +8,8 @@ import {
   DollarOutlined,
   CheckCircleFilled,
   ClockCircleFilled,
-  MinusCircleOutlined
+  MinusCircleOutlined,
+  PlusOutlined
 } from '@ant-design/icons';
 
 interface FlowStep {
@@ -20,6 +21,8 @@ interface FlowStep {
   docStatus?: string;
   date?: string;
   onClick?: () => void;
+  actionLabel?: string;
+  onAction?: () => void;
 }
 
 interface QuotationFlowProgressProps {
@@ -36,19 +39,27 @@ interface QuotationFlowProgressProps {
     inv?: { id: number; docNo: string; status: string; date?: string };
   };
   onNavigate?: (type: string, id: number) => void;
+  onCreatePO?: () => void;
+  onCreateGR?: () => void;
+  onCreateInvoice?: () => void;
+  onMarkPaid?: () => void;
 }
 
 const QuotationFlowProgress: React.FC<QuotationFlowProgressProps> = ({
   quotation,
   relatedDocs,
-  onNavigate
+  onNavigate,
+  onCreatePO,
+  onCreateGR,
+  onCreateInvoice,
+  onMarkPaid
 }) => {
   // Calculate progress percentage
   const getProgressPercent = () => {
     let completed = 0;
     if (['CONFIRMED', 'PARTIALLY_CLOSED', 'CLOSED'].includes(quotation.status)) completed += 20;
-    if (relatedDocs.po) completed += 20;
-    if (relatedDocs.gr) completed += 20;
+    if (relatedDocs.po?.status === 'APPROVED') completed += 20;
+    if (relatedDocs.gr?.status === 'POSTED') completed += 20;
     if (relatedDocs.inv) completed += 20;
     if (relatedDocs.inv?.status === 'PAID') completed += 20;
     return completed;
@@ -92,6 +103,42 @@ const QuotationFlowProgress: React.FC<QuotationFlowProgressProps> = ({
       default:
         return 'pending';
     }
+  };
+
+  // Determine action button for each step
+  const getStepAction = (step: string): { label: string; action: () => void } | null => {
+    switch (step) {
+      case 'PO':
+        if (!relatedDocs.po && ['CONFIRMED', 'PARTIALLY_CLOSED'].includes(quotation.status)) {
+          return { label: 'สร้าง PO', action: onCreatePO || (() => {}) };
+        }
+        if (relatedDocs.po?.status === 'DRAFT') {
+          return { label: 'ดู PO', action: () => onNavigate?.('po', relatedDocs.po!.id) };
+        }
+        break;
+      case 'GR':
+        if (!relatedDocs.gr && relatedDocs.po?.status === 'APPROVED') {
+          return { label: 'รับสินค้า', action: onCreateGR || (() => {}) };
+        }
+        if (relatedDocs.gr?.status === 'DRAFT') {
+          return { label: 'ดู GR', action: () => onNavigate?.('gr', relatedDocs.gr!.id) };
+        }
+        break;
+      case 'INV':
+        if (!relatedDocs.inv && relatedDocs.gr?.status === 'POSTED') {
+          return { label: 'สร้างใบแจ้งหนี้', action: onCreateInvoice || (() => {}) };
+        }
+        if (relatedDocs.inv?.status === 'DRAFT') {
+          return { label: 'ดู INV', action: () => onNavigate?.('inv', relatedDocs.inv!.id) };
+        }
+        break;
+      case 'PAID':
+        if (relatedDocs.inv?.status === 'POSTED') {
+          return { label: 'บันทึกชำระ', action: onMarkPaid || (() => {}) };
+        }
+        break;
+    }
+    return null;
   };
 
   const steps: FlowStep[] = [
@@ -215,86 +262,113 @@ const QuotationFlowProgress: React.FC<QuotationFlowProgressProps> = ({
           transition: 'width 0.5s ease',
         }} />
 
-        {steps.map((step, _index) => (
-          <Tooltip 
-            key={step.key} 
-            title={step.onClick ? 'คลิกเพื่อดูรายละเอียด' : ''}
-          >
-            <div 
-              style={{ 
-                display: 'flex', 
-                flexDirection: 'column', 
-                alignItems: 'center',
-                cursor: step.onClick ? 'pointer' : 'default',
-                zIndex: 2,
-                flex: 1,
-              }}
-              onClick={step.onClick}
+        {steps.map((step) => {
+          const stepAction = getStepAction(step.key);
+          
+          return (
+            <Tooltip 
+              key={step.key} 
+              title={step.onClick ? 'คลิกเพื่อดูรายละเอียด' : ''}
             >
-              {/* Step Box */}
-              <div style={{
-                width: 90,
-                height: 90,
-                borderRadius: 12,
-                background: step.status === 'completed' 
-                  ? 'linear-gradient(135deg, #065f46 0%, #047857 100%)'
-                  : step.status === 'current'
-                  ? 'linear-gradient(135deg, #92400e 0%, #b45309 100%)'
-                  : '#1f2937',
-                border: step.status === 'completed' 
-                  ? '2px solid #10b981'
-                  : step.status === 'current'
-                  ? '2px solid #f59e0b'
-                  : '2px solid #374151',
-                display: 'flex',
-                flexDirection: 'column',
-                alignItems: 'center',
-                justifyContent: 'center',
-                marginBottom: 12,
-                transition: 'all 0.3s ease',
-                boxShadow: step.status !== 'pending' ? '0 4px 12px rgba(0,0,0,0.3)' : 'none',
-              }}>
-                <div style={{ color: step.status === 'pending' ? '#6b7280' : '#fff' }}>
-                  {step.icon}
-                </div>
-                <div style={{ 
-                  color: step.status === 'pending' ? '#6b7280' : '#fff',
-                  fontSize: 11,
-                  fontWeight: 600,
-                  marginTop: 4,
+              <div 
+                style={{ 
+                  display: 'flex', 
+                  flexDirection: 'column', 
+                  alignItems: 'center',
+                  cursor: step.onClick ? 'pointer' : 'default',
+                  zIndex: 2,
+                  flex: 1,
+                }}
+                onClick={step.onClick}
+              >
+                {/* Step Box */}
+                <div style={{
+                  width: 90,
+                  height: 90,
+                  borderRadius: 12,
+                  background: step.status === 'completed' 
+                    ? 'linear-gradient(135deg, #065f46 0%, #047857 100%)'
+                    : step.status === 'current'
+                    ? 'linear-gradient(135deg, #92400e 0%, #b45309 100%)'
+                    : '#1f2937',
+                  border: step.status === 'completed' 
+                    ? '2px solid #10b981'
+                    : step.status === 'current'
+                    ? '2px solid #f59e0b'
+                    : '2px solid #374151',
+                  display: 'flex',
+                  flexDirection: 'column',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  marginBottom: 12,
+                  transition: 'all 0.3s ease',
+                  boxShadow: step.status !== 'pending' ? '0 4px 12px rgba(0,0,0,0.3)' : 'none',
                 }}>
-                  {step.title}
+                  <div style={{ color: step.status === 'pending' ? '#6b7280' : '#fff' }}>
+                    {step.icon}
+                  </div>
+                  <div style={{ 
+                    color: step.status === 'pending' ? '#6b7280' : '#fff',
+                    fontSize: 11,
+                    fontWeight: 600,
+                    marginTop: 4,
+                  }}>
+                    {step.title}
+                  </div>
                 </div>
-              </div>
 
-              {/* Status Icon */}
-              <div style={{ marginBottom: 8 }}>
-                {getStatusIcon(step.status)}
-              </div>
+                {/* Status Icon */}
+                <div style={{ marginBottom: 8 }}>
+                  {getStatusIcon(step.status)}
+                </div>
 
-              {/* Doc Number */}
-              <div style={{ 
-                color: step.docNo ? '#e5e7eb' : '#6b7280',
-                fontSize: 12,
-                fontWeight: 600,
-                textAlign: 'center',
-                minHeight: 18,
-              }}>
-                {step.docNo || '-'}
-              </div>
+                {/* Doc Number */}
+                <div style={{ 
+                  color: step.docNo ? '#e5e7eb' : '#6b7280',
+                  fontSize: 12,
+                  fontWeight: 600,
+                  textAlign: 'center',
+                  minHeight: 18,
+                }}>
+                  {step.docNo || '-'}
+                </div>
 
-              {/* Status Tag */}
-              {step.docStatus && (
-                <Tag 
-                  color={statusColors[step.docStatus] || '#6b7280'}
-                  style={{ marginTop: 4, fontSize: 10 }}
-                >
-                  {statusLabels[step.docStatus] || step.docStatus}
-                </Tag>
-              )}
-            </div>
-          </Tooltip>
-        ))}
+                {/* Status Tag */}
+                {step.docStatus && (
+                  <Tag 
+                    color={statusColors[step.docStatus] || '#6b7280'}
+                    style={{ marginTop: 4, fontSize: 10 }}
+                  >
+                    {statusLabels[step.docStatus] || step.docStatus}
+                  </Tag>
+                )}
+
+                {/* Action Button */}
+                {stepAction && (
+                  <Button
+                    type="primary"
+                    size="small"
+                    icon={<PlusOutlined />}
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      stepAction.action();
+                    }}
+                    style={{
+                      marginTop: 8,
+                      background: 'linear-gradient(135deg, #3b82f6 0%, #1d4ed8 100%)',
+                      border: 'none',
+                      fontSize: 11,
+                      height: 26,
+                      borderRadius: 6,
+                    }}
+                  >
+                    {stepAction.label}
+                  </Button>
+                )}
+              </div>
+            </Tooltip>
+          );
+        })}
       </div>
 
       {/* Progress Bar */}
