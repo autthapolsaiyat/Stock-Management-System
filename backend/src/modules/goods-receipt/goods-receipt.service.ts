@@ -116,7 +116,7 @@ export class GoodsReceiptService {
           poItemId: item.poItemId,
           quotationItemId: item.quotationItemId,
           sourceType: item.sourceType || 'MASTER',
-          productId: item.sourceType === 'MASTER' ? item.productId : null,
+          productId: item.productId || null,
           tempProductId: item.sourceType === 'TEMP' ? item.tempProductId : null,
           itemCode: item.itemCode,
           itemName: item.itemName,
