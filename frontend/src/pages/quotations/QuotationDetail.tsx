@@ -7,7 +7,7 @@ import {
 import {
   EditOutlined, SendOutlined, CheckCircleOutlined,
   CloseCircleOutlined, FileTextOutlined, ShoppingCartOutlined,
-  ArrowLeftOutlined, ExclamationCircleOutlined, FilePdfOutlined
+  ArrowLeftOutlined, FilePdfOutlined
 } from '@ant-design/icons';
 import QuotationPrintPreview from '../../components/quotation/QuotationPrintPreview';
 import { quotationsApi, purchaseOrdersApi, salesInvoicesApi } from '../../services/api';
@@ -73,25 +73,6 @@ const QuotationDetail: React.FC = () => {
     }
   };
 
-  const handleApprove = async () => {
-    try {
-      await quotationsApi.approve(parseInt(id!));
-      message.success('อนุมัติสำเร็จ');
-      loadQuotation(parseInt(id!));
-    } catch (error) {
-      message.error('ไม่สามารถอนุมัติได้');
-    }
-  };
-
-  const handleApproveMargin = async () => {
-    try {
-      await quotationsApi.approveMargin(parseInt(id!));
-      message.success('อนุมัติ Margin ต่ำสำเร็จ');
-      loadQuotation(parseInt(id!));
-    } catch (error) {
-      message.error('ไม่สามารถอนุมัติได้');
-    }
-  };
 
   const handleSend = async () => {
     try {
@@ -251,41 +232,20 @@ const QuotationDetail: React.FC = () => {
         {/* Actions */}
         <Space wrap>
           {quotation.status === 'DRAFT' && (
-            <Button icon={<EditOutlined />} onClick={() => navigate(`/quotations/${id}/edit`)}>
-              แก้ไข
-            </Button>
-          )}
-          
-          {quotation.status === 'PENDING' && (
             <>
-              {quotation.requiresMarginApproval && !quotation.marginApproved && (
-                <Popconfirm title="อนุมัติ Margin ต่ำ?" onConfirm={handleApproveMargin}>
-                  <Button type="primary" danger icon={<ExclamationCircleOutlined />}>
-                    อนุมัติ Margin
-                  </Button>
-                </Popconfirm>
-              )}
-              <Popconfirm title="อนุมัติใบเสนอราคา?" onConfirm={handleApprove}>
-                <Button type="primary" icon={<CheckCircleOutlined />}>
-                  อนุมัติ
+	      <Button icon={<EditOutlined />} onClick={() => navigate(`/quotations/${id}/edit`)}>
+                แก้ไข
+              </Button>
+              <Popconfirm title="ส่งใบเสนอราคาให้ลูกค้า?" onConfirm={handleSend}>
+                <Button type="primary" icon={<SendOutlined />}>
+                  ส่งลูกค้า
                 </Button>
               </Popconfirm>
             </>
           )}
           
-          {quotation.status === 'APPROVED' && (
-            <>
-              <Button icon={<SendOutlined />} onClick={handleSend}>
-                ส่งลูกค้า
-              </Button>
-              <Button type="primary" icon={<FileTextOutlined />} onClick={handleCreatePO}>
-                สร้าง PO
-              </Button>
-            </>
-          )}
-          
           {quotation.status === 'SENT' && (
-            <Popconfirm title="ลูกค้ายืนยัน?" onConfirm={handleConfirm}>
+            <Popconfirm title="ลูกค้ายืนยันรับงาน?" onConfirm={handleConfirm}>
               <Button type="primary" icon={<CheckCircleOutlined />}>
                 ยืนยันรับงาน
               </Button>
@@ -293,12 +253,17 @@ const QuotationDetail: React.FC = () => {
           )}
           
           {['CONFIRMED', 'PARTIALLY_CLOSED'].includes(quotation.status) && (
-            <Button type="primary" icon={<ShoppingCartOutlined />} onClick={handleCreateInvoice}>
-              สร้างใบแจ้งหนี้
-            </Button>
+            <>
+              <Button type="primary" icon={<FileTextOutlined />} onClick={handleCreatePO}>
+                สร้าง PO
+              </Button>
+              <Button icon={<ShoppingCartOutlined />} onClick={handleCreateInvoice}>
+                สร้างใบแจ้งหนี้
+              </Button>
+            </>
           )}
           
-          {['DRAFT', 'PENDING'].includes(quotation.status) && (
+          {quotation.status === 'DRAFT' && (
             <Popconfirm title="ยกเลิกใบเสนอราคา?" onConfirm={handleCancel}>
               <Button danger icon={<CloseCircleOutlined />}>
                 ยกเลิก
@@ -311,7 +276,7 @@ const QuotationDetail: React.FC = () => {
           </Button>
         </Space>
       </div>
-
+      
       <Row gutter={24}>
         {/* Main Content */}
         <Col xs={24} lg={16}>
