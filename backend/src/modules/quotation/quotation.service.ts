@@ -354,8 +354,8 @@ export class QuotationService {
 
   async send(id: number, userId: number) {
     const quotation = await this.findOne(id);
-    if (quotation.status !== 'APPROVED') {
-      throw new BadRequestException('Only approved quotations can be sent');
+   if (!['DRAFT', 'APPROVED'].includes(quotation.status)) {
+      throw new BadRequestException('Only draft or approved quotations can be sent');
     }
     
     quotation.status = 'SENT';
@@ -508,3 +508,5 @@ export class QuotationService {
     return { success: true, message: 'ลบใบเสนอราคาสำเร็จ' };
   }
 }
+
+

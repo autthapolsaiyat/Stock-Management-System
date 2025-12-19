@@ -328,8 +328,8 @@ let QuotationService = class QuotationService {
     }
     async send(id, userId) {
         const quotation = await this.findOne(id);
-        if (quotation.status !== 'APPROVED') {
-            throw new common_1.BadRequestException('Only approved quotations can be sent');
+        if (!['DRAFT', 'APPROVED'].includes(quotation.status)) {
+            throw new common_1.BadRequestException('Only draft or approved quotations can be sent');
         }
         quotation.status = 'SENT';
         quotation.updatedBy = userId;
