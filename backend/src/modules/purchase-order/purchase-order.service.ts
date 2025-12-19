@@ -244,7 +244,7 @@ export class PurchaseOrderService {
 
   async approve(id: number, userId: number, note?: string) {
     const po = await this.findOne(id);
-    if (po.status !== 'PENDING_APPROVAL') {
+    if (!['DRAFT', 'PENDING_APPROVAL'].includes(po.status)) {
       throw new BadRequestException('PO is not pending approval');
     }
 
