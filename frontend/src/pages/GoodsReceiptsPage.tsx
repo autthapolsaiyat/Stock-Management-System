@@ -125,6 +125,32 @@ const GoodsReceiptsPage: React.FC = () => {
     }
   };
 
+  const handleReverse = (id: number, docNo: string) => {
+    Modal.confirm({
+      title: 'กลับรายการรับสินค้า',
+      content: (
+        <div>
+          <p>คุณต้องการกลับรายการ <strong>{docNo}</strong> ใช่หรือไม่?</p>
+          <p style={{ color: '#f97373', fontSize: 12 }}>
+            การกลับรายการจะหัก stock ออกและไม่สามารถยกเลิกได้
+          </p>
+        </div>
+      ),
+      okText: 'ยืนยันกลับรายการ',
+      okButtonProps: { danger: true },
+      cancelText: 'ยกเลิก',
+      onOk: async () => {
+        try {
+          await goodsReceiptsApi.reverse(id, 'กลับรายการจากหน้า UI');
+          message.success('กลับรายการสำเร็จ');
+          loadData();
+        } catch (error: any) {
+          message.error(error.response?.data?.message || 'ไม่สามารถกลับรายการได้');
+        }
+      },
+    });
+  };
+
   const handleSubmit = async (values: any) => {
     try {
       const payload = {
@@ -169,8 +195,8 @@ const GoodsReceiptsPage: React.FC = () => {
     return items.reduce((sum, item) => sum + (item.qty || 0) * (item.unitCost || 0), 0);
   }, [items]);
 
-  const statusColors: Record<string, string> = { draft: 'default', posted: 'success', cancelled: 'error', DRAFT: 'default', POSTED: 'success', CANCELLED: 'error' };
-  const statusLabels: Record<string, string> = { draft: 'ร่าง', posted: 'รับแล้ว', cancelled: 'ยกเลิก', DRAFT: 'ร่าง', POSTED: 'รับแล้ว', CANCELLED: 'ยกเลิก' };
+  const statusColors: Record<string, string> = { draft: 'default', posted: 'success', cancelled: 'error', DRAFT: 'default', POSTED: 'success', CANCELLED: 'error', REVERSED: 'warning', reversed: 'warning' };
+  const statusLabels: Record<string, string> = { draft: 'ร่าง', posted: 'รับแล้ว', cancelled: 'ยกเลิก', DRAFT: 'ร่าง', POSTED: 'รับแล้ว', CANCELLED: 'ยกเลิก', REVERSED: 'กลับรายการ', reversed: 'กลับรายการ' };
 
   const columns = [
     { title: 'เลขที่', dataIndex: 'docFullNo', key: 'docFullNo', width: 140, render: (v: string, r: GoodsReceipt) => v || r.docNo },
@@ -193,6 +219,11 @@ const GoodsReceiptsPage: React.FC = () => {
               <Button type="primary" icon={<CheckOutlined />} onClick={() => handlePost(r.id)} style={{ background: '#10b981', borderColor: '#10b981' }}>บันทึกรับ</Button>
               <Button type="text" icon={<CloseOutlined />} onClick={() => handleCancel(r.id)} style={{ color: '#f97373' }} />
             </>
+          )}
+          {(r.status === 'posted' || r.status === 'POSTED') && (
+            <Button type="primary" danger icon={<RollbackOutlined />} onClick={() => handleReverse(r.id, r.docFullNo || '')}>
+              กลับรายการ
+            </Button>
           )}
         </Space>
       ),

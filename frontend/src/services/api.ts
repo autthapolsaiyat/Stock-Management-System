@@ -138,6 +138,7 @@ export const goodsReceiptsApi = {
   post: (id: number) => api.post(`/api/goods-receipts/${id}/post`),
   cancel: (id: number) => api.post(`/api/goods-receipts/${id}/cancel`),
   getByQuotation: (quotationId: number) => api.get(`/api/goods-receipts/quotation/${quotationId}`),
+  reverse: (id: number, reason: string) => api.post("/api/goods-receipts/" + id + "/reverse", { reason }),
 };
 
 // Sales Invoices API
