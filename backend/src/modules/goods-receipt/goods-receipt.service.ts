@@ -1,6 +1,6 @@
 import { Injectable, NotFoundException, BadRequestException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository, DataSource } from 'typeorm';
+import { Repository, DataSource, In } from 'typeorm';
 import { GoodsReceiptEntity, GoodsReceiptItemEntity } from './entities';
 import { DocNumberingService } from '../doc-numbering/doc-numbering.service';
 import { FifoService } from '../fifo/fifo.service';
@@ -51,11 +51,38 @@ export class GoodsReceiptService {
   }
 
   async findByQuotation(quotationId: number) {
-    return this.grRepository.find({
+    // 1. ค้นหา GR ที่มี quotationId โดยตรง
+    const directGRs = await this.grRepository.find({
       where: { quotationId, isLatestRevision: true },
       relations: ['items'],
       order: { createdAt: 'DESC' },
     });
+
+    // 2. ค้นหา PO ที่เชื่อมกับ quotation แล้วหา GR ที่เชื่อมกับ PO เหล่านั้น
+    const pos = await this.poService.findByQuotation(quotationId);
+    const poIds = pos.map((po: any) => po.id);
+
+    let poGRs: GoodsReceiptEntity[] = [];
+    if (poIds.length > 0) {
+      poGRs = await this.grRepository.find({
+        where: { 
+          purchaseOrderId: In(poIds), 
+          isLatestRevision: true 
+        },
+        relations: ['items'],
+        order: { createdAt: 'DESC' },
+      });
+    }
+
+    // 3. รวมผลและ deduplicate
+    const allGRs = [...directGRs, ...poGRs];
+    const uniqueGRs = allGRs.filter((gr, index, self) =>
+      index === self.findIndex(g => g.id === gr.id)
+    );
+
+    return uniqueGRs.sort((a, b) => 
+      new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
+    );
   }
 
   async create(dto: any, userId: number) {

@@ -60,11 +60,27 @@ let GoodsReceiptService = class GoodsReceiptService {
         });
     }
     async findByQuotation(quotationId) {
-        return this.grRepository.find({
+        const directGRs = await this.grRepository.find({
             where: { quotationId, isLatestRevision: true },
             relations: ['items'],
             order: { createdAt: 'DESC' },
         });
+        const pos = await this.poService.findByQuotation(quotationId);
+        const poIds = pos.map((po) => po.id);
+        let poGRs = [];
+        if (poIds.length > 0) {
+            poGRs = await this.grRepository.find({
+                where: {
+                    purchaseOrderId: (0, typeorm_2.In)(poIds),
+                    isLatestRevision: true
+                },
+                relations: ['items'],
+                order: { createdAt: 'DESC' },
+            });
+        }
+        const allGRs = [...directGRs, ...poGRs];
+        const uniqueGRs = allGRs.filter((gr, index, self) => index === self.findIndex(g => g.id === gr.id));
+        return uniqueGRs.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
     }
     async create(dto, userId) {
         const queryRunner = this.dataSource.createQueryRunner();
