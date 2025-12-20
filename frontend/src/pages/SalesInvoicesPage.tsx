@@ -111,8 +111,9 @@ const SalesInvoicesPage: React.FC = () => {
   const statusLabels: Record<string, string> = { draft: 'ร่าง', confirmed: 'ยืนยัน', posted: 'ลงบัญชี', cancelled: 'ยกเลิก' };
 
   const columns = [
-    { title: 'เลขที่', dataIndex: 'docNo', key: 'docNo', width: 140 },
+    { title: 'เลขที่', dataIndex: 'docFullNo', key: 'docNo', width: 140 },
     { title: 'วันที่', dataIndex: 'docDate', key: 'docDate', width: 110, render: (d: string) => d ? dayjs(d).format('DD/MM/YYYY') : '-' },
+    { title: 'เลข QT', dataIndex: 'quotationDocNo', key: 'quotationDocNo', width: 160 },
     { title: 'ลูกค้า', key: 'customer', render: (_: any, r: SalesInvoice) => customers.find(c => c.id === r.customerId)?.name || '-' },
     { title: 'คลัง', key: 'warehouse', render: (_: any, r: SalesInvoice) => warehouses.find(w => w.id === r.warehouseId)?.name || '-' },
     { title: 'ยอดรวม', dataIndex: 'grandTotal', key: 'totalAmount', align: 'right' as const, render: (v: number) => `฿${(v || 0).toLocaleString()}` },
