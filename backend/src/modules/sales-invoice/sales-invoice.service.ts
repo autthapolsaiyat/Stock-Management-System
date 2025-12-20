@@ -164,8 +164,8 @@ export class SalesInvoiceService {
     // Get items ready for invoicing (received from GR)
     const readyItems = quotation.items.filter(item =>
       item.itemStatus !== 'CANCELLED' &&
-      item.qtyReceived > 0 &&
-      item.qtySold < item.qtyReceived &&
+      item.qty > 0 &&
+      item.qtySold < item.qty &&
       (!dto.itemIds || dto.itemIds.includes(item.id))
     );
 
@@ -189,7 +189,7 @@ export class SalesInvoiceService {
       internalNote: dto.internalNote,
       remark: dto.remark,
       items: readyItems.map(item => {
-        const qtyToInvoice = dto.quantities?.[item.id] || (item.qtyReceived - item.qtySold);
+        const qtyToInvoice = dto.quantities?.[item.id] || (item.qty - item.qtySold);
         return {
           quotationItemId: item.id,
           productId: item.productId,

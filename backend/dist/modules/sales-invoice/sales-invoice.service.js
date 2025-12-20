@@ -156,8 +156,8 @@ let SalesInvoiceService = class SalesInvoiceService {
             throw new common_1.BadRequestException('Quotation must be approved before creating invoice');
         }
         const readyItems = quotation.items.filter(item => item.itemStatus !== 'CANCELLED' &&
-            item.qtyReceived > 0 &&
-            item.qtySold < item.qtyReceived &&
+            item.qty > 0 &&
+            item.qtySold < item.qty &&
             (!dto.itemIds || dto.itemIds.includes(item.id)));
         if (readyItems.length === 0) {
             throw new common_1.BadRequestException('No items ready for invoicing');
@@ -178,7 +178,7 @@ let SalesInvoiceService = class SalesInvoiceService {
             internalNote: dto.internalNote,
             remark: dto.remark,
             items: readyItems.map(item => {
-                const qtyToInvoice = dto.quantities?.[item.id] || (item.qtyReceived - item.qtySold);
+                const qtyToInvoice = dto.quantities?.[item.id] || (item.qty - item.qtySold);
                 return {
                     quotationItemId: item.id,
                     productId: item.productId,
