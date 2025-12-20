@@ -283,18 +283,18 @@ const QuotationPrintPreview: React.FC<QuotationPrintPreviewProps> = ({
               {items.map((item, idx) => (
                 <tr key={idx}>
                   <td style={{ border: '1px solid #000', padding: 6, textAlign: 'center' }}>{idx + 1}</td>
-                  <td style={{ border: '1px solid #000', padding: 6, textAlign: 'center' }}>{item.qty} {item.unit}</td>
-                  <td style={{ border: '1px solid #000', padding: 6, fontSize: 11 }}>{item.itemCode}</td>
-                  <td style={{ border: '1px solid #000', padding: 6 }}>
-                    <div>{item.itemName}</div>
+                  <td style={{ border: '1px solid #000', padding: 6, textAlign: 'center', verticalAlign: 'top' }}>{item.qty} {item.unit}</td>
+                  <td style={{ border: '1px solid #000', padding: 6, fontSize: 11, verticalAlign: 'top' }}>{item.itemCode}</td>
+                  <td style={{ border: '1px solid #000', padding: 6, verticalAlign: 'top' }}>
+                    <div style={{ fontWeight: 500 }}>{item.itemName}</div>
                     {item.itemDescription && (
-                      <div style={{ fontSize: 10, color: '#333', marginTop: 4, whiteSpace: 'pre-line' }}>
+                      <div style={{ fontSize: 9, color: '#333', marginTop: 6, whiteSpace: 'pre-line', lineHeight: 1.4 }}>
                         {item.itemDescription}
                       </div>
                     )}
                   </td>
-                  <td style={{ border: '1px solid #000', padding: 6, textAlign: 'right' }}>{formatNumber(item.unitPrice)}</td>
-                  <td style={{ border: '1px solid #000', padding: 6, textAlign: 'right' }}>{formatNumber(item.lineTotal)}</td>
+                  <td style={{ border: '1px solid #000', padding: 6, textAlign: 'right', verticalAlign: 'top' }}>{formatNumber(item.unitPrice)}</td>
+                  <td style={{ border: '1px solid #000', padding: 6, textAlign: 'right', verticalAlign: 'top' }}>{formatNumber(item.lineTotal)}</td>
                 </tr>
               ))}
               {/* Empty rows for spacing */}
