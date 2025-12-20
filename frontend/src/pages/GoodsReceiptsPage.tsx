@@ -175,6 +175,7 @@ const GoodsReceiptsPage: React.FC = () => {
   const columns = [
     { title: 'เลขที่', dataIndex: 'docFullNo', key: 'docFullNo', width: 140, render: (v: string, r: GoodsReceipt) => v || r.docNo },
     { title: 'วันที่', dataIndex: 'docDate', key: 'docDate', width: 110, render: (d: string) => d ? dayjs(d).format('DD/MM/YYYY') : '-' },
+    { title: 'เลข PO', dataIndex: 'purchaseOrderDocNo', key: 'poDocNo', width: 130, render: (v: string, r: any) => v || (r.purchaseOrderId ? `PO-${r.purchaseOrderId}` : '-') },
     { title: 'ผู้จำหน่าย', key: 'supplier', render: (_: any, r: GoodsReceipt) => suppliers.find(s => s.id === r.supplierId)?.name || '-' },
     { title: 'คลัง', key: 'warehouse', render: (_: any, r: GoodsReceipt) => warehouses.find(w => w.id === r.warehouseId)?.name || '-' },
     { title: 'ยอดรวม', dataIndex: 'totalAmount', key: 'totalAmount', align: 'right' as const, render: (v: number) => `฿${(v || 0).toLocaleString()}` },

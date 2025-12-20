@@ -142,6 +142,7 @@ const PurchaseOrdersPage: React.FC = () => {
   const columns = [
     { title: 'เลขที่', dataIndex: 'docFullNo', key: 'docFullNo', width: 140, render: (v: string, r: PurchaseOrder) => v || r.docNo },
     { title: 'วันที่', dataIndex: 'docDate', key: 'docDate', width: 110, render: (d: string) => d ? dayjs(d).format('DD/MM/YYYY') : '-' },
+    { title: 'เลข QT', dataIndex: 'quotationDocNo', key: 'qtDocNo', width: 150, render: (v: string) => v || '-' },
     { title: 'ผู้จำหน่าย', key: 'supplier', render: (_: any, r: PurchaseOrder) => suppliers.find(s => s.id === r.supplierId)?.name || '-' },
     { title: 'ยอดรวม', dataIndex: 'grandTotal', key: 'grandTotal', align: 'right' as const, render: (v: number, r: any) => `฿${(v || r.totalAmount || 0).toLocaleString()}` },
     { title: 'สถานะ', dataIndex: 'status', key: 'status', render: (s: string) => <Tag color={statusColors[s] || 'default'}>{statusLabels[s] || s}</Tag> },
