@@ -5,6 +5,7 @@ import { ConfigProvider, theme } from 'antd'
 import thTH from 'antd/locale/th_TH'
 import App from './App'
 import { AuthProvider } from './contexts/AuthContext'
+import { ActiveQuotationProvider } from './contexts/ActiveQuotationContext'
 import { ThemeProvider, useTheme } from './contexts/ThemeContext'
 import './styles/global.css'
 
@@ -71,7 +72,9 @@ const ThemedApp: React.FC = () => {
   return (
     <ConfigProvider theme={currentTheme} locale={thTH}>
       <AuthProvider>
-        <App />
+        <ActiveQuotationProvider>
+          <App />
+        </ActiveQuotationProvider>
       </AuthProvider>
     </ConfigProvider>
   );

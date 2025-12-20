@@ -13,6 +13,7 @@ import QuotationFlowProgress from '../../components/quotation/QuotationFlowProgr
 import QuotationPrintPreview from '../../components/quotation/QuotationPrintPreview';
 import { quotationsApi, purchaseOrdersApi, salesInvoicesApi, goodsReceiptsApi } from '../../services/api';
 import type { Quotation, QuotationItem, QuotationType, QuotationStatus } from '../../types/quotation';
+import { useActiveQuotation } from '../../contexts/ActiveQuotationContext';
 
 const typeLabels: Record<QuotationType, { text: string; color: string; icon: string }> = {
   STANDARD: { text: 'Accustandard/PT', color: 'blue', icon: '🧪' },
@@ -44,6 +45,7 @@ const itemStatusLabels: Record<string, { text: string; color: string }> = {
 const QuotationDetail: React.FC = () => {
   const navigate = useNavigate();
   const { id } = useParams<{ id: string }>();
+  const { setActiveQuotation } = useActiveQuotation();
   const [quotation, setQuotation] = useState<Quotation | null>(null);
   const [loading, setLoading] = useState(true);
   const [printPreviewOpen, setPrintPreviewOpen] = useState(false);
@@ -76,6 +78,29 @@ const QuotationDetail: React.FC = () => {
         purchaseOrders: Array.isArray(poRes.data) ? poRes.data : [],
         goodsReceipts: Array.isArray(grRes.data) ? grRes.data : [],
         invoices: Array.isArray(invRes.data) ? invRes.data : [],
+      });
+
+      // Set active quotation for floating progress bar
+      const q = response.data;
+      const pos = Array.isArray(poRes.data) ? poRes.data : [];
+      const grs = Array.isArray(grRes.data) ? grRes.data : [];
+      const invs = Array.isArray(invRes.data) ? invRes.data : [];
+      
+      setActiveQuotation({
+        id: q.id,
+        docFullNo: q.docFullNo || '',
+        status: q.status || 'DRAFT',
+        customerName: q.customerName || '',
+        grandTotal: Number(q.grandTotal) || 0,
+        relatedDocs: {
+          po: pos[0] ? { id: pos[0].id, docNo: pos[0].docFullNo, status: pos[0].status } : undefined,
+          gr: grs[0] ? { id: grs[0].id, docNo: grs[0].docFullNo, status: grs[0].status } : undefined,
+          inv: invs.find((i: any) => i.status === 'PAID') || invs.find((i: any) => i.status === 'POSTED') || invs[0] 
+            ? { id: (invs.find((i: any) => i.status === 'PAID') || invs.find((i: any) => i.status === 'POSTED') || invs[0]).id, 
+                docNo: (invs.find((i: any) => i.status === 'PAID') || invs.find((i: any) => i.status === 'POSTED') || invs[0]).docFullNo, 
+                status: (invs.find((i: any) => i.status === 'PAID') || invs.find((i: any) => i.status === 'POSTED') || invs[0]).status } 
+            : undefined,
+        },
       });
     } catch (error) {
       message.error('ไม่สามารถโหลดข้อมูลได้');

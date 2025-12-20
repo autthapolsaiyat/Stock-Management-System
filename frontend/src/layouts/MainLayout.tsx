@@ -25,6 +25,7 @@ import {
 import { useAuth } from '../contexts/AuthContext';
 import { SettingOutlined } from '@ant-design/icons';
 import { useTheme } from '../contexts/ThemeContext';
+import FloatingFlowProgress from '../components/FloatingFlowProgress';
 
 const { Sider, Content, Header, Footer } = Layout;
 
@@ -278,6 +279,9 @@ const MainLayout: React.FC = () => {
         >
           <Outlet />
         </Content>
+
+        {/* Floating Flow Progress */}
+        <FloatingFlowProgress />
 
         {/* Footer */}
         <Footer
