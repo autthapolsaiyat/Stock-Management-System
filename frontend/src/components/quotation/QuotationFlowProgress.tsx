@@ -187,7 +187,7 @@ const QuotationFlowProgress: React.FC<QuotationFlowProgressProps> = ({
       title: 'ชำระเงิน',
       status: getStepStatus('PAID'),
       docNo: relatedDocs.inv?.status === 'PAID' ? 'ชำระแล้ว' : undefined,
-      docStatus: relatedDocs.inv?.status === 'PAID' ? 'COMPLETED' : undefined,
+      docStatus: relatedDocs.inv?.status === 'PAID' ? 'PAID' : undefined,
     },
   ];
 
