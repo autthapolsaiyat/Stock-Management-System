@@ -415,8 +415,6 @@ export class GoodsReceiptService {
       },
     };
   }
-}
-
   async reverse(id: number, userId: number, reason?: string) {
     const gr = await this.findOne(id);
 
@@ -494,13 +492,83 @@ export class GoodsReceiptService {
 
         // 3. หัก stock จาก FIFO (consume lot)
         if (item.productId) {
-          await this.fifoService.consumeStock(
+        if (item.productId) {
+          await this.fifoService.deductFifo(
             item.productId,
             gr.warehouseId,
             Number(item.qty),
-            savedReverseGR.docFullNo,
-            queryRunner.manager,
+            'GR_REVERSE',
+            savedReverseGR.id,
+            undefined,
+            queryRunner,
           );
+        }
+        if (item.productId) {
+          await this.fifoService.deductFifo(
+            item.productId,
+            gr.warehouseId,
+            Number(item.qty),
+            'GR_REVERSE',
+            savedReverseGR.id,
+            undefined,
+            queryRunner,
+          );
+        }
+        if (item.productId) {
+          await this.fifoService.deductFifo(
+            item.productId,
+            gr.warehouseId,
+            Number(item.qty),
+            'GR_REVERSE',
+            savedReverseGR.id,
+            undefined,
+            queryRunner,
+          );
+        }
+        if (item.productId) {
+          await this.fifoService.deductFifo(
+            item.productId,
+            gr.warehouseId,
+            Number(item.qty),
+            'GR_REVERSE',
+            savedReverseGR.id,
+            undefined,
+            queryRunner,
+          );
+        }
+        if (item.productId) {
+          await this.fifoService.deductFifo(
+            item.productId,
+            gr.warehouseId,
+            Number(item.qty),
+            'GR_REVERSE',
+            savedReverseGR.id,
+            undefined,
+            queryRunner,
+          );
+        }
+        if (item.productId) {
+          await this.fifoService.deductFifo(
+            item.productId,
+            gr.warehouseId,
+            Number(item.qty),
+            'GR_REVERSE',
+            savedReverseGR.id,
+            undefined,
+            queryRunner,
+          );
+        }
+        if (item.productId) {
+          await this.fifoService.deductFifo(
+            item.productId,
+            gr.warehouseId,
+            Number(item.qty),
+            'GR_REVERSE',
+            savedReverseGR.id,
+            undefined,
+            queryRunner,
+          );
+        }
         }
       }
 
@@ -523,3 +591,4 @@ export class GoodsReceiptService {
       await queryRunner.release();
     }
   }
+}

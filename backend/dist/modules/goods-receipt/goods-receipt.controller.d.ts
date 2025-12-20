@@ -26,5 +26,5 @@ export declare class GoodsReceiptController {
     createFromPO(poId: number, dto: any, req: any): Promise<import("./entities").GoodsReceiptEntity>;
     post(id: number, req: any): Promise<import("./entities").GoodsReceiptEntity>;
     cancel(id: number, reason: string, req: any): Promise<import("./entities").GoodsReceiptEntity>;
-    reverse(id: number, reason: string, req: any): any;
+    reverse(id: number, reason: string, req: any): Promise<import("./entities").GoodsReceiptEntity>;
 }

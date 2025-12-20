@@ -39,4 +39,5 @@ export declare class GoodsReceiptService {
             hasAlert: boolean;
         };
     }>;
+    reverse(id: number, userId: number, reason?: string): Promise<GoodsReceiptEntity>;
 }

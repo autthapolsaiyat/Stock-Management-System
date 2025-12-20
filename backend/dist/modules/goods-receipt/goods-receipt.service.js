@@ -358,6 +358,113 @@ let GoodsReceiptService = class GoodsReceiptService {
             },
         };
     }
+    async reverse(id, userId, reason) {
+        const gr = await this.findOne(id);
+        if (gr.status !== 'POSTED') {
+            throw new common_1.BadRequestException('Only posted GR can be reversed');
+        }
+        const queryRunner = this.dataSource.createQueryRunner();
+        await queryRunner.connect();
+        await queryRunner.startTransaction();
+        try {
+            const { docBaseNo, docFullNo } = await this.docNumberingService.generateDocNumber('GR', queryRunner);
+            const reverseGR = queryRunner.manager.create(entities_1.GoodsReceiptEntity, {
+                docBaseNo,
+                docFullNo,
+                docRevision: 1,
+                isLatestRevision: true,
+                purchaseOrderId: gr.purchaseOrderId,
+                purchaseOrderDocNo: gr.purchaseOrderDocNo,
+                quotationId: gr.quotationId,
+                quotationDocNo: gr.quotationDocNo,
+                supplierId: gr.supplierId,
+                supplierName: gr.supplierName,
+                warehouseId: gr.warehouseId,
+                warehouseName: gr.warehouseName,
+                docDate: new Date(),
+                receiveDate: new Date(),
+                internalNote: `Reverse of ${gr.docFullNo}: ${reason || 'No reason provided'}`,
+                remark: gr.remark,
+                status: 'POSTED',
+                subtotal: -Number(gr.subtotal),
+                discountAmount: -Number(gr.discountAmount),
+                taxAmount: -Number(gr.taxAmount),
+                totalAmount: -Number(gr.totalAmount),
+                totalExpectedCost: -Number(gr.totalExpectedCost),
+                totalVariance: 0,
+                variancePercent: 0,
+                hasVarianceAlert: false,
+                postedAt: new Date(),
+                postedBy: userId,
+                createdBy: userId,
+                reversedFromId: gr.id,
+            });
+            const savedReverseGR = await queryRunner.manager.save(reverseGR);
+            for (const item of gr.items) {
+                const reverseItem = queryRunner.manager.create(entities_1.GoodsReceiptItemEntity, {
+                    goodsReceiptId: savedReverseGR.id,
+                    lineNo: item.lineNo,
+                    poItemId: item.poItemId,
+                    quotationItemId: item.quotationItemId,
+                    sourceType: item.sourceType,
+                    productId: item.productId,
+                    tempProductId: item.tempProductId,
+                    itemCode: item.itemCode,
+                    itemName: item.itemName,
+                    itemDescription: item.itemDescription,
+                    brand: item.brand,
+                    qty: -Number(item.qty),
+                    unit: item.unit,
+                    unitCost: Number(item.unitCost),
+                    lineTotal: -Number(item.lineTotal),
+                    expectedUnitCost: Number(item.expectedUnitCost),
+                    costVariance: 0,
+                    variancePercent: 0,
+                    hasVarianceAlert: false,
+                });
+                await queryRunner.manager.save(reverseItem);
+                if (item.productId) {
+                    if (item.productId) {
+                        await this.fifoService.deductFifo(item.productId, gr.warehouseId, Number(item.qty), 'GR_REVERSE', savedReverseGR.id, undefined, queryRunner);
+                    }
+                    if (item.productId) {
+                        await this.fifoService.deductFifo(item.productId, gr.warehouseId, Number(item.qty), 'GR_REVERSE', savedReverseGR.id, undefined, queryRunner);
+                    }
+                    if (item.productId) {
+                        await this.fifoService.deductFifo(item.productId, gr.warehouseId, Number(item.qty), 'GR_REVERSE', savedReverseGR.id, undefined, queryRunner);
+                    }
+                    if (item.productId) {
+                        await this.fifoService.deductFifo(item.productId, gr.warehouseId, Number(item.qty), 'GR_REVERSE', savedReverseGR.id, undefined, queryRunner);
+                    }
+                    if (item.productId) {
+                        await this.fifoService.deductFifo(item.productId, gr.warehouseId, Number(item.qty), 'GR_REVERSE', savedReverseGR.id, undefined, queryRunner);
+                    }
+                    if (item.productId) {
+                        await this.fifoService.deductFifo(item.productId, gr.warehouseId, Number(item.qty), 'GR_REVERSE', savedReverseGR.id, undefined, queryRunner);
+                    }
+                    if (item.productId) {
+                        await this.fifoService.deductFifo(item.productId, gr.warehouseId, Number(item.qty), 'GR_REVERSE', savedReverseGR.id, undefined, queryRunner);
+                    }
+                }
+            }
+            gr.status = 'REVERSED';
+            gr.reversedAt = new Date();
+            gr.reversedBy = userId;
+            gr.reverseReason = reason;
+            gr.reversedToId = savedReverseGR.id;
+            gr.updatedBy = userId;
+            await queryRunner.manager.save(gr);
+            await queryRunner.commitTransaction();
+            return savedReverseGR;
+        }
+        catch (error) {
+            await queryRunner.rollbackTransaction();
+            throw error;
+        }
+        finally {
+            await queryRunner.release();
+        }
+    }
 };
 exports.GoodsReceiptService = GoodsReceiptService;
 exports.GoodsReceiptService = GoodsReceiptService = __decorate([
@@ -373,93 +480,4 @@ exports.GoodsReceiptService = GoodsReceiptService = __decorate([
         system_settings_service_1.SystemSettingsService,
         typeorm_2.DataSource])
 ], GoodsReceiptService);
-async;
-reverse(id, number, userId, number, reason ?  : string);
-{
-    const gr = await this.findOne(id);
-    if (gr.status !== 'POSTED') {
-        throw new common_1.BadRequestException('Only posted GR can be reversed');
-    }
-    const queryRunner = this.dataSource.createQueryRunner();
-    await queryRunner.connect();
-    await queryRunner.startTransaction();
-    try {
-        const { docBaseNo, docFullNo } = await this.docNumberingService.generateDocNumber('GR', queryRunner);
-        const reverseGR = queryRunner.manager.create(entities_1.GoodsReceiptEntity, {
-            docBaseNo,
-            docFullNo,
-            docRevision: 1,
-            isLatestRevision: true,
-            purchaseOrderId: gr.purchaseOrderId,
-            purchaseOrderDocNo: gr.purchaseOrderDocNo,
-            quotationId: gr.quotationId,
-            quotationDocNo: gr.quotationDocNo,
-            supplierId: gr.supplierId,
-            supplierName: gr.supplierName,
-            warehouseId: gr.warehouseId,
-            warehouseName: gr.warehouseName,
-            docDate: new Date(),
-            receiveDate: new Date(),
-            internalNote: `Reverse of ${gr.docFullNo}: ${reason || 'No reason provided'}`,
-            remark: gr.remark,
-            status: 'POSTED',
-            subtotal: -Number(gr.subtotal),
-            discountAmount: -Number(gr.discountAmount),
-            taxAmount: -Number(gr.taxAmount),
-            totalAmount: -Number(gr.totalAmount),
-            totalExpectedCost: -Number(gr.totalExpectedCost),
-            totalVariance: 0,
-            variancePercent: 0,
-            hasVarianceAlert: false,
-            postedAt: new Date(),
-            postedBy: userId,
-            createdBy: userId,
-            reversedFromId: gr.id,
-        });
-        const savedReverseGR = await queryRunner.manager.save(reverseGR);
-        for (const item of gr.items) {
-            const reverseItem = queryRunner.manager.create(entities_1.GoodsReceiptItemEntity, {
-                goodsReceiptId: savedReverseGR.id,
-                lineNo: item.lineNo,
-                poItemId: item.poItemId,
-                quotationItemId: item.quotationItemId,
-                sourceType: item.sourceType,
-                productId: item.productId,
-                tempProductId: item.tempProductId,
-                itemCode: item.itemCode,
-                itemName: item.itemName,
-                itemDescription: item.itemDescription,
-                brand: item.brand,
-                qty: -Number(item.qty),
-                unit: item.unit,
-                unitCost: Number(item.unitCost),
-                lineTotal: -Number(item.lineTotal),
-                expectedUnitCost: Number(item.expectedUnitCost),
-                costVariance: 0,
-                variancePercent: 0,
-                hasVarianceAlert: false,
-            });
-            await queryRunner.manager.save(reverseItem);
-            if (item.productId) {
-                await this.fifoService.consumeStock(item.productId, gr.warehouseId, Number(item.qty), savedReverseGR.docFullNo, queryRunner.manager);
-            }
-        }
-        gr.status = 'REVERSED';
-        gr.reversedAt = new Date();
-        gr.reversedBy = userId;
-        gr.reverseReason = reason;
-        gr.reversedToId = savedReverseGR.id;
-        gr.updatedBy = userId;
-        await queryRunner.manager.save(gr);
-        await queryRunner.commitTransaction();
-        return savedReverseGR;
-    }
-    catch (error) {
-        await queryRunner.rollbackTransaction();
-        throw error;
-    }
-    finally {
-        await queryRunner.release();
-    }
-}
 //# sourceMappingURL=goods-receipt.service.js.map
