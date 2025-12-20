@@ -304,11 +304,11 @@ const QuotationDetail: React.FC = () => {
             docNo: relatedDocs.goodsReceipts[0].docFullNo,
             status: relatedDocs.goodsReceipts[0].status,
           } : undefined,
-          inv: relatedDocs.invoices[0] ? {
-            id: relatedDocs.invoices[0].id,
-            docNo: relatedDocs.invoices[0].docFullNo,
-            status: relatedDocs.invoices[0].status,
-          } : undefined,
+          inv: (() => { const best = relatedDocs.invoices.find(i => i.status === "PAID") || relatedDocs.invoices.find(i => i.status === "POSTED") || relatedDocs.invoices[0]; return best ? {
+            id: best.id,
+            docNo: best.docFullNo,
+            status: best.status,
+          } : undefined; })(),
         }}
     	        onNavigate={(type) => {
           if (type === "po") navigate("/purchase-orders");
