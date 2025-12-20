@@ -177,6 +177,7 @@ export interface GoodsReceipt {
   status: DocumentStatus;
   totalAmount: number;
   grandTotal?: number;
+  hasCreditNote?: boolean;
   remark?: string;
   items: GoodsReceiptItem[];
   createdAt: string;
@@ -252,6 +253,7 @@ export interface SalesInvoice {
   vatAmount: number;
   totalAmount: number;
   grandTotal?: number;
+  hasCreditNote?: boolean;
   remark?: string;
   items: SalesInvoiceItem[];
   createdAt: string;

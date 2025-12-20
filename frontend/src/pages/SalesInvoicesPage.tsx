@@ -75,6 +75,32 @@ const SalesInvoicesPage: React.FC = () => {
     }
   };
 
+  const handleCreditNote = (id: number, docNo: string) => {
+    Modal.confirm({
+      title: 'สร้างใบลดหนี้ (Credit Note)',
+      content: (
+        <div>
+          <p>คุณต้องการสร้างใบลดหนี้สำหรับ <strong>{docNo}</strong> ใช่หรือไม่?</p>
+          <p style={{ color: '#f97373', fontSize: 12 }}>
+            ใบลดหนี้จะลดยอดลูกหนี้ตามจำนวนเต็มของใบแจ้งหนี้เดิม
+          </p>
+        </div>
+      ),
+      okText: 'ยืนยันสร้างใบลดหนี้',
+      okButtonProps: { danger: true },
+      cancelText: 'ยกเลิก',
+      onOk: async () => {
+        try {
+          await salesInvoicesApi.createCreditNote(id, 'สร้างใบลดหนี้จากหน้า UI');
+          message.success('สร้างใบลดหนี้สำเร็จ');
+          loadData();
+        } catch (error: any) {
+          message.error(error.response?.data?.message || 'ไม่สามารถสร้างใบลดหนี้ได้');
+        }
+      },
+    });
+  };
+
   const handleSubmit = async (values: any) => {
     try {
       const payload = {
@@ -107,8 +133,8 @@ const SalesInvoicesPage: React.FC = () => {
     setItems(newItems);
   };
 
-  const statusColors: Record<string, string> = { DRAFT: 'default', draft: 'default', confirmed: 'processing', POSTED: 'success', posted: 'success', cancelled: 'error' };
-  const statusLabels: Record<string, string> = { DRAFT: 'ร่าง', draft: 'ร่าง', confirmed: 'ยืนยัน', POSTED: 'ลงบัญชี', posted: 'ลงบัญชี', cancelled: 'ยกเลิก' };
+  const statusColors: Record<string, string> = { DRAFT: 'default', draft: 'default', confirmed: 'processing', POSTED: 'success', posted: 'success', PAID: 'success', paid: 'success', cancelled: 'error', CREDIT_NOTE: 'warning' };
+  const statusLabels: Record<string, string> = { DRAFT: 'ร่าง', draft: 'ร่าง', confirmed: 'ยืนยัน', POSTED: 'ลงบัญชี', posted: 'ลงบัญชี', PAID: 'ชำระแล้ว', paid: 'ชำระแล้ว', cancelled: 'ยกเลิก', CREDIT_NOTE: 'ใบลดหนี้' };
 
   const columns = [
     { title: 'เลขที่', dataIndex: 'docFullNo', key: 'docNo', width: 140 },
@@ -128,6 +154,11 @@ const SalesInvoicesPage: React.FC = () => {
               <Button type="text" icon={<CheckOutlined />} onClick={() => handlePost(r.id)} style={{ color: '#10b981' }} />
               <Button type="text" icon={<CloseOutlined />} onClick={() => handleCancel(r.id)} style={{ color: '#f97373' }} />
             </>
+          )}
+          {['POSTED', 'PAID'].includes(r.status?.toUpperCase() || '') && !r.hasCreditNote && (
+            <Button type="primary" danger icon={<RollbackOutlined />} onClick={() => handleCreditNote(r.id, r.docFullNo || '')}>
+              ใบลดหนี้
+            </Button>
           )}
         </Space>
       ),

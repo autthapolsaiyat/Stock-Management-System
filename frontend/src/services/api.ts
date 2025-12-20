@@ -151,6 +151,7 @@ export const salesInvoicesApi = {
   createFromQuotation: (quotationId: number) => api.post(`/api/sales-invoices/from-quotation/${quotationId}`),
   getByQuotation: (quotationId: number) => api.get(`/api/sales-invoices/quotation/${quotationId}`),
   markPaid: (id: number, data: any) => api.post("/api/sales-invoices/" + id + "/mark-paid", data),
+  createCreditNote: (id: number, reason: string) => api.post("/api/sales-invoices/" + id + "/credit-note", { reason }),
 };
 
 // Stock Issues API
