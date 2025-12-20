@@ -144,7 +144,6 @@ export interface PurchaseOrder {
   vatAmount: number;
   totalAmount: number;
   grandTotal?: number;
-  grandTotal?: number;
   expectedDate?: string;
   deliveryDate?: string;
   remark?: string;
