@@ -57,6 +57,13 @@ const App: React.FC = () => {
     <Routes>
       {/* Public Routes */}
       <Route path="/login" element={<LoginPage />} />
+      
+      {/* Intro Page - No Layout */}
+      <Route path="/intro" element={
+        <ProtectedRoute>
+          <IntroPage />
+        </ProtectedRoute>
+      } />
 
       {/* Protected Routes */}
       <Route
@@ -67,7 +74,6 @@ const App: React.FC = () => {
           </ProtectedRoute>
         }
       >
-        <Route path="intro" element={<IntroPage />} />
         <Route index element={<DashboardPage />} />
         
         {/* Master Data */}
