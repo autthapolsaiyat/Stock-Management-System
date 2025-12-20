@@ -134,6 +134,21 @@ const QuotationDetail: React.FC = () => {
     }
   };
 
+  const handleMarkPaid = async () => {
+    const inv = relatedDocs.invoices.find(i => i.status === "POSTED") || relatedDocs.invoices[0];
+    if (!inv) {
+      message.error("ไม่พบใบแจ้งหนี้ที่สามารถบันทึกชำระได้");
+      return;
+    }
+    try {
+      await salesInvoicesApi.markPaid(inv.id, { paymentMethod: "CASH", paymentReference: "" });
+      message.success("บันทึกชำระเงินสำเร็จ");
+      loadData();
+    } catch (error: any) {
+      message.error(error.response?.data?.message || "ไม่สามารถบันทึกชำระเงินได้");
+    }
+  };
+
   if (loading || !quotation) {
     return <div style={{ padding: 24, textAlign: 'center' }}>กำลังโหลด...</div>;
   }
@@ -318,6 +333,7 @@ const QuotationDetail: React.FC = () => {
         onCreatePO={handleCreatePO}
         onCreateGR={() => navigate("/goods-receipts")}
         onCreateInvoice={handleCreateInvoice}
+        onMarkPaid={handleMarkPaid}
       />
       <Row gutter={24}>
         <Col xs={24} lg={16}>
