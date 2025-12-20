@@ -1,6 +1,7 @@
 import React, { useEffect, useState, useMemo } from 'react';
 import { Table, Button, Card, Space, Tag, message, Modal, Form, Select, InputNumber, Input, DatePicker, Divider, Typography } from 'antd';
-import { PlusOutlined, EyeOutlined, CheckOutlined, CloseOutlined, EditOutlined } from '@ant-design/icons';
+import { PlusOutlined, EyeOutlined, CheckOutlined, CloseOutlined,
+  RollbackOutlined, EditOutlined } from '@ant-design/icons';
 import { goodsReceiptsApi, suppliersApi, warehousesApi, productsApi, purchaseOrdersApi } from '../services/api';
 import { GoodsReceipt, Supplier, Warehouse, Product, PurchaseOrder } from '../types';
 import dayjs from 'dayjs';
