@@ -143,6 +143,9 @@ export class QuotationEntity {
   @Column({ name: 'revision_reason', type: 'text', nullable: true })
   revisionReason: string;
 
+  @Column({ name: 'revised_from_id', nullable: true })
+  revisedFromId: number;
+
   // Confirmation
   @Column({ name: 'confirmed_at', type: 'timestamptz', nullable: true })
   confirmedAt: Date;

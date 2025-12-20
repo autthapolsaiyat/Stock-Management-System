@@ -44,6 +44,7 @@ export declare class QuotationEntity {
     internalNote: string;
     remark: string;
     revisionReason: string;
+    revisedFromId: number;
     confirmedAt: Date;
     confirmedBy: number;
     cancelledAt: Date;

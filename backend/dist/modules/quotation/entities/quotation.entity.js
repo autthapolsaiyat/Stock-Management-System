@@ -192,6 +192,10 @@ __decorate([
     __metadata("design:type", String)
 ], QuotationEntity.prototype, "revisionReason", void 0);
 __decorate([
+    (0, typeorm_1.Column)({ name: 'revised_from_id', nullable: true }),
+    __metadata("design:type", Number)
+], QuotationEntity.prototype, "revisedFromId", void 0);
+__decorate([
     (0, typeorm_1.Column)({ name: 'confirmed_at', type: 'timestamptz', nullable: true }),
     __metadata("design:type", Date)
 ], QuotationEntity.prototype, "confirmedAt", void 0);

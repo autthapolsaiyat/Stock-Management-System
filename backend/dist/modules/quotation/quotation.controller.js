@@ -57,6 +57,9 @@ let QuotationController = class QuotationController {
     cancel(id, reason, req) {
         return this.quotationService.cancel(id, req.user.sub, reason);
     }
+    createRevision(id, reason, req) {
+        return this.quotationService.createRevision(id, req.user.sub, reason);
+    }
     cancelItem(id, itemId, reason, req) {
         return this.quotationService.cancelItem(id, itemId, req.user.sub, reason);
     }
@@ -164,6 +167,15 @@ __decorate([
     __metadata("design:paramtypes", [Number, String, Object]),
     __metadata("design:returntype", void 0)
 ], QuotationController.prototype, "cancel", null);
+__decorate([
+    (0, common_1.Post)(':id/revision'),
+    __param(0, (0, common_1.Param)('id', common_1.ParseIntPipe)),
+    __param(1, (0, common_1.Body)('reason')),
+    __param(2, (0, common_1.Request)()),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [Number, String, Object]),
+    __metadata("design:returntype", void 0)
+], QuotationController.prototype, "createRevision", null);
 __decorate([
     (0, common_1.Post)(':id/items/:itemId/cancel'),
     __param(0, (0, common_1.Param)('id', common_1.ParseIntPipe)),

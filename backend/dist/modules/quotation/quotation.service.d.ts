@@ -42,4 +42,5 @@ export declare class QuotationService {
         success: boolean;
         message: string;
     }>;
+    createRevision(id: number, userId: number, reason?: string): Promise<QuotationEntity>;
 }

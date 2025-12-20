@@ -27,6 +27,7 @@ export declare class QuotationController {
     send(id: number, req: any): Promise<import("./entities").QuotationEntity>;
     confirm(id: number, req: any): Promise<import("./entities").QuotationEntity>;
     cancel(id: number, reason: string, req: any): Promise<import("./entities").QuotationEntity>;
+    createRevision(id: number, reason: string, req: any): Promise<import("./entities").QuotationEntity>;
     cancelItem(id: number, itemId: number, reason: string, req: any): Promise<import("./entities").QuotationEntity>;
     delete(id: number, req: any): Promise<{
         success: boolean;

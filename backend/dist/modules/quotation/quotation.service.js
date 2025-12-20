@@ -451,6 +451,84 @@ let QuotationService = class QuotationService {
         await this.quotationRepository.delete(id);
         return { success: true, message: 'ลบใบเสนอราคาสำเร็จ' };
     }
+    async createRevision(id, userId, reason) {
+        const original = await this.findOne(id);
+        if (!['SENT', 'CONFIRMED', 'PARTIALLY_CLOSED'].includes(original.status)) {
+            throw new common_1.BadRequestException('Only sent or confirmed quotations can be revised');
+        }
+        const queryRunner = this.dataSource.createQueryRunner();
+        await queryRunner.connect();
+        await queryRunner.startTransaction();
+        try {
+            original.isLatestRevision = false;
+            original.updatedBy = userId;
+            await queryRunner.manager.save(original);
+            const newRevision = original.docRevision + 1;
+            const newDocFullNo = `${original.docBaseNo}-R${newRevision - 1}`;
+            const revision = queryRunner.manager.create(entities_1.QuotationEntity, {
+                docBaseNo: original.docBaseNo,
+                docRevision: newRevision,
+                docFullNo: newDocFullNo,
+                isLatestRevision: true,
+                qtType: original.qtType,
+                customerId: original.customerId,
+                customerName: original.customerName,
+                customerAddress: original.customerAddress,
+                contactPerson: original.contactPerson,
+                contactPhone: original.contactPhone,
+                contactEmail: original.contactEmail,
+                docDate: new Date(),
+                validUntil: original.validUntil,
+                deliveryDays: original.deliveryDays,
+                paymentTermsText: original.paymentTermsText,
+                creditTermDays: original.creditTermDays,
+                remark: original.remark,
+                internalNote: original.internalNote,
+                status: 'DRAFT',
+                subtotal: original.subtotal,
+                discountPercent: original.discountPercent,
+                discountAmount: original.discountAmount,
+                afterDiscount: original.afterDiscount,
+                taxRate: original.taxRate,
+                taxAmount: original.taxAmount,
+                grandTotal: original.grandTotal,
+                revisionReason: reason || 'Revision from previous version',
+                revisedFromId: original.id,
+                createdBy: userId,
+            });
+            const savedRevision = await queryRunner.manager.save(revision);
+            for (const item of original.items) {
+                const newItem = queryRunner.manager.create(entities_1.QuotationItemEntity, {
+                    quotationId: savedRevision.id,
+                    lineNo: item.lineNo,
+                    productId: item.productId,
+                    tempProductId: item.tempProductId,
+                    itemCode: item.itemCode,
+                    itemName: item.itemName,
+                    itemDescription: item.itemDescription,
+                    brand: item.brand,
+                    qty: item.qty,
+                    unit: item.unit,
+                    unitPrice: item.unitPrice,
+                    estimatedCost: item.estimatedCost,
+                    lineTotal: item.lineTotal,
+                    marginPercent: item.marginPercent,
+                    marginAmount: item.marginAmount,
+                    itemStatus: 'PENDING',
+                });
+                await queryRunner.manager.save(newItem);
+            }
+            await queryRunner.commitTransaction();
+            return savedRevision;
+        }
+        catch (error) {
+            await queryRunner.rollbackTransaction();
+            throw error;
+        }
+        finally {
+            await queryRunner.release();
+        }
+    }
 };
 exports.QuotationService = QuotationService;
 exports.QuotationService = QuotationService = __decorate([

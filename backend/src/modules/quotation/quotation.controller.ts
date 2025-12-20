@@ -72,6 +72,11 @@ export class QuotationController {
     return this.quotationService.cancel(id, req.user.sub, reason);
   }
 
+  @Post(':id/revision')
+  createRevision(@Param('id', ParseIntPipe) id: number, @Body('reason') reason: string, @Request() req: any) {
+    return this.quotationService.createRevision(id, req.user.sub, reason);
+  }
+
   @Post(':id/items/:itemId/cancel')
   cancelItem(
     @Param('id', ParseIntPipe) id: number,
