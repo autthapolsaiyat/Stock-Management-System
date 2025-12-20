@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import {
-  Card, Button, Tag, Space, Descriptions, Table, Divider,
+  Card, Modal, Button, Tag, Space, Descriptions, Table, Divider,
   message, Popconfirm, Row, Col, Progress
 } from 'antd';
 import {
@@ -127,6 +127,24 @@ const QuotationDetail: React.FC = () => {
     } catch (error) {
       message.error('ไม่สามารถยืนยันได้');
     }
+  };
+
+  const handleRevision = () => {
+    Modal.confirm({
+      title: 'สร้าง Revision ใหม่',
+      content: 'คุณต้องการสร้าง Revision ใหม่ของใบเสนอราคานี้ใช่หรือไม่? Revision ใหม่จะถูกสร้างเป็นร่างและสามารถแก้ไขได้',
+      okText: 'สร้าง Revision',
+      cancelText: 'ยกเลิก',
+      onOk: async () => {
+        try {
+          const res = await quotationsApi.createRevision(parseInt(id!), 'แก้ไขจากหน้า UI');
+          message.success('สร้าง Revision สำเร็จ');
+          navigate('/quotations/' + res.data.id);
+        } catch (error: any) {
+          message.error(error.response?.data?.message || 'ไม่สามารถสร้าง Revision ได้');
+        }
+      },
+    });
   };
 
   const handleCancel = async () => {
@@ -291,11 +309,16 @@ const QuotationDetail: React.FC = () => {
           )}
           
           {quotation.status === 'SENT' && (
-            <Popconfirm title="ลูกค้ายืนยันรับงาน?" onConfirm={handleConfirm}>
-              <Button type="primary" icon={<CheckCircleOutlined />}>
-                ยืนยันรับงาน
+            <>
+              <Popconfirm title="ลูกค้ายืนยันรับงาน?" onConfirm={handleConfirm}>
+                <Button type="primary" icon={<CheckCircleOutlined />}>
+                  ยืนยันรับงาน
+                </Button>
+              </Popconfirm>
+              <Button icon={<EditOutlined />} onClick={handleRevision} style={{ borderColor: '#fbbf24', color: '#fbbf24' }}>
+                สร้าง Revision
               </Button>
-            </Popconfirm>
+            </>
           )}
           
           {(['CONFIRMED', 'PARTIALLY_CLOSED'] as string[]).includes(quotation.status) && (
@@ -305,6 +328,9 @@ const QuotationDetail: React.FC = () => {
               </Button>
               <Button icon={<ShoppingCartOutlined />} onClick={handleCreateInvoice}>
                 สร้างใบแจ้งหนี้
+              </Button>
+              <Button icon={<EditOutlined />} onClick={handleRevision} style={{ borderColor: '#fbbf24', color: '#fbbf24' }}>
+                สร้าง Revision
               </Button>
             </>
           )}

@@ -183,6 +183,7 @@ export const quotationsApi = {
   approveMargin: (id: number) => api.post(`/api/quotations/${id}/approve-margin`),
   send: (id: number) => api.post(`/api/quotations/${id}/send`),
   confirm: (id: number) => api.post(`/api/quotations/${id}/confirm`),
+  createRevision: (id: number, reason: string) => api.post("/api/quotations/" + id + "/revision", { reason }),
   cancel: (id: number) => api.post(`/api/quotations/${id}/cancel`),
 };
 
