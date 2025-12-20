@@ -196,7 +196,7 @@ export class PurchaseOrderService {
         brand: item.brand,
         qty: dto.quantities?.[item.id] || item.qtyRemaining,
         unit: item.unit,
-        unitPrice: item.estimatedCost || item.unitPrice, // Use estimated cost for PO
+        unitPrice: item.estimatedCost > 0 ? item.estimatedCost : item.unitPrice, // Use estimated cost for PO
         internalNote: item.internalNote,
       })),
     };

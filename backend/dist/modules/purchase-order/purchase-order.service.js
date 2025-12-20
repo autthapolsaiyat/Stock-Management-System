@@ -186,7 +186,7 @@ let PurchaseOrderService = class PurchaseOrderService {
                 brand: item.brand,
                 qty: dto.quantities?.[item.id] || item.qtyRemaining,
                 unit: item.unit,
-                unitPrice: item.estimatedCost || item.unitPrice,
+                unitPrice: item.estimatedCost > 0 ? item.estimatedCost : item.unitPrice,
                 internalNote: item.internalNote,
             })),
         };
