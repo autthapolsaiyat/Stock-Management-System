@@ -285,7 +285,14 @@ const QuotationPrintPreview: React.FC<QuotationPrintPreviewProps> = ({
                   <td style={{ border: '1px solid #000', padding: 6, textAlign: 'center' }}>{idx + 1}</td>
                   <td style={{ border: '1px solid #000', padding: 6, textAlign: 'center' }}>{item.qty} {item.unit}</td>
                   <td style={{ border: '1px solid #000', padding: 6, fontSize: 11 }}>{item.itemCode}</td>
-                  <td style={{ border: '1px solid #000', padding: 6 }}>{item.itemName}</td>
+                  <td style={{ border: '1px solid #000', padding: 6 }}>
+                    <div>{item.itemName}</div>
+                    {item.itemDescription && (
+                      <div style={{ fontSize: 10, color: '#333', marginTop: 4, whiteSpace: 'pre-line' }}>
+                        {item.itemDescription}
+                      </div>
+                    )}
+                  </td>
                   <td style={{ border: '1px solid #000', padding: 6, textAlign: 'right' }}>{formatNumber(item.unitPrice)}</td>
                   <td style={{ border: '1px solid #000', padding: 6, textAlign: 'right' }}>{formatNumber(item.lineTotal)}</td>
                 </tr>
