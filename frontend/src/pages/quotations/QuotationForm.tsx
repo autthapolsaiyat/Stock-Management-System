@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import {
-  Card, Form, Input, Select, DatePicker, InputNumber, Button, Space, Row, Col,
+  Card, Form, Input, Select, DatePicker, InputNumber, Button, Space, Row, Col, Checkbox,
   Table, Tag, message, Modal, Divider, Radio, Popconfirm
 } from 'antd';
 import {
@@ -578,6 +578,36 @@ const QuotationForm: React.FC = () => {
               pagination={false}
               size="small"
               locale={{ emptyText: 'ยังไม่มีรายการสินค้า' }}
+              expandable={{
+                expandedRowRender: (record: QuotationItem, index: number) => (
+                  <div style={{ padding: '12px 0' }}>
+                    <div style={{ marginBottom: 8, fontWeight: 500 }}>
+                      <Checkbox 
+                        checked={!!record.itemDescription}
+                        onChange={(e) => {
+                          if (!e.target.checked) {
+                            handleItemChange(index, 'itemDescription', '');
+                          }
+                        }}
+                      >
+                        เพิ่มรายละเอียด
+                      </Checkbox>
+                    </div>
+                    <Input.TextArea
+                      rows={6}
+                      value={record.itemDescription || ''}
+                      onChange={(e) => handleItemChange(index, 'itemDescription', e.target.value)}
+                      placeholder="ใส่รายละเอียดเพิ่มเติม เช่น:&#10;- ตรวจเช็คความสมบูรณ์และรอยรั่วของแท้งค์&#10;- ตรวจเช็คความสมบูรณ์ของกลไกการเปิดปิดฝา&#10;- ตรวจเช็คการทำงานของระบบต่างๆ"
+                      style={{ 
+                        fontFamily: 'monospace',
+                        background: 'rgba(0,0,0,0.02)',
+                      }}
+                    />
+                  </div>
+                ),
+                rowExpandable: () => true,
+                expandRowByClick: false,
+              }}
             />
             
             {items.length > 0 && summary.requiresApproval && (
