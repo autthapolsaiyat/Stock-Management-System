@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { Table, Button, Card, Space, Tag, message, Modal, Form, Select, InputNumber, Input, DatePicker } from 'antd';
-import { PlusOutlined, EyeOutlined, CheckOutlined, CloseOutlined } from '@ant-design/icons';
+import { PlusOutlined, EyeOutlined, CheckOutlined, CloseOutlined, RollbackOutlined } from '@ant-design/icons';
 import { salesInvoicesApi, customersApi, warehousesApi, productsApi } from '../services/api';
 import { SalesInvoice, Customer, Warehouse, Product } from '../types';
 import dayjs from 'dayjs';
