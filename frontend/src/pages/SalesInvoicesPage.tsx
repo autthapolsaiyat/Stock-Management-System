@@ -107,8 +107,8 @@ const SalesInvoicesPage: React.FC = () => {
     setItems(newItems);
   };
 
-  const statusColors: Record<string, string> = { draft: 'default', confirmed: 'processing', posted: 'success', cancelled: 'error' };
-  const statusLabels: Record<string, string> = { draft: 'ร่าง', confirmed: 'ยืนยัน', posted: 'ลงบัญชี', cancelled: 'ยกเลิก' };
+  const statusColors: Record<string, string> = { DRAFT: 'default', draft: 'default', confirmed: 'processing', POSTED: 'success', posted: 'success', cancelled: 'error' };
+  const statusLabels: Record<string, string> = { DRAFT: 'ร่าง', draft: 'ร่าง', confirmed: 'ยืนยัน', POSTED: 'ลงบัญชี', posted: 'ลงบัญชี', cancelled: 'ยกเลิก' };
 
   const columns = [
     { title: 'เลขที่', dataIndex: 'docFullNo', key: 'docNo', width: 140 },
@@ -123,7 +123,7 @@ const SalesInvoicesPage: React.FC = () => {
       render: (_: any, r: SalesInvoice) => (
         <Space>
           <Button type="text" icon={<EyeOutlined />} onClick={() => handleView(r.id)} style={{ color: '#22d3ee' }} />
-          {r.status === 'draft' && (
+          {r.status?.toUpperCase() === 'DRAFT' && (
             <>
               <Button type="text" icon={<CheckOutlined />} onClick={() => handlePost(r.id)} style={{ color: '#10b981' }} />
               <Button type="text" icon={<CloseOutlined />} onClick={() => handleCancel(r.id)} style={{ color: '#f97373' }} />
