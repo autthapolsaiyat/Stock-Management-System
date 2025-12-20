@@ -208,6 +208,22 @@ __decorate([
     __metadata("design:type", Number)
 ], SalesInvoiceEntity.prototype, "updatedBy", void 0);
 __decorate([
+    (0, typeorm_1.Column)({ name: 'has_credit_note', type: 'boolean', default: false }),
+    __metadata("design:type", Boolean)
+], SalesInvoiceEntity.prototype, "hasCreditNote", void 0);
+__decorate([
+    (0, typeorm_1.Column)({ name: 'credit_note_id', nullable: true }),
+    __metadata("design:type", Number)
+], SalesInvoiceEntity.prototype, "creditNoteId", void 0);
+__decorate([
+    (0, typeorm_1.Column)({ name: 'credit_note_for_id', nullable: true }),
+    __metadata("design:type", Number)
+], SalesInvoiceEntity.prototype, "creditNoteForId", void 0);
+__decorate([
+    (0, typeorm_1.Column)({ name: 'credit_note_reason', type: 'text', nullable: true }),
+    __metadata("design:type", String)
+], SalesInvoiceEntity.prototype, "creditNoteReason", void 0);
+__decorate([
     (0, typeorm_1.OneToMany)(() => sales_invoice_item_entity_1.SalesInvoiceItemEntity, item => item.salesInvoice),
     __metadata("design:type", Array)
 ], SalesInvoiceEntity.prototype, "items", void 0);

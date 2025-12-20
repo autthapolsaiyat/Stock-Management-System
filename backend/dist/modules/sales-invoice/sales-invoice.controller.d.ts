@@ -32,4 +32,7 @@ export declare class SalesInvoiceController {
     post(id: number, req: any): Promise<import("./entities").SalesInvoiceEntity>;
     cancel(id: number, reason: string, req: any): Promise<import("./entities").SalesInvoiceEntity>;
     markPaid(id: number, dto: any, req: any): Promise<import("./entities").SalesInvoiceEntity>;
+    createCreditNote(id: number, dto: {
+        reason: string;
+    }, req: any): Promise<import("./entities").SalesInvoiceEntity>;
 }

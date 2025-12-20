@@ -47,4 +47,12 @@ export declare class SalesInvoiceService {
             profitPercent: number;
         }[];
     }>;
+    createCreditNote(id: number, userId: number, dto: {
+        reason: string;
+        items?: {
+            itemId: number;
+            qty: number;
+            amount: number;
+        }[];
+    }): Promise<SalesInvoiceEntity>;
 }

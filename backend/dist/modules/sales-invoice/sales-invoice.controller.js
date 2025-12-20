@@ -51,6 +51,9 @@ let SalesInvoiceController = class SalesInvoiceController {
     markPaid(id, dto, req) {
         return this.invoiceService.markPaid(id, req.user.sub, dto);
     }
+    createCreditNote(id, dto, req) {
+        return this.invoiceService.createCreditNote(id, req.user.sub, dto);
+    }
 };
 exports.SalesInvoiceController = SalesInvoiceController;
 __decorate([
@@ -133,6 +136,15 @@ __decorate([
     __metadata("design:paramtypes", [Number, Object, Object]),
     __metadata("design:returntype", void 0)
 ], SalesInvoiceController.prototype, "markPaid", null);
+__decorate([
+    (0, common_1.Post)(':id/credit-note'),
+    __param(0, (0, common_1.Param)('id', common_1.ParseIntPipe)),
+    __param(1, (0, common_1.Body)()),
+    __param(2, (0, common_1.Request)()),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [Number, Object, Object]),
+    __metadata("design:returntype", void 0)
+], SalesInvoiceController.prototype, "createCreditNote", null);
 exports.SalesInvoiceController = SalesInvoiceController = __decorate([
     (0, swagger_1.ApiTags)('Sales Invoices'),
     (0, swagger_1.ApiBearerAuth)(),

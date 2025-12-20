@@ -48,5 +48,9 @@ export declare class SalesInvoiceEntity {
     updatedAt: Date;
     createdBy: number;
     updatedBy: number;
+    hasCreditNote: boolean;
+    creditNoteId: number;
+    creditNoteForId: number;
+    creditNoteReason: string;
     items: SalesInvoiceItemEntity[];
 }

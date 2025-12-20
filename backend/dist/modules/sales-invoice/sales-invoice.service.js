@@ -325,6 +325,72 @@ let SalesInvoiceService = class SalesInvoiceService {
             })),
         };
     }
+    async createCreditNote(id, userId, dto) {
+        const invoice = await this.findOne(id);
+        if (!['POSTED', 'PAID'].includes(invoice.status)) {
+            throw new common_1.BadRequestException('Only posted or paid invoices can have credit notes');
+        }
+        const queryRunner = this.dataSource.createQueryRunner();
+        await queryRunner.connect();
+        await queryRunner.startTransaction();
+        try {
+            const { docBaseNo, docFullNo } = await this.docNumberingService.generateDocNumber('CN', queryRunner);
+            const creditNote = queryRunner.manager.create(entities_1.SalesInvoiceEntity, {
+                docBaseNo,
+                docFullNo,
+                docDate: new Date(),
+                customerId: invoice.customerId,
+                customerName: invoice.customerName,
+                warehouseId: invoice.warehouseId,
+                warehouseName: invoice.warehouseName,
+                quotationId: invoice.quotationId,
+                quotationDocNo: invoice.quotationDocNo,
+                status: 'POSTED',
+                subtotal: -Number(invoice.subtotal),
+                discountPercent: invoice.discountPercent,
+                discountAmount: -Number(invoice.discountTotal),
+                taxRate: invoice.taxRate,
+                taxAmount: -Number(invoice.taxAmount),
+                grandTotal: -Number(invoice.grandTotal),
+                costTotal: -Number(invoice.costTotal),
+                profitTotal: -Number(invoice.profitTotal),
+                remark: `Credit Note for ${invoice.docFullNo}: ${dto.reason}`,
+                creditNoteForId: invoice.id,
+                creditNoteReason: dto.reason,
+                postedAt: new Date(),
+                postedBy: userId,
+                createdBy: userId,
+            });
+            const savedCN = await queryRunner.manager.save(creditNote);
+            for (const item of invoice.items) {
+                const cnItem = queryRunner.manager.create(entities_1.SalesInvoiceItemEntity, {
+                    salesInvoiceId: savedCN.id,
+                    lineNo: item.lineNo,
+                    productId: item.productId,
+                    itemCode: item.itemCode,
+                    itemName: item.itemName,
+                    qty: -Number(item.qty),
+                    unit: item.unit,
+                    unitPrice: Number(item.unitPrice),
+                    lineTotal: -Number(item.lineTotal),
+                });
+                await queryRunner.manager.save(cnItem);
+            }
+            invoice.hasCreditNote = true;
+            invoice.creditNoteId = savedCN.id;
+            invoice.updatedBy = userId;
+            await queryRunner.manager.save(invoice);
+            await queryRunner.commitTransaction();
+            return savedCN;
+        }
+        catch (error) {
+            await queryRunner.rollbackTransaction();
+            throw error;
+        }
+        finally {
+            await queryRunner.release();
+        }
+    }
 };
 exports.SalesInvoiceService = SalesInvoiceService;
 exports.SalesInvoiceService = SalesInvoiceService = __decorate([

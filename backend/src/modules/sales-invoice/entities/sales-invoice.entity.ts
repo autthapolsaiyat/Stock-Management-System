@@ -160,6 +160,19 @@ export class SalesInvoiceEntity {
   @Column({ name: 'updated_by', nullable: true })
   updatedBy: number;
 
+  // Credit Note fields
+  @Column({ name: 'has_credit_note', type: 'boolean', default: false })
+  hasCreditNote: boolean;
+
+  @Column({ name: 'credit_note_id', nullable: true })
+  creditNoteId: number;
+
+  @Column({ name: 'credit_note_for_id', nullable: true })
+  creditNoteForId: number;
+
+  @Column({ name: 'credit_note_reason', type: 'text', nullable: true })
+  creditNoteReason: string;
+
   @OneToMany(() => SalesInvoiceItemEntity, item => item.salesInvoice)
   items: SalesInvoiceItemEntity[];
 }

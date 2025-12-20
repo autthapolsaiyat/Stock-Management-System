@@ -64,4 +64,9 @@ export class SalesInvoiceController {
   markPaid(@Param('id', ParseIntPipe) id: number, @Body() dto: any, @Request() req: any) {
     return this.invoiceService.markPaid(id, req.user.sub, dto);
   }
+
+  @Post(':id/credit-note')
+  createCreditNote(@Param('id', ParseIntPipe) id: number, @Body() dto: { reason: string }, @Request() req: any) {
+    return this.invoiceService.createCreditNote(id, req.user.sub, dto);
+  }
 }
