@@ -282,7 +282,7 @@ const QuotationPrintPreview: React.FC<QuotationPrintPreviewProps> = ({
             <tbody>
               {items.map((item, idx) => (
                 <tr key={idx}>
-                  <td style={{ border: '1px solid #000', padding: 6, textAlign: 'center' }}>{idx + 1}</td>
+                  <td style={{ border: '1px solid #000', padding: 6, textAlign: 'center', verticalAlign: 'top' }}>{idx + 1}</td>
                   <td style={{ border: '1px solid #000', padding: 6, textAlign: 'center', verticalAlign: 'top' }}>{item.qty} {item.unit}</td>
                   <td style={{ border: '1px solid #000', padding: 6, fontSize: 11, verticalAlign: 'top' }}>{item.itemCode}</td>
                   <td style={{ border: '1px solid #000', padding: 6, verticalAlign: 'top' }}>
