@@ -112,6 +112,7 @@ export interface Quotation {
   discountAmount: number;
   vatAmount: number;
   totalAmount: number;
+  grandTotal?: number;
   validUntil?: string;
   remark?: string;
   items: QuotationItem[];
@@ -142,6 +143,7 @@ export interface PurchaseOrder {
   discountAmount: number;
   vatAmount: number;
   totalAmount: number;
+  grandTotal?: number;
   grandTotal?: number;
   expectedDate?: string;
   deliveryDate?: string;
@@ -175,6 +177,7 @@ export interface GoodsReceipt {
   purchaseOrderId?: number;
   status: DocumentStatus;
   totalAmount: number;
+  grandTotal?: number;
   remark?: string;
   items: GoodsReceiptItem[];
   createdAt: string;
@@ -249,6 +252,7 @@ export interface SalesInvoice {
   discountAmount: number;
   vatAmount: number;
   totalAmount: number;
+  grandTotal?: number;
   remark?: string;
   items: SalesInvoiceItem[];
   createdAt: string;
