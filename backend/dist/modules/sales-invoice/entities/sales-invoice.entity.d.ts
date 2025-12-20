@@ -39,6 +39,11 @@ export declare class SalesInvoiceEntity {
     cancelledAt: Date;
     cancelledBy: number;
     cancelReason: string;
+    paidAt: Date;
+    paidBy: number;
+    paidAmount: number;
+    paymentMethod: string;
+    paymentReference: string;
     createdAt: Date;
     updatedAt: Date;
     createdBy: number;

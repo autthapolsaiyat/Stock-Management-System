@@ -21,6 +21,11 @@ export declare class SalesInvoiceService {
     approvePriceVariance(id: number, userId: number): Promise<SalesInvoiceEntity>;
     post(id: number, userId: number): Promise<SalesInvoiceEntity>;
     cancel(id: number, userId: number, reason?: string): Promise<SalesInvoiceEntity>;
+    markPaid(id: number, userId: number, dto?: {
+        paymentMethod?: string;
+        paymentReference?: string;
+        paidAmount?: number;
+    }): Promise<SalesInvoiceEntity>;
     getProfitReport(id: number): Promise<{
         invoice: {
             id: number;

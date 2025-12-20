@@ -335,6 +335,24 @@ export class SalesInvoiceService {
     return this.invoiceRepository.save(invoice);
   }
 
+  async markPaid(id: number, userId: number, dto?: { paymentMethod?: string; paymentReference?: string; paidAmount?: number }) {
+    const invoice = await this.findOne(id);
+    
+    if (invoice.status !== 'POSTED') {
+      throw new BadRequestException('Invoice must be posted before marking as paid');
+    }
+    
+    invoice.status = 'PAID';
+    invoice.paidAt = new Date();
+    invoice.paidBy = userId;
+    invoice.paidAmount = dto?.paidAmount || invoice.grandTotal;
+    invoice.paymentMethod = dto?.paymentMethod || 'TRANSFER';
+    invoice.paymentReference = dto?.paymentReference;
+    invoice.updatedBy = userId;
+    
+    return this.invoiceRepository.save(invoice);
+  }
+
   async getProfitReport(id: number) {
     const invoice = await this.findOne(id);
 

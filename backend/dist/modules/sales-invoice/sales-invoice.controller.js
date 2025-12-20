@@ -48,6 +48,9 @@ let SalesInvoiceController = class SalesInvoiceController {
     cancel(id, reason, req) {
         return this.invoiceService.cancel(id, req.user.sub, reason);
     }
+    markPaid(id, dto, req) {
+        return this.invoiceService.markPaid(id, req.user.sub, dto);
+    }
 };
 exports.SalesInvoiceController = SalesInvoiceController;
 __decorate([
@@ -121,6 +124,15 @@ __decorate([
     __metadata("design:paramtypes", [Number, String, Object]),
     __metadata("design:returntype", void 0)
 ], SalesInvoiceController.prototype, "cancel", null);
+__decorate([
+    (0, common_1.Post)(':id/mark-paid'),
+    __param(0, (0, common_1.Param)('id', common_1.ParseIntPipe)),
+    __param(1, (0, common_1.Body)()),
+    __param(2, (0, common_1.Request)()),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [Number, Object, Object]),
+    __metadata("design:returntype", void 0)
+], SalesInvoiceController.prototype, "markPaid", null);
 exports.SalesInvoiceController = SalesInvoiceController = __decorate([
     (0, swagger_1.ApiTags)('Sales Invoices'),
     (0, swagger_1.ApiBearerAuth)(),

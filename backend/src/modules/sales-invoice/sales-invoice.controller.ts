@@ -59,4 +59,9 @@ export class SalesInvoiceController {
   cancel(@Param('id', ParseIntPipe) id: number, @Body('reason') reason: string, @Request() req: any) {
     return this.invoiceService.cancel(id, req.user.sub, reason);
   }
+
+  @Post(':id/mark-paid')
+  markPaid(@Param('id', ParseIntPipe) id: number, @Body() dto: any, @Request() req: any) {
+    return this.invoiceService.markPaid(id, req.user.sub, dto);
+  }
 }

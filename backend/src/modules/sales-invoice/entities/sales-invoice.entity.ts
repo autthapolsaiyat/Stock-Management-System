@@ -131,6 +131,22 @@ export class SalesInvoiceEntity {
   @Column({ name: 'cancel_reason', type: 'text', nullable: true })
   cancelReason: string;
 
+  // Payment
+  @Column({ name: 'paid_at', type: 'timestamptz', nullable: true })
+  paidAt: Date;
+
+  @Column({ name: 'paid_by', nullable: true })
+  paidBy: number;
+
+  @Column({ name: 'paid_amount', type: 'decimal', precision: 15, scale: 4, nullable: true })
+  paidAmount: number;
+
+  @Column({ name: 'payment_method', type: 'varchar', length: 50, nullable: true })
+  paymentMethod: string;
+
+  @Column({ name: 'payment_reference', type: 'varchar', length: 100, nullable: true })
+  paymentReference: string;
+
   // Audit
   @CreateDateColumn({ name: 'created_at' })
   createdAt: Date;

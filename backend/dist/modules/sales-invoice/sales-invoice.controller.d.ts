@@ -31,4 +31,5 @@ export declare class SalesInvoiceController {
     approvePriceVariance(id: number, req: any): Promise<import("./entities").SalesInvoiceEntity>;
     post(id: number, req: any): Promise<import("./entities").SalesInvoiceEntity>;
     cancel(id: number, reason: string, req: any): Promise<import("./entities").SalesInvoiceEntity>;
+    markPaid(id: number, dto: any, req: any): Promise<import("./entities").SalesInvoiceEntity>;
 }

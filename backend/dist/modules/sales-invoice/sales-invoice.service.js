@@ -287,6 +287,20 @@ let SalesInvoiceService = class SalesInvoiceService {
         invoice.updatedBy = userId;
         return this.invoiceRepository.save(invoice);
     }
+    async markPaid(id, userId, dto) {
+        const invoice = await this.findOne(id);
+        if (invoice.status !== 'POSTED') {
+            throw new common_1.BadRequestException('Invoice must be posted before marking as paid');
+        }
+        invoice.status = 'PAID';
+        invoice.paidAt = new Date();
+        invoice.paidBy = userId;
+        invoice.paidAmount = dto?.paidAmount || invoice.grandTotal;
+        invoice.paymentMethod = dto?.paymentMethod || 'TRANSFER';
+        invoice.paymentReference = dto?.paymentReference;
+        invoice.updatedBy = userId;
+        return this.invoiceRepository.save(invoice);
+    }
     async getProfitReport(id) {
         const invoice = await this.findOne(id);
         return {

@@ -172,6 +172,26 @@ __decorate([
     __metadata("design:type", String)
 ], SalesInvoiceEntity.prototype, "cancelReason", void 0);
 __decorate([
+    (0, typeorm_1.Column)({ name: 'paid_at', type: 'timestamptz', nullable: true }),
+    __metadata("design:type", Date)
+], SalesInvoiceEntity.prototype, "paidAt", void 0);
+__decorate([
+    (0, typeorm_1.Column)({ name: 'paid_by', nullable: true }),
+    __metadata("design:type", Number)
+], SalesInvoiceEntity.prototype, "paidBy", void 0);
+__decorate([
+    (0, typeorm_1.Column)({ name: 'paid_amount', type: 'decimal', precision: 15, scale: 4, nullable: true }),
+    __metadata("design:type", Number)
+], SalesInvoiceEntity.prototype, "paidAmount", void 0);
+__decorate([
+    (0, typeorm_1.Column)({ name: 'payment_method', type: 'varchar', length: 50, nullable: true }),
+    __metadata("design:type", String)
+], SalesInvoiceEntity.prototype, "paymentMethod", void 0);
+__decorate([
+    (0, typeorm_1.Column)({ name: 'payment_reference', type: 'varchar', length: 100, nullable: true }),
+    __metadata("design:type", String)
+], SalesInvoiceEntity.prototype, "paymentReference", void 0);
+__decorate([
     (0, typeorm_1.CreateDateColumn)({ name: 'created_at' }),
     __metadata("design:type", Date)
 ], SalesInvoiceEntity.prototype, "createdAt", void 0);
