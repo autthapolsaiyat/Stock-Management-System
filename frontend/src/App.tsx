@@ -5,6 +5,7 @@ import MainLayout from './layouts/MainLayout';
 import {
   LoginPage,
   DashboardPage,
+  IntroPage,
   ProductsPage,
   CategoriesPage,
   CustomersPage,
@@ -66,6 +67,7 @@ const App: React.FC = () => {
           </ProtectedRoute>
         }
       >
+        <Route path="intro" element={<IntroPage />} />
         <Route index element={<DashboardPage />} />
         
         {/* Master Data */}
