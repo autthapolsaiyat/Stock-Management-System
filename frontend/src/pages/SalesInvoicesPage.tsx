@@ -115,7 +115,7 @@ const SalesInvoicesPage: React.FC = () => {
     { title: 'วันที่', dataIndex: 'docDate', key: 'docDate', width: 110, render: (d: string) => d ? dayjs(d).format('DD/MM/YYYY') : '-' },
     { title: 'ลูกค้า', key: 'customer', render: (_: any, r: SalesInvoice) => customers.find(c => c.id === r.customerId)?.name || '-' },
     { title: 'คลัง', key: 'warehouse', render: (_: any, r: SalesInvoice) => warehouses.find(w => w.id === r.warehouseId)?.name || '-' },
-    { title: 'ยอดรวม', dataIndex: 'totalAmount', key: 'totalAmount', align: 'right' as const, render: (v: number) => `฿${(v || 0).toLocaleString()}` },
+    { title: 'ยอดรวม', dataIndex: 'grandTotal', key: 'totalAmount', align: 'right' as const, render: (v: number) => `฿${(v || 0).toLocaleString()}` },
     { title: 'สถานะ', dataIndex: 'status', key: 'status', render: (s: string) => <Tag color={statusColors[s]}>{statusLabels[s] || s}</Tag> },
     {
       title: 'จัดการ', key: 'actions', width: 150,
@@ -212,7 +212,7 @@ const SalesInvoicesPage: React.FC = () => {
               size="small"
             />
             <div style={{ textAlign: 'right', marginTop: 16, fontSize: 18 }}>
-              <strong>ยอดรวม: ฿{selectedInvoice.totalAmount?.toLocaleString()}</strong>
+              <strong>ยอดรวม: ฿{selectedInvoice.grandTotal?.toLocaleString()}</strong>
             </div>
           </div>
         )}
