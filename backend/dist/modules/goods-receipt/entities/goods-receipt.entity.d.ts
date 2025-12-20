@@ -37,5 +37,10 @@ export declare class GoodsReceiptEntity {
     updatedAt: Date;
     createdBy: number;
     updatedBy: number;
+    reversedFromId: number;
+    reversedToId: number;
+    reversedAt: Date;
+    reversedBy: number;
+    reverseReason: string;
     items: GoodsReceiptItemEntity[];
 }

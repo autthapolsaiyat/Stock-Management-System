@@ -165,8 +165,25 @@ __decorate([
 ], GoodsReceiptEntity.prototype, "updatedBy", void 0);
 __decorate([
     (0, typeorm_1.OneToMany)(() => goods_receipt_item_entity_1.GoodsReceiptItemEntity, item => item.goodsReceipt),
-    __metadata("design:type", Array)
-], GoodsReceiptEntity.prototype, "items", void 0);
+    (0, typeorm_1.Column)({ name: 'reversed_from_id', nullable: true }),
+    __metadata("design:type", Number)
+], GoodsReceiptEntity.prototype, "reversedFromId", void 0);
+__decorate([
+    (0, typeorm_1.Column)({ name: 'reversed_to_id', nullable: true }),
+    __metadata("design:type", Number)
+], GoodsReceiptEntity.prototype, "reversedToId", void 0);
+__decorate([
+    (0, typeorm_1.Column)({ name: 'reversed_at', type: 'timestamptz', nullable: true }),
+    __metadata("design:type", Date)
+], GoodsReceiptEntity.prototype, "reversedAt", void 0);
+__decorate([
+    (0, typeorm_1.Column)({ name: 'reversed_by', nullable: true }),
+    __metadata("design:type", Number)
+], GoodsReceiptEntity.prototype, "reversedBy", void 0);
+__decorate([
+    (0, typeorm_1.Column)({ name: 'reverse_reason', type: 'text', nullable: true }),
+    __metadata("design:type", String)
+], GoodsReceiptEntity.prototype, "reverseReason", void 0);
 exports.GoodsReceiptEntity = GoodsReceiptEntity = __decorate([
     (0, typeorm_1.Entity)('goods_receipts')
 ], GoodsReceiptEntity);

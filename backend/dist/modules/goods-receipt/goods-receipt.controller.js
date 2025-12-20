@@ -48,6 +48,9 @@ let GoodsReceiptController = class GoodsReceiptController {
     cancel(id, reason, req) {
         return this.grService.cancel(id, req.user.sub, reason);
     }
+    reverse(id, reason, req) {
+        return this.grService.reverse(id, req.user.sub, reason);
+    }
 };
 exports.GoodsReceiptController = GoodsReceiptController;
 __decorate([
@@ -120,6 +123,15 @@ __decorate([
     __metadata("design:paramtypes", [Number, String, Object]),
     __metadata("design:returntype", void 0)
 ], GoodsReceiptController.prototype, "cancel", null);
+__decorate([
+    (0, common_1.Post)(':id/reverse'),
+    __param(0, (0, common_1.Param)('id', common_1.ParseIntPipe)),
+    __param(1, (0, common_1.Body)('reason')),
+    __param(2, (0, common_1.Request)()),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [Number, String, Object]),
+    __metadata("design:returntype", void 0)
+], GoodsReceiptController.prototype, "reverse", null);
 exports.GoodsReceiptController = GoodsReceiptController = __decorate([
     (0, swagger_1.ApiTags)('Goods Receipts'),
     (0, swagger_1.ApiBearerAuth)(),

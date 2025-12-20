@@ -126,5 +126,20 @@ export class GoodsReceiptEntity {
   updatedBy: number;
 
   @OneToMany(() => GoodsReceiptItemEntity, item => item.goodsReceipt)
+
+  @Column({ name: 'reversed_from_id', nullable: true })
+  reversedFromId: number;
+
+  @Column({ name: 'reversed_to_id', nullable: true })
+  reversedToId: number;
+
+  @Column({ name: 'reversed_at', type: 'timestamptz', nullable: true })
+  reversedAt: Date;
+
+  @Column({ name: 'reversed_by', nullable: true })
+  reversedBy: number;
+
+  @Column({ name: 'reverse_reason', type: 'text', nullable: true })
+  reverseReason: string;
   items: GoodsReceiptItemEntity[];
 }

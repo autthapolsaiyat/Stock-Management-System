@@ -59,4 +59,9 @@ export class GoodsReceiptController {
   cancel(@Param('id', ParseIntPipe) id: number, @Body('reason') reason: string, @Request() req: any) {
     return this.grService.cancel(id, req.user.sub, reason);
   }
+
+  @Post(':id/reverse')
+  reverse(@Param('id', ParseIntPipe) id: number, @Body('reason') reason: string, @Request() req: any) {
+    return this.grService.reverse(id, req.user.sub, reason);
+  }
 }
