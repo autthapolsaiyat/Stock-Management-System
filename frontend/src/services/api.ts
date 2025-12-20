@@ -149,6 +149,7 @@ export const salesInvoicesApi = {
   cancel: (id: number) => api.post(`/api/sales-invoices/${id}/cancel`),
   createFromQuotation: (quotationId: number) => api.post(`/api/sales-invoices/from-quotation/${quotationId}`),
   getByQuotation: (quotationId: number) => api.get(`/api/sales-invoices/quotation/${quotationId}`),
+  markPaid: (id: number, data: any) => api.post(\`/api/sales-invoices/${id}/mark-paid`, data),
 };
 
 // Stock Issues API

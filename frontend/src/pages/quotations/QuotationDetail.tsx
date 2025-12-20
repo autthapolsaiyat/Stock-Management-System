@@ -143,7 +143,7 @@ const QuotationDetail: React.FC = () => {
     try {
       await salesInvoicesApi.markPaid(inv.id, { paymentMethod: "CASH", paymentReference: "" });
       message.success("บันทึกชำระเงินสำเร็จ");
-      loadData();
+      loadQuotation(parseInt(id!));
     } catch (error: any) {
       message.error(error.response?.data?.message || "ไม่สามารถบันทึกชำระเงินได้");
     }
