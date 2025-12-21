@@ -555,35 +555,35 @@ END:VCARD`;
         <div style={{ display: 'flex', justifyContent: 'center', flexWrap: 'wrap', gap: 12 }}>
           <Button 
             onClick={() => navigate('/products')}
-            style={{ borderRadius: 10, background: darkMode ? 'rgba(255,255,255,0.05)' : '#fff' }}
+            style={{ borderRadius: 10, background: darkMode ? 'rgba(255,255,255,0.05)' : '#fff', color: darkMode ? '#fff' : '#1f2937' }}
             icon={<AppstoreOutlined />}
           >
             สินค้า
           </Button>
           <Button 
             onClick={() => navigate('/customers')}
-            style={{ borderRadius: 10, background: darkMode ? 'rgba(255,255,255,0.05)' : '#fff' }}
+            style={{ borderRadius: 10, background: darkMode ? 'rgba(255,255,255,0.05)' : '#fff', color: darkMode ? '#fff' : '#1f2937' }}
             icon={<TeamOutlined />}
           >
             ลูกค้า
           </Button>
           <Button 
             onClick={() => navigate('/quotations')}
-            style={{ borderRadius: 10, background: darkMode ? 'rgba(255,255,255,0.05)' : '#fff' }}
+            style={{ borderRadius: 10, background: darkMode ? 'rgba(255,255,255,0.05)' : '#fff', color: darkMode ? '#fff' : '#1f2937' }}
             icon={<FileTextOutlined />}
           >
             ใบเสนอราคา
           </Button>
           <Button 
             onClick={() => navigate('/dashboard')}
-            style={{ borderRadius: 10, background: darkMode ? 'rgba(255,255,255,0.05)' : '#fff' }}
+            style={{ borderRadius: 10, background: darkMode ? 'rgba(255,255,255,0.05)' : '#fff', color: darkMode ? '#fff' : '#1f2937' }}
             icon={<BarChartOutlined />}
           >
             Dashboard
           </Button>
           <Button 
             onClick={() => navigate('/settings')}
-            style={{ borderRadius: 10, background: darkMode ? 'rgba(255,255,255,0.05)' : '#fff' }}
+            style={{ borderRadius: 10, background: darkMode ? 'rgba(255,255,255,0.05)' : '#fff', color: darkMode ? '#fff' : '#1f2937' }}
             icon={<SettingOutlined />}
           >
             ตั้งค่า
