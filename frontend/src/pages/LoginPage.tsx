@@ -16,7 +16,7 @@ const LoginPage: React.FC = () => {
     try {
       const success = await login(values.username, values.password);
       if (success) {
-        navigate('/');
+        navigate('/intro');
       } else {
         setError('ชื่อผู้ใช้หรือรหัสผ่านไม่ถูกต้อง');
       }
