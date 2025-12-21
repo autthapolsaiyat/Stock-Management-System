@@ -7,7 +7,7 @@ import {
   AppstoreOutlined, TeamOutlined, BarChartOutlined
 } from '@ant-design/icons';
 import { QRCode } from 'antd';
-import { useAuth } from '../hooks/useAuth';
+import { useAuth } from '../contexts/AuthContext';
 import api from '../services/api';
 
 const IntroPage = () => {
@@ -25,7 +25,6 @@ const IntroPage = () => {
   // Mock check-in data
   const checkInStats = { present: 18, leave: 2, month: 'ธ.ค. 2568' };
 
-  const userRole = user?.roles?.[0]?.toLowerCase() || 'viewer';
   const isAdmin = user?.roles?.includes('ADMIN');
   const isSales = user?.roles?.some((r: string) => 
     ['ADMIN', 'SALES', 'SALES_STANDARD', 'SALES_FORENSIC', 'SALES_TOOLLAB', 'SALES_MAINTENANCE'].includes(r)
