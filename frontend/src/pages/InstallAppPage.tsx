@@ -27,8 +27,8 @@ const InstallAppPage: React.FC = () => {
     if (navigator.share) {
       try {
         await navigator.share({
-          title: 'SVS Stock Management System',
-          text: 'ติดตั้งแอป SVS Stock เพื่อจัดการสต็อกสินค้า',
+          title: 'SVS Business Suite',
+          text: 'ติดตั้งแอป SVS Business Suite',
           url: APP_URL,
         });
       } catch (err) {
@@ -55,11 +55,8 @@ const InstallAppPage: React.FC = () => {
             style={{ width: 100, height: 100, marginBottom: 20 }}
           />
           <Title level={2} style={{ color: '#fff', margin: 0 }}>
-            SVS Stock Management System
+            SVS Business Suite
           </Title>
-          <Text style={{ color: '#9ca3af', fontSize: 16 }}>
-            ระบบจัดการสต็อกสินค้า
-          </Text>
         </div>
 
         {/* QR Code Card */}
@@ -288,7 +285,7 @@ const InstallAppPage: React.FC = () => {
         {/* Footer */}
         <div style={{ textAlign: 'center', marginTop: 40 }}>
           <Text style={{ color: '#6b7280' }}>
-            © 2025 SVS Stock Management System
+            © 2025 SVS Business Suite
           </Text>
         </div>
       </div>
