@@ -1,14 +1,18 @@
 import { useState, useEffect } from 'react';
-import { Card, Form, Input, Button, message, Avatar, Divider, Space, Tag, Spin } from 'antd';
-import { UserOutlined, KeyOutlined, SaveOutlined, ArrowLeftOutlined } from '@ant-design/icons';
-import { useNavigate } from 'react-router-dom';
+import { Card, Form, Input, Button, message, Avatar, Divider, Space, Tag, Spin, Collapse, Steps } from 'antd';
+import { 
+  UserOutlined, KeyOutlined, SaveOutlined, 
+  BookOutlined, FileTextOutlined, ShoppingCartOutlined, 
+  InboxOutlined, DollarOutlined, TeamOutlined,
+  SafetyOutlined, DatabaseOutlined, CheckCircleOutlined
+} from '@ant-design/icons';
 import { useAuth } from '../contexts/AuthContext';
 import api from '../services/api';
 
 const { TextArea } = Input;
+const { Panel } = Collapse;
 
 const ProfilePage = () => {
-  const navigate = useNavigate();
   const { user } = useAuth();
   const [loading, setLoading] = useState(false);
   const [saving, setSaving] = useState(false);
@@ -25,7 +29,6 @@ const ProfilePage = () => {
       const res = await api.get('/api/user-settings/profile');
       profileForm.setFieldsValue(res.data);
     } catch (error) {
-      // Use default from user context
       profileForm.setFieldsValue({
         position: '',
         department: '',
@@ -72,22 +75,297 @@ const ProfilePage = () => {
     SALES_TOOLLAB: 'lime',
     SALES_MAINTENANCE: 'orange',
     WAREHOUSE: 'green',
+    STOCK: 'green',
     PURCHASING: 'gold',
     ACCOUNTING: 'magenta',
     VIEWER: 'default',
   };
 
+  // Check user roles
+  const isAdmin = user?.roles?.includes('ADMIN');
+  const isManager = user?.roles?.includes('MANAGER');
+  const isSales = user?.roles?.some((r: string) => 
+    ['SALES', 'SALES_STANDARD', 'SALES_FORENSIC', 'SALES_TOOLLAB', 'SALES_MAINTENANCE'].includes(r)
+  );
+  const isStock = user?.roles?.some((r: string) => ['STOCK', 'WAREHOUSE'].includes(r));
+
+  // User Manual Content
+  const salesGuide = (
+    <div>
+      <h4 style={{ color: '#f59e0b', marginBottom: 16 }}>📋 ขั้นตอนการทำงาน Sales</h4>
+      
+      <Steps
+        direction="vertical"
+        size="small"
+        current={-1}
+        items={[
+          {
+            title: '1. สร้างใบเสนอราคา',
+            description: (
+              <div style={{ fontSize: 13, color: '#9ca3af' }}>
+                <p>• ไปที่เมนู <Tag color="orange">ใบเสนอราคา</Tag></p>
+                <p>• กดปุ่ม "+ สร้างใบเสนอราคา"</p>
+                <p>• เลือกลูกค้า, เพิ่มสินค้า, กำหนดราคาและส่วนลด</p>
+                <p>• กดบันทึก (สถานะ: ร่าง)</p>
+              </div>
+            ),
+            icon: <FileTextOutlined style={{ color: '#f59e0b' }} />,
+          },
+          {
+            title: '2. ยืนยันใบเสนอราคา',
+            description: (
+              <div style={{ fontSize: 13, color: '#9ca3af' }}>
+                <p>• ตรวจสอบข้อมูลให้ถูกต้อง</p>
+                <p>• กดปุ่ม "ยืนยัน" (สถานะ: ยืนยันแล้ว)</p>
+                <p>• สามารถพิมพ์ใบเสนอราคาให้ลูกค้าได้</p>
+              </div>
+            ),
+            icon: <CheckCircleOutlined style={{ color: '#10b981' }} />,
+          },
+          {
+            title: '3. ติดตาม Flow',
+            description: (
+              <div style={{ fontSize: 13, color: '#9ca3af' }}>
+                <p>• ดู Floating Progress Bar ด้านล่าง</p>
+                <p>• ติดตามสถานะ: QT → PO → GR → INV → PAID</p>
+              </div>
+            ),
+            icon: <DollarOutlined style={{ color: '#8b5cf6' }} />,
+          },
+        ]}
+      />
+
+      <Divider />
+      
+      <h4 style={{ marginBottom: 12 }}>💡 Tips</h4>
+      <ul style={{ fontSize: 13, color: '#9ca3af', paddingLeft: 20 }}>
+        <li>ใช้ปุ่ม "คัดลอก" เพื่อสร้างใบเสนอราคาใหม่จากใบเดิม</li>
+        <li>ตรวจสอบ Margin % ก่อนยืนยันใบเสนอราคา</li>
+        <li>สามารถแก้ไขได้เฉพาะใบที่ยังเป็น "ร่าง"</li>
+      </ul>
+    </div>
+  );
+
+  const stockGuide = (
+    <div>
+      <h4 style={{ color: '#06b6d4', marginBottom: 16 }}>📦 ขั้นตอนการทำงาน Stock</h4>
+      
+      <Steps
+        direction="vertical"
+        size="small"
+        current={-1}
+        items={[
+          {
+            title: '1. รับสินค้าเข้า (Goods Receipt)',
+            description: (
+              <div style={{ fontSize: 13, color: '#9ca3af' }}>
+                <p>• ไปที่เมนู <Tag color="cyan">ใบรับสินค้า</Tag></p>
+                <p>• เลือกจาก PO ที่ approved แล้ว</p>
+                <p>• ตรวจสอบจำนวนและ Post เข้าสต็อก</p>
+              </div>
+            ),
+            icon: <InboxOutlined style={{ color: '#06b6d4' }} />,
+          },
+          {
+            title: '2. เบิกสินค้า (Stock Issue)',
+            description: (
+              <div style={{ fontSize: 13, color: '#9ca3af' }}>
+                <p>• ไปที่เมนู <Tag color="green">เบิกสินค้า</Tag></p>
+                <p>• เลือกคลังต้นทาง</p>
+                <p>• เพิ่มรายการสินค้าที่ต้องการเบิก</p>
+                <p>• Post เพื่อตัดสต็อก</p>
+              </div>
+            ),
+            icon: <InboxOutlined style={{ color: '#10b981' }} />,
+          },
+          {
+            title: '3. โอนสินค้า (Stock Transfer)',
+            description: (
+              <div style={{ fontSize: 13, color: '#9ca3af' }}>
+                <p>• ไปที่เมนู <Tag color="blue">โอนสินค้า</Tag></p>
+                <p>• เลือกคลังต้นทาง และคลังปลายทาง</p>
+                <p>• เพิ่มรายการสินค้าที่ต้องการโอน</p>
+                <p>• Post เพื่อย้ายสต็อก</p>
+              </div>
+            ),
+            icon: <InboxOutlined style={{ color: '#3b82f6' }} />,
+          },
+          {
+            title: '4. ตรวจสอบยอดคงเหลือ',
+            description: (
+              <div style={{ fontSize: 13, color: '#9ca3af' }}>
+                <p>• ไปที่เมนู <Tag color="purple">ยอดคงเหลือ</Tag></p>
+                <p>• ดูสต็อกแยกตามคลัง</p>
+                <p>• ระบบคำนวณต้นทุนแบบ FIFO</p>
+              </div>
+            ),
+            icon: <DatabaseOutlined style={{ color: '#8b5cf6' }} />,
+          },
+        ]}
+      />
+
+      <Divider />
+      
+      <h4 style={{ marginBottom: 12 }}>💡 Tips</h4>
+      <ul style={{ fontSize: 13, color: '#9ca3af', paddingLeft: 20 }}>
+        <li>ตรวจสอบ GR ก่อน Post เสมอ - ไม่สามารถแก้ไขหลัง Post</li>
+        <li>ถ้า Post ผิด ให้ทำ "Reverse" เพื่อกลับรายการ</li>
+        <li>สินค้าที่ใกล้หมด จะแสดงสีแดงใน Stock Balance</li>
+      </ul>
+    </div>
+  );
+
+  const adminGuide = (
+    <div>
+      <h4 style={{ color: '#ef4444', marginBottom: 16 }}>🛡️ คู่มือ Admin</h4>
+      
+      <Steps
+        direction="vertical"
+        size="small"
+        current={-1}
+        items={[
+          {
+            title: '1. จัดการผู้ใช้',
+            description: (
+              <div style={{ fontSize: 13, color: '#9ca3af' }}>
+                <p>• ไปที่ <Tag color="red">Super Admin → ผู้ใช้</Tag></p>
+                <p>• เพิ่ม/แก้ไข/ลบ ผู้ใช้งาน</p>
+                <p>• กำหนด Role และ quotationType</p>
+              </div>
+            ),
+            icon: <TeamOutlined style={{ color: '#ef4444' }} />,
+          },
+          {
+            title: '2. ตั้งค่าบริษัท',
+            description: (
+              <div style={{ fontSize: 13, color: '#9ca3af' }}>
+                <p>• ไปที่ <Tag color="purple">ตั้งค่า → ตั้งค่าบริษัท</Tag></p>
+                <p>• กำหนดชื่อบริษัท, ที่อยู่, เลขประจำตัวผู้เสียภาษี</p>
+                <p>• ตั้งค่าเลขที่เอกสาร</p>
+              </div>
+            ),
+            icon: <SafetyOutlined style={{ color: '#8b5cf6' }} />,
+          },
+          {
+            title: '3. ดู Activity Logs',
+            description: (
+              <div style={{ fontSize: 13, color: '#9ca3af' }}>
+                <p>• ไปที่ <Tag color="orange">Super Admin → Logs</Tag></p>
+                <p>• ตรวจสอบการใช้งานระบบ</p>
+                <p>• ดูประวัติการ Login</p>
+              </div>
+            ),
+            icon: <DatabaseOutlined style={{ color: '#f59e0b' }} />,
+          },
+        ]}
+      />
+
+      <Divider />
+      
+      <h4 style={{ marginBottom: 12 }}>⚙️ การตั้งค่า Role</h4>
+      <table style={{ width: '100%', fontSize: 12, borderCollapse: 'collapse' }}>
+        <thead>
+          <tr style={{ background: 'rgba(255,255,255,0.05)' }}>
+            <th style={{ padding: 8, textAlign: 'left', borderBottom: '1px solid rgba(255,255,255,0.1)' }}>Role</th>
+            <th style={{ padding: 8, textAlign: 'left', borderBottom: '1px solid rgba(255,255,255,0.1)' }}>สิทธิ์การใช้งาน</th>
+          </tr>
+        </thead>
+        <tbody style={{ color: '#9ca3af' }}>
+          <tr><td style={{ padding: 8 }}><Tag color="red">ADMIN</Tag></td><td>เข้าถึงทุกเมนู + จัดการผู้ใช้</td></tr>
+          <tr><td style={{ padding: 8 }}><Tag color="purple">MANAGER</Tag></td><td>เข้าถึงทุกเมนู (ยกเว้นจัดการผู้ใช้)</td></tr>
+          <tr><td style={{ padding: 8 }}><Tag color="cyan">SALES_STANDARD</Tag></td><td>ใบเสนอราคา (กลุ่มทั่วไป)</td></tr>
+          <tr><td style={{ padding: 8 }}><Tag color="geekblue">SALES_FORENSIC</Tag></td><td>ใบเสนอราคา (กลุ่มนิติวิทย์)</td></tr>
+          <tr><td style={{ padding: 8 }}><Tag color="orange">SALES_MAINTENANCE</Tag></td><td>ใบเสนอราคา (กลุ่มบำรุงรักษา)</td></tr>
+          <tr><td style={{ padding: 8 }}><Tag color="green">STOCK</Tag></td><td>จัดการคลังสินค้า</td></tr>
+        </tbody>
+      </table>
+    </div>
+  );
+
+  const managerGuide = (
+    <div>
+      <h4 style={{ color: '#8b5cf6', marginBottom: 16 }}>👔 คู่มือ Manager</h4>
+      
+      <Steps
+        direction="vertical"
+        size="small"
+        current={-1}
+        items={[
+          {
+            title: '1. อนุมัติใบสั่งซื้อ (PO)',
+            description: (
+              <div style={{ fontSize: 13, color: '#9ca3af' }}>
+                <p>• ไปที่ <Tag color="blue">ใบสั่งซื้อ</Tag></p>
+                <p>• ตรวจสอบ PO ที่รอการอนุมัติ</p>
+                <p>• กดปุ่ม "อนุมัติ" เพื่ออนุมัติ</p>
+              </div>
+            ),
+            icon: <ShoppingCartOutlined style={{ color: '#3b82f6' }} />,
+          },
+          {
+            title: '2. ดู Dashboard',
+            description: (
+              <div style={{ fontSize: 13, color: '#9ca3af' }}>
+                <p>• ดูภาพรวมยอดขาย</p>
+                <p>• ติดตามสถานะใบเสนอราคา</p>
+                <p>• ตรวจสอบสต็อกสินค้า</p>
+              </div>
+            ),
+            icon: <DatabaseOutlined style={{ color: '#10b981' }} />,
+          },
+          {
+            title: '3. ติดตามงาน (Coming Soon)',
+            description: (
+              <div style={{ fontSize: 13, color: '#9ca3af' }}>
+                <p>• ติดตามคู่สัญญาที่จะหมดประกัน</p>
+                <p>• ติดตามงานซ่อมบำรุง</p>
+              </div>
+            ),
+            icon: <FileTextOutlined style={{ color: '#f59e0b' }} />,
+          },
+        ]}
+      />
+    </div>
+  );
+
+  const generalGuide = (
+    <div>
+      <h4 style={{ color: '#22c55e', marginBottom: 16 }}>🏠 การใช้งานทั่วไป</h4>
+      
+      <div style={{ marginBottom: 20 }}>
+        <h5 style={{ marginBottom: 8 }}>🎨 ธีมสี</h5>
+        <p style={{ fontSize: 13, color: '#9ca3af' }}>
+          กดปุ่ม ☀️/🌙 ที่มุมขวาบนเพื่อสลับโหมด Light/Dark
+        </p>
+      </div>
+
+      <div style={{ marginBottom: 20 }}>
+        <h5 style={{ marginBottom: 8 }}>🏠 ปุ่ม Home ลอย</h5>
+        <p style={{ fontSize: 13, color: '#9ca3af' }}>
+          • กด "หน้าหลัก" เพื่อกลับไปหน้า Intro<br/>
+          • กด ☰ เพื่อย่อปุ่ม<br/>
+          • กด ✕ เพื่อซ่อนปุ่ม (กดปุ่มเล็กๆ เพื่อแสดงใหม่)
+        </p>
+      </div>
+
+      <div style={{ marginBottom: 20 }}>
+        <h5 style={{ marginBottom: 8 }}>📱 ติดตั้งแอป (PWA)</h5>
+        <p style={{ fontSize: 13, color: '#9ca3af' }}>
+          เข้า <a href="/install" style={{ color: '#3b82f6' }}>/install</a> เพื่อติดตั้งแอปลงอุปกรณ์
+        </p>
+      </div>
+
+      <div style={{ marginBottom: 20 }}>
+        <h5 style={{ marginBottom: 8 }}>🔐 เปลี่ยนรหัสผ่าน</h5>
+        <p style={{ fontSize: 13, color: '#9ca3af' }}>
+          เลื่อนลงด้านล่างของหน้านี้เพื่อเปลี่ยนรหัสผ่าน
+        </p>
+      </div>
+    </div>
+  );
+
   return (
     <div style={{ padding: 24, maxWidth: 900, margin: '0 auto' }}>
-      {/* Back Button */}
-      <Button 
-        icon={<ArrowLeftOutlined />} 
-        onClick={() => navigate('/intro')}
-        style={{ marginBottom: 16 }}
-      >
-        กลับหน้าหลัก
-      </Button>
-
       {/* Profile Header */}
       <Card style={{ marginBottom: 24 }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: 24 }}>
@@ -106,6 +384,66 @@ const ProfilePage = () => {
             </Space>
           </div>
         </div>
+      </Card>
+
+      {/* User Manual */}
+      <Card 
+        title={<><BookOutlined /> คู่มือการใช้งาน</>}
+        style={{ marginBottom: 24 }}
+      >
+        <Collapse 
+          defaultActiveKey={['general']}
+          expandIconPosition="end"
+          style={{ background: 'transparent', border: 'none' }}
+        >
+          <Panel 
+            header={<span style={{ fontWeight: 600 }}>🏠 การใช้งานทั่วไป</span>} 
+            key="general"
+            style={{ marginBottom: 8, borderRadius: 8, overflow: 'hidden' }}
+          >
+            {generalGuide}
+          </Panel>
+
+          {(isSales || isAdmin) && (
+            <Panel 
+              header={<span style={{ fontWeight: 600 }}>📋 คู่มือ Sales - ใบเสนอราคา</span>} 
+              key="sales"
+              style={{ marginBottom: 8, borderRadius: 8, overflow: 'hidden' }}
+            >
+              {salesGuide}
+            </Panel>
+          )}
+
+          {(isStock || isAdmin) && (
+            <Panel 
+              header={<span style={{ fontWeight: 600 }}>📦 คู่มือ Stock - คลังสินค้า</span>} 
+              key="stock"
+              style={{ marginBottom: 8, borderRadius: 8, overflow: 'hidden' }}
+            >
+              {stockGuide}
+            </Panel>
+          )}
+
+          {(isManager || isAdmin) && (
+            <Panel 
+              header={<span style={{ fontWeight: 600 }}>👔 คู่มือ Manager</span>} 
+              key="manager"
+              style={{ marginBottom: 8, borderRadius: 8, overflow: 'hidden' }}
+            >
+              {managerGuide}
+            </Panel>
+          )}
+
+          {isAdmin && (
+            <Panel 
+              header={<span style={{ fontWeight: 600 }}>🛡️ คู่มือ Admin</span>} 
+              key="admin"
+              style={{ marginBottom: 8, borderRadius: 8, overflow: 'hidden' }}
+            >
+              {adminGuide}
+            </Panel>
+          )}
+        </Collapse>
       </Card>
 
       {loading ? (
