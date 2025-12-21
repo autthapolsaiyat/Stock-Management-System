@@ -14,6 +14,7 @@ const health_module_1 = require("./modules/health/health.module");
 const auth_module_1 = require("./modules/auth/auth.module");
 const user_module_1 = require("./modules/user/user.module");
 const product_module_1 = require("./modules/product/product.module");
+const category_module_1 = require("./modules/category/category.module");
 const customer_module_1 = require("./modules/customer/customer.module");
 const supplier_module_1 = require("./modules/supplier/supplier.module");
 const warehouse_module_1 = require("./modules/warehouse/warehouse.module");
@@ -55,6 +56,7 @@ exports.AppModule = AppModule = __decorate([
             auth_module_1.AuthModule,
             user_module_1.UserModule,
             product_module_1.ProductModule,
+            category_module_1.CategoryModule,
             customer_module_1.CustomerModule,
             supplier_module_1.SupplierModule,
             warehouse_module_1.WarehouseModule,

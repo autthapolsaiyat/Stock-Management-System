@@ -5,6 +5,7 @@ import { HealthModule } from './modules/health/health.module';
 import { AuthModule } from './modules/auth/auth.module';
 import { UserModule } from './modules/user/user.module';
 import { ProductModule } from './modules/product/product.module';
+import { CategoryModule } from './modules/category/category.module';
 import { CustomerModule } from './modules/customer/customer.module';
 import { SupplierModule } from './modules/supplier/supplier.module';
 import { WarehouseModule } from './modules/warehouse/warehouse.module';
@@ -43,6 +44,7 @@ import { UserSettingsModule } from './modules/user-settings/user-settings.module
     AuthModule,
     UserModule,
     ProductModule,
+    CategoryModule,
     CustomerModule,
     SupplierModule,
     WarehouseModule,
