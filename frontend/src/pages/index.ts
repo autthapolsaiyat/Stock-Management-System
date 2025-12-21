@@ -17,3 +17,4 @@ export { QuotationList, QuotationForm, QuotationDetail } from './quotations';
 export { default as UserSettingsPage } from './settings/UserSettings';
 export { default as CompanySettingsPage } from './settings/CompanySettings';
 export { default as IntroPage } from './IntroPage';
+export { UserManagementPage, ActivityLogPage } from './admin';

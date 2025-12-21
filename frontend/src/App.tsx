@@ -6,6 +6,8 @@ import {
   LoginPage,
   DashboardPage,
   IntroPage,
+  UserManagementPage,
+  ActivityLogPage,
   ProductsPage,
   CategoriesPage,
   CustomersPage,
@@ -104,6 +106,8 @@ const App: React.FC = () => {
         {/* Settings */}
         <Route path="settings" element={<UserSettingsPage />} />
         <Route path="settings/company" element={<CompanySettingsPage />} />
+        <Route path="admin/users" element={<UserManagementPage />} />
+        <Route path="admin/activity-logs" element={<ActivityLogPage />} />
       </Route>
 
       {/* Catch all */}
