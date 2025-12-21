@@ -44,6 +44,11 @@ __decorate([
     (0, class_validator_1.IsOptional)(),
     __metadata("design:type", Array)
 ], CreateUserDto.prototype, "roleIds", void 0);
+__decorate([
+    (0, swagger_1.ApiPropertyOptional)(),
+    (0, class_validator_1.IsOptional)(),
+    __metadata("design:type", Boolean)
+], CreateUserDto.prototype, "isActive", void 0);
 class UpdateUserDto {
 }
 exports.UpdateUserDto = UpdateUserDto;
@@ -73,4 +78,9 @@ __decorate([
     (0, class_validator_1.IsOptional)(),
     __metadata("design:type", Array)
 ], UpdateUserDto.prototype, "roleIds", void 0);
+__decorate([
+    (0, swagger_1.ApiPropertyOptional)(),
+    (0, class_validator_1.IsOptional)(),
+    __metadata("design:type", Boolean)
+], UpdateUserDto.prototype, "isActive", void 0);
 //# sourceMappingURL=user.dto.js.map

@@ -101,7 +101,7 @@ const UserManagementPage = () => {
   const handleSubmit = async (values: any) => {
     try {
       if (selectedUser) {
-        await api.patch(`/users/${selectedUser.id}`, values);
+        await api.put(`/users/${selectedUser.id}`, values);
         message.success('อัปเดตข้อมูลผู้ใช้สำเร็จ');
       } else {
         await api.post('/users', { ...values, password: '123456' });
@@ -117,7 +117,7 @@ const UserManagementPage = () => {
   const handleUpdateRoles = async (values: any) => {
     if (!selectedUser) return;
     try {
-      await api.patch(`/users/${selectedUser.id}/roles`, { roles: values.roles });
+      await api.put(`/users/${selectedUser.id}/roles`, { roles: values.roles });
       message.success('อัปเดตสิทธิ์สำเร็จ');
       setRoleModalVisible(false);
       fetchUsers();
@@ -129,7 +129,7 @@ const UserManagementPage = () => {
   const handlePasswordReset = async (values: any) => {
     if (!selectedUser) return;
     try {
-      await api.patch(`/users/${selectedUser.id}/password`, { password: values.newPassword });
+      await api.put(`/users/${selectedUser.id}/password`, { password: values.newPassword });
       message.success('รีเซ็ตรหัสผ่านสำเร็จ');
       setPasswordModalVisible(false);
     } catch (error: any) {
@@ -139,7 +139,7 @@ const UserManagementPage = () => {
 
   const handleToggleActive = async (user: User) => {
     try {
-      await api.patch(`/users/${user.id}`, { isActive: !user.isActive });
+      await api.put(`/users/${user.id}/toggle-active`: !user.isActive });
       message.success(user.isActive ? 'ระงับผู้ใช้สำเร็จ' : 'เปิดใช้งานผู้ใช้สำเร็จ');
       fetchUsers();
     } catch (error) {

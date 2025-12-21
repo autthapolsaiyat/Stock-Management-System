@@ -23,7 +23,7 @@ let UserController = class UserController {
         this.userService = userService;
     }
     findAll() {
-        return this.userService.findAll();
+        return this.userService.findAllWithInactive();
     }
     findAllRoles() {
         return this.userService.findAllRoles();
@@ -36,6 +36,15 @@ let UserController = class UserController {
     }
     update(id, dto) {
         return this.userService.update(id, dto);
+    }
+    updateRoles(id, body) {
+        return this.userService.updateRolesByCodes(id, body.roles);
+    }
+    resetPassword(id, body) {
+        return this.userService.resetPassword(id, body.password);
+    }
+    toggleActive(id) {
+        return this.userService.toggleActive(id);
     }
     delete(id) {
         return this.userService.delete(id);
@@ -81,6 +90,32 @@ __decorate([
     __metadata("design:paramtypes", [Number, user_dto_1.UpdateUserDto]),
     __metadata("design:returntype", void 0)
 ], UserController.prototype, "update", null);
+__decorate([
+    (0, common_1.Put)(':id/roles'),
+    (0, swagger_1.ApiOperation)({ summary: 'Update user roles by code' }),
+    __param(0, (0, common_1.Param)('id', common_1.ParseIntPipe)),
+    __param(1, (0, common_1.Body)()),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [Number, Object]),
+    __metadata("design:returntype", void 0)
+], UserController.prototype, "updateRoles", null);
+__decorate([
+    (0, common_1.Put)(':id/password'),
+    (0, swagger_1.ApiOperation)({ summary: 'Reset user password' }),
+    __param(0, (0, common_1.Param)('id', common_1.ParseIntPipe)),
+    __param(1, (0, common_1.Body)()),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [Number, Object]),
+    __metadata("design:returntype", void 0)
+], UserController.prototype, "resetPassword", null);
+__decorate([
+    (0, common_1.Put)(':id/toggle-active'),
+    (0, swagger_1.ApiOperation)({ summary: 'Toggle user active status' }),
+    __param(0, (0, common_1.Param)('id', common_1.ParseIntPipe)),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [Number]),
+    __metadata("design:returntype", void 0)
+], UserController.prototype, "toggleActive", null);
 __decorate([
     (0, common_1.Delete)(':id'),
     (0, swagger_1.ApiOperation)({ summary: 'Delete user' }),

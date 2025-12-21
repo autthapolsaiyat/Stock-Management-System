@@ -11,6 +11,7 @@ const common_1 = require("@nestjs/common");
 const typeorm_1 = require("@nestjs/typeorm");
 const user_service_1 = require("./user.service");
 const user_controller_1 = require("./user.controller");
+const role_controller_1 = require("./role.controller");
 const user_entity_1 = require("./entities/user.entity");
 const role_entity_1 = require("./entities/role.entity");
 const permission_entity_1 = require("./entities/permission.entity");
@@ -22,7 +23,7 @@ exports.UserModule = UserModule;
 exports.UserModule = UserModule = __decorate([
     (0, common_1.Module)({
         imports: [typeorm_1.TypeOrmModule.forFeature([user_entity_1.UserEntity, role_entity_1.RoleEntity, permission_entity_1.PermissionEntity, user_role_entity_1.UserRoleEntity, role_permission_entity_1.RolePermissionEntity])],
-        controllers: [user_controller_1.UserController],
+        controllers: [user_controller_1.UserController, role_controller_1.RoleController],
         providers: [user_service_1.UserService],
         exports: [user_service_1.UserService],
     })

@@ -14,7 +14,7 @@ export class UserController {
   @Get()
   @ApiOperation({ summary: 'Get all users' })
   findAll() {
-    return this.userService.findAll();
+    return this.userService.findAllWithInactive();
   }
 
   @Get('roles')
@@ -39,6 +39,24 @@ export class UserController {
   @ApiOperation({ summary: 'Update user' })
   update(@Param('id', ParseIntPipe) id: number, @Body() dto: UpdateUserDto) {
     return this.userService.update(id, dto);
+  }
+
+  @Put(':id/roles')
+  @ApiOperation({ summary: 'Update user roles by code' })
+  updateRoles(@Param('id', ParseIntPipe) id: number, @Body() body: { roles: string[] }) {
+    return this.userService.updateRolesByCodes(id, body.roles);
+  }
+
+  @Put(':id/password')
+  @ApiOperation({ summary: 'Reset user password' })
+  resetPassword(@Param('id', ParseIntPipe) id: number, @Body() body: { password: string }) {
+    return this.userService.resetPassword(id, body.password);
+  }
+
+  @Put(':id/toggle-active')
+  @ApiOperation({ summary: 'Toggle user active status' })
+  toggleActive(@Param('id', ParseIntPipe) id: number) {
+    return this.userService.toggleActive(id);
   }
 
   @Delete(':id')
