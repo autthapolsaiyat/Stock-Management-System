@@ -5,7 +5,7 @@ import MainLayout from './layouts/MainLayout';
 import {
   LoginPage,
   DashboardPage,
-  IntroPage,
+  IntroPage, ProfilePage,
   UserManagementPage,
   ActivityLogPage,
   ProductsPage,
@@ -108,6 +108,7 @@ const App: React.FC = () => {
         <Route path="settings/company" element={<CompanySettingsPage />} />
         <Route path="admin/users" element={<UserManagementPage />} />
         <Route path="admin/activity-logs" element={<ActivityLogPage />} />
+        <Route path="profile" element={<ProfilePage />} />
       </Route>
 
       {/* Catch all */}
