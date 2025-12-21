@@ -25,6 +25,7 @@ import {
   UserSettingsPage,
   CompanySettingsPage,
 } from './pages';
+import InstallAppPage from './pages/InstallAppPage';
 import { useAuth } from './contexts/AuthContext';
 
 // Protected Route Component
@@ -59,6 +60,7 @@ const App: React.FC = () => {
     <Routes>
       {/* Public Routes */}
       <Route path="/login" element={<LoginPage />} />
+      <Route path="/install" element={<InstallAppPage />} />
       
       {/* Intro Page - No Layout */}
       <Route path="/intro" element={
