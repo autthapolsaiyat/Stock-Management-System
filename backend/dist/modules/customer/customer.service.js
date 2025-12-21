@@ -45,6 +45,11 @@ let CustomerService = class CustomerService {
         Object.assign(customer, dto);
         return this.customerRepository.save(customer);
     }
+    async delete(id) {
+        const customer = await this.findOne(id);
+        customer.isActive = false;
+        return this.customerRepository.save(customer);
+    }
 };
 exports.CustomerService = CustomerService;
 exports.CustomerService = CustomerService = __decorate([

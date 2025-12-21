@@ -30,4 +30,10 @@ export class SupplierService {
     Object.assign(supplier, dto);
     return this.supplierRepository.save(supplier);
   }
+
+  async delete(id: number) {
+    const supplier = await this.findOne(id);
+    supplier.isActive = false;
+    return this.supplierRepository.save(supplier);
+  }
 }

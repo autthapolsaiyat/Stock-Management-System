@@ -33,6 +33,9 @@ let WarehouseController = class WarehouseController {
     update(id, dto) {
         return this.warehouseService.update(id, dto);
     }
+    delete(id) {
+        return this.warehouseService.delete(id);
+    }
 };
 exports.WarehouseController = WarehouseController;
 __decorate([
@@ -63,6 +66,13 @@ __decorate([
     __metadata("design:paramtypes", [Number, Object]),
     __metadata("design:returntype", void 0)
 ], WarehouseController.prototype, "update", null);
+__decorate([
+    (0, common_1.Delete)(':id'),
+    __param(0, (0, common_1.Param)('id', common_1.ParseIntPipe)),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [Number]),
+    __metadata("design:returntype", void 0)
+], WarehouseController.prototype, "delete", null);
 exports.WarehouseController = WarehouseController = __decorate([
     (0, swagger_1.ApiTags)('Warehouses'),
     (0, swagger_1.ApiBearerAuth)(),

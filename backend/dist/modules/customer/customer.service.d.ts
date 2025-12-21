@@ -7,4 +7,5 @@ export declare class CustomerService {
     findOne(id: number): Promise<CustomerEntity>;
     create(dto: any): Promise<CustomerEntity[]>;
     update(id: number, dto: any): Promise<CustomerEntity>;
+    delete(id: number): Promise<CustomerEntity>;
 }

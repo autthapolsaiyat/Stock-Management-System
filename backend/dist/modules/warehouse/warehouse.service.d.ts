@@ -7,4 +7,5 @@ export declare class WarehouseService {
     findOne(id: number): Promise<WarehouseEntity>;
     create(dto: any): Promise<WarehouseEntity[]>;
     update(id: number, dto: any): Promise<WarehouseEntity>;
+    delete(id: number): Promise<WarehouseEntity>;
 }

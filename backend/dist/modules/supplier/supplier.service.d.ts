@@ -7,4 +7,5 @@ export declare class SupplierService {
     findOne(id: number): Promise<SupplierEntity>;
     create(dto: any): Promise<SupplierEntity[]>;
     update(id: number, dto: any): Promise<SupplierEntity>;
+    delete(id: number): Promise<SupplierEntity>;
 }

@@ -6,4 +6,5 @@ export declare class CustomerController {
     findOne(id: number): Promise<import("./entities").CustomerEntity>;
     create(dto: any): Promise<import("./entities").CustomerEntity[]>;
     update(id: number, dto: any): Promise<import("./entities").CustomerEntity>;
+    delete(id: number): Promise<import("./entities").CustomerEntity>;
 }

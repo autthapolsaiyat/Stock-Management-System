@@ -6,4 +6,5 @@ export declare class WarehouseController {
     findOne(id: number): Promise<import("./entities").WarehouseEntity>;
     create(dto: any): Promise<import("./entities").WarehouseEntity[]>;
     update(id: number, dto: any): Promise<import("./entities").WarehouseEntity>;
+    delete(id: number): Promise<import("./entities").WarehouseEntity>;
 }

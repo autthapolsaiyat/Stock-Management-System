@@ -39,6 +39,11 @@ let SupplierService = class SupplierService {
         Object.assign(supplier, dto);
         return this.supplierRepository.save(supplier);
     }
+    async delete(id) {
+        const supplier = await this.findOne(id);
+        supplier.isActive = false;
+        return this.supplierRepository.save(supplier);
+    }
 };
 exports.SupplierService = SupplierService;
 exports.SupplierService = SupplierService = __decorate([

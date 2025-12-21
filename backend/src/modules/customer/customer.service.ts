@@ -36,4 +36,10 @@ export class CustomerService {
     Object.assign(customer, dto);
     return this.customerRepository.save(customer);
   }
+
+  async delete(id: number) {
+    const customer = await this.findOne(id);
+    customer.isActive = false;
+    return this.customerRepository.save(customer);
+  }
 }

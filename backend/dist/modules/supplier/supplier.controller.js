@@ -25,6 +25,7 @@ let SupplierController = class SupplierController {
     findOne(id) { return this.supplierService.findOne(id); }
     create(dto) { return this.supplierService.create(dto); }
     update(id, dto) { return this.supplierService.update(id, dto); }
+    delete(id) { return this.supplierService.delete(id); }
 };
 exports.SupplierController = SupplierController;
 __decorate([
@@ -55,6 +56,13 @@ __decorate([
     __metadata("design:paramtypes", [Number, Object]),
     __metadata("design:returntype", void 0)
 ], SupplierController.prototype, "update", null);
+__decorate([
+    (0, common_1.Delete)(':id'),
+    __param(0, (0, common_1.Param)('id', common_1.ParseIntPipe)),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [Number]),
+    __metadata("design:returntype", void 0)
+], SupplierController.prototype, "delete", null);
 exports.SupplierController = SupplierController = __decorate([
     (0, swagger_1.ApiTags)('Suppliers'),
     (0, swagger_1.ApiBearerAuth)(),

@@ -22,7 +22,10 @@ let WarehouseService = class WarehouseService {
         this.warehouseRepository = warehouseRepository;
     }
     async findAll() {
-        return this.warehouseRepository.find({ order: { code: 'ASC' } });
+        return this.warehouseRepository.find({
+            where: { isActive: true },
+            order: { code: 'ASC' }
+        });
     }
     async findOne(id) {
         const warehouse = await this.warehouseRepository.findOne({ where: { id } });
@@ -31,12 +34,17 @@ let WarehouseService = class WarehouseService {
         return warehouse;
     }
     async create(dto) {
-        const warehouse = this.warehouseRepository.create(dto);
+        const warehouse = this.warehouseRepository.create({ ...dto, isActive: true });
         return this.warehouseRepository.save(warehouse);
     }
     async update(id, dto) {
         const warehouse = await this.findOne(id);
         Object.assign(warehouse, dto);
+        return this.warehouseRepository.save(warehouse);
+    }
+    async delete(id) {
+        const warehouse = await this.findOne(id);
+        warehouse.isActive = false;
         return this.warehouseRepository.save(warehouse);
     }
 };

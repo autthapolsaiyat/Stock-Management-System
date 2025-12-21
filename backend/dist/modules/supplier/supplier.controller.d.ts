@@ -6,4 +6,5 @@ export declare class SupplierController {
     findOne(id: number): Promise<import("./entities").SupplierEntity>;
     create(dto: any): Promise<import("./entities").SupplierEntity[]>;
     update(id: number, dto: any): Promise<import("./entities").SupplierEntity>;
+    delete(id: number): Promise<import("./entities").SupplierEntity>;
 }

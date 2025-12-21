@@ -25,6 +25,7 @@ let CustomerController = class CustomerController {
     findOne(id) { return this.customerService.findOne(id); }
     create(dto) { return this.customerService.create(dto); }
     update(id, dto) { return this.customerService.update(id, dto); }
+    delete(id) { return this.customerService.delete(id); }
 };
 exports.CustomerController = CustomerController;
 __decorate([
@@ -55,6 +56,13 @@ __decorate([
     __metadata("design:paramtypes", [Number, Object]),
     __metadata("design:returntype", void 0)
 ], CustomerController.prototype, "update", null);
+__decorate([
+    (0, common_1.Delete)(':id'),
+    __param(0, (0, common_1.Param)('id', common_1.ParseIntPipe)),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [Number]),
+    __metadata("design:returntype", void 0)
+], CustomerController.prototype, "delete", null);
 exports.CustomerController = CustomerController = __decorate([
     (0, swagger_1.ApiTags)('Customers'),
     (0, swagger_1.ApiBearerAuth)(),

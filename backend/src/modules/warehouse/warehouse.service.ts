@@ -1,4 +1,4 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import { Injectable, NotFoundException, BadRequestException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { WarehouseEntity } from './entities/warehouse.entity';
@@ -11,7 +11,10 @@ export class WarehouseService {
   ) {}
 
   async findAll() {
-    return this.warehouseRepository.find({ order: { code: 'ASC' } });
+    return this.warehouseRepository.find({ 
+      where: { isActive: true },
+      order: { code: 'ASC' } 
+    });
   }
 
   async findOne(id: number) {
@@ -21,13 +24,19 @@ export class WarehouseService {
   }
 
   async create(dto: any) {
-    const warehouse = this.warehouseRepository.create(dto);
+    const warehouse = this.warehouseRepository.create({ ...dto, isActive: true });
     return this.warehouseRepository.save(warehouse);
   }
 
   async update(id: number, dto: any) {
     const warehouse = await this.findOne(id);
     Object.assign(warehouse, dto);
+    return this.warehouseRepository.save(warehouse);
+  }
+
+  async delete(id: number) {
+    const warehouse = await this.findOne(id);
+    warehouse.isActive = false;
     return this.warehouseRepository.save(warehouse);
   }
 }
