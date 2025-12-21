@@ -63,9 +63,6 @@ const ProfilePage = () => {
           <Descriptions.Item label={<><MailOutlined /> อีเมล</>}>
             {user?.email || '-'}
           </Descriptions.Item>
-          <Descriptions.Item label={<><PhoneOutlined /> เบอร์โทร</>}>
-            {user?.phone || '-'}
-          </Descriptions.Item>
           <Descriptions.Item label="ประเภทใบเสนอราคา">
             {user?.quotationType || 'ไม่ระบุ'}
           </Descriptions.Item>
