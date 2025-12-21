@@ -5,7 +5,6 @@ import { HealthModule } from './modules/health/health.module';
 import { AuthModule } from './modules/auth/auth.module';
 import { UserModule } from './modules/user/user.module';
 import { ProductModule } from './modules/product/product.module';
-import { CategoryModule } from './modules/category/category.module';
 import { CustomerModule } from './modules/customer/customer.module';
 import { SupplierModule } from './modules/supplier/supplier.module';
 import { WarehouseModule } from './modules/warehouse/warehouse.module';
@@ -21,6 +20,7 @@ import { StockTransferModule } from './modules/stock-transfer/stock-transfer.mod
 import { SalesInvoiceModule } from './modules/sales-invoice/sales-invoice.module';
 import { UploadModule } from './upload/upload.module';
 import { UserSettingsModule } from './modules/user-settings/user-settings.module';
+import { VCardModule } from './modules/vcard/vcard.module';
 
 @Module({
   imports: [
@@ -44,7 +44,6 @@ import { UserSettingsModule } from './modules/user-settings/user-settings.module
     AuthModule,
     UserModule,
     ProductModule,
-    CategoryModule,
     CustomerModule,
     SupplierModule,
     WarehouseModule,
@@ -60,6 +59,7 @@ import { UserSettingsModule } from './modules/user-settings/user-settings.module
     SalesInvoiceModule,
     UploadModule,
     UserSettingsModule,
+    VCardModule,
   ],
 })
 export class AppModule {}

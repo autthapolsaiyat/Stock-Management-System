@@ -14,7 +14,6 @@ const health_module_1 = require("./modules/health/health.module");
 const auth_module_1 = require("./modules/auth/auth.module");
 const user_module_1 = require("./modules/user/user.module");
 const product_module_1 = require("./modules/product/product.module");
-const category_module_1 = require("./modules/category/category.module");
 const customer_module_1 = require("./modules/customer/customer.module");
 const supplier_module_1 = require("./modules/supplier/supplier.module");
 const warehouse_module_1 = require("./modules/warehouse/warehouse.module");
@@ -30,6 +29,7 @@ const stock_transfer_module_1 = require("./modules/stock-transfer/stock-transfer
 const sales_invoice_module_1 = require("./modules/sales-invoice/sales-invoice.module");
 const upload_module_1 = require("./upload/upload.module");
 const user_settings_module_1 = require("./modules/user-settings/user-settings.module");
+const vcard_module_1 = require("./modules/vcard/vcard.module");
 let AppModule = class AppModule {
 };
 exports.AppModule = AppModule;
@@ -56,7 +56,6 @@ exports.AppModule = AppModule = __decorate([
             auth_module_1.AuthModule,
             user_module_1.UserModule,
             product_module_1.ProductModule,
-            category_module_1.CategoryModule,
             customer_module_1.CustomerModule,
             supplier_module_1.SupplierModule,
             warehouse_module_1.WarehouseModule,
@@ -72,6 +71,7 @@ exports.AppModule = AppModule = __decorate([
             sales_invoice_module_1.SalesInvoiceModule,
             upload_module_1.UploadModule,
             user_settings_module_1.UserSettingsModule,
+            vcard_module_1.VCardModule,
         ],
     })
 ], AppModule);
