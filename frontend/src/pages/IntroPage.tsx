@@ -26,6 +26,7 @@ const IntroPage = () => {
   const navigate = useNavigate();
   const { user } = useAuth();
   const [profileModalOpen, setProfileModalOpen] = useState(false);
+  const [cardFlipped, setCardFlipped] = useState(false);
   const [darkMode, setDarkMode] = useState(true);
   
   // Role-based permissions
@@ -53,8 +54,12 @@ const IntroPage = () => {
     phone: '085-070-9938',
     email: user?.email || 'sunisa@saengvith.co.th',
     company: 'บริษัท แสงวิทย์ ซายน์ จำกัด',
-    address: '123/4-5 ซอยสมเด็จพระปิ่นเกล้า 9 ถ.สมเด็จพระปิ่นเกล้า',
+    address: '123/4-5 ซอยสมเด็จพระปิ่นเกล้า 9 ถ.สมเด็จพระปิ่นเกล้า แขวงอรุณอมรินทร์ เขตบางกอกน้อย กรุงเทพฯ 10700',
     website: 'www.saengvithscience.co.th',
+    startDate: '15 ธ.ค. 2551',
+    experience: '17 ปี',
+    skills: ['Sales', 'Customer Service', 'Product Knowledge'],
+    achievements: ['Top Sales 2023', 'Customer Satisfaction Award'],
   };
 
   const vCardData = `BEGIN:VCARD
@@ -557,120 +562,248 @@ END:VCARD`;
         </div>
       </div>
 
-      {/* Profile Modal - Digital Business Card */}
+      {/* Profile Modal - Digital Business Card with Flip */}
       <Modal
         title={null}
         open={profileModalOpen}
-        onCancel={() => setProfileModalOpen(false)}
+        onCancel={() => { setProfileModalOpen(false); setCardFlipped(false); }}
         footer={null}
-        width={400}
+        width={420}
         centered
         styles={{
           content: {
-            background: darkMode 
-              ? 'linear-gradient(135deg, #1a1a2e, #16213e)'
-              : '#fff',
-            borderRadius: 24,
+            background: 'transparent',
+            boxShadow: 'none',
+            padding: 0,
+          },
+          body: {
             padding: 0,
           },
         }}
       >
-        <div style={{ padding: 32, textAlign: 'center' }}>
-          {/* Card Header */}
+        {/* Flip Card Container */}
+        <div 
+          onDoubleClick={() => setCardFlipped(!cardFlipped)}
+          style={{
+            perspective: '1000px',
+            cursor: 'pointer',
+          }}
+        >
           <div style={{
-            background: 'linear-gradient(135deg, #3b82f6, #8b5cf6)',
-            margin: -32,
-            marginBottom: 24,
-            padding: '32px 24px',
-            borderRadius: '24px 24px 0 0',
+            position: 'relative',
+            width: '100%',
+            height: 480,
+            transformStyle: 'preserve-3d',
+            transition: 'transform 0.6s ease',
+            transform: cardFlipped ? 'rotateY(180deg)' : 'rotateY(0deg)',
           }}>
-            <Avatar 
-              size={80} 
-              icon={<UserOutlined />}
-              style={{ 
-                background: 'rgba(255,255,255,0.2)',
-                marginBottom: 16,
-              }}
-            />
-            <h2 style={{ color: '#fff', margin: 0, fontSize: 22 }}>{businessCard.name}</h2>
-            <p style={{ color: 'rgba(255,255,255,0.8)', margin: '4px 0 0', fontSize: 14 }}>
-              {businessCard.position}
-            </p>
-            <p style={{ color: 'rgba(255,255,255,0.6)', margin: '4px 0 0', fontSize: 12 }}>
-              {businessCard.department}
-            </p>
-          </div>
+            {/* Front Side */}
+            <div style={{
+              position: 'absolute',
+              width: '100%',
+              height: '100%',
+              backfaceVisibility: 'hidden',
+              background: '#fff',
+              borderRadius: 16,
+              overflow: 'hidden',
+              boxShadow: '0 25px 50px -12px rgba(0,0,0,0.4)',
+            }}>
+              {/* Card Top - Logo & Company */}
+              <div style={{
+                background: 'linear-gradient(135deg, #1e3a5f 0%, #0d2137 100%)',
+                padding: '24px 28px',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'space-between',
+              }}>
+                <div>
+                  <div style={{ color: '#fff', fontSize: 16, fontWeight: 700, marginBottom: 4 }}>
+                    SAENGVITH SCIENCE
+                  </div>
+                  <div style={{ color: 'rgba(255,255,255,0.7)', fontSize: 11 }}>
+                    Scientific Equipment & Services
+                  </div>
+                </div>
+                <div style={{
+                  background: '#fff',
+                  borderRadius: 8,
+                  padding: 8,
+                }}>
+                  <QRCode value={vCardData} size={60} />
+                </div>
+              </div>
 
-          {/* Contact Info */}
-          <div style={{ 
-            textAlign: 'left', 
-            marginBottom: 24,
-            color: darkMode ? '#fff' : '#1f2937',
-          }}>
-            <p style={{ margin: '8px 0', fontSize: 14 }}>
-              📱 {businessCard.phone}
-            </p>
-            <p style={{ margin: '8px 0', fontSize: 14 }}>
-              ✉️ {businessCard.email}
-            </p>
-            <p style={{ margin: '8px 0', fontSize: 14 }}>
-              🏢 {businessCard.company}
-            </p>
-          </div>
+              {/* Card Body - Personal Info */}
+              <div style={{ padding: '24px 28px' }}>
+                <div style={{ display: 'flex', gap: 20 }}>
+                  <Avatar 
+                    size={72} 
+                    icon={<UserOutlined />}
+                    style={{ 
+                      background: 'linear-gradient(135deg, #3b82f6, #1d4ed8)',
+                      flexShrink: 0,
+                    }}
+                  />
+                  <div style={{ flex: 1 }}>
+                    <h2 style={{ margin: 0, fontSize: 20, fontWeight: 700, color: '#1f2937' }}>
+                      {businessCard.name}
+                    </h2>
+                    <p style={{ margin: '4px 0 0', fontSize: 14, color: '#3b82f6', fontWeight: 600 }}>
+                      {businessCard.position}
+                    </p>
+                    <p style={{ margin: '2px 0 0', fontSize: 12, color: '#6b7280' }}>
+                      {businessCard.department}
+                    </p>
+                  </div>
+                </div>
 
-          {/* QR Code */}
-          <div style={{
-            background: '#fff',
-            padding: 16,
-            borderRadius: 16,
-            display: 'inline-block',
-            marginBottom: 16,
-          }}>
-            <QRCode value={vCardData} size={150} />
-          </div>
-          <p style={{ 
-            fontSize: 12, 
-            color: darkMode ? 'rgba(255,255,255,0.5)' : '#9ca3af',
-            marginBottom: 24,
-          }}>
-            สแกนเพื่อบันทึกข้อมูลติดต่อ
-          </p>
+                <div style={{ height: 1, background: '#e5e7eb', margin: '20px 0' }} />
 
-          {/* Action Buttons */}
-          <Space size="middle">
-            <Button 
-              type="primary"
-              icon={<ShareAltOutlined />}
-              onClick={shareCard}
-              style={{ borderRadius: 8 }}
-            >
-              แชร์
-            </Button>
-            <Button 
-              icon={<CopyOutlined />}
-              onClick={copyToClipboard}
-              style={{ 
-                borderRadius: 8,
-                background: darkMode ? 'rgba(255,255,255,0.1)' : '#f3f4f6',
-                border: 'none',
-                color: darkMode ? '#fff' : '#1f2937',
-              }}
-            >
-              คัดลอก
-            </Button>
-            <Button 
-              icon={<EditOutlined />}
-              onClick={() => navigate('/profile')}
-              style={{ 
-                borderRadius: 8,
-                background: darkMode ? 'rgba(255,255,255,0.1)' : '#f3f4f6',
-                border: 'none',
-                color: darkMode ? '#fff' : '#1f2937',
-              }}
-            >
-              แก้ไข
-            </Button>
-          </Space>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+                    <div style={{ width: 36, height: 36, borderRadius: 8, background: '#eff6ff', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#3b82f6', fontSize: 16 }}>📱</div>
+                    <div>
+                      <div style={{ fontSize: 11, color: '#9ca3af' }}>โทรศัพท์</div>
+                      <div style={{ fontSize: 14, color: '#1f2937', fontWeight: 500 }}>{businessCard.phone}</div>
+                    </div>
+                  </div>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+                    <div style={{ width: 36, height: 36, borderRadius: 8, background: '#eff6ff', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#3b82f6', fontSize: 16 }}>✉️</div>
+                    <div>
+                      <div style={{ fontSize: 11, color: '#9ca3af' }}>อีเมล</div>
+                      <div style={{ fontSize: 14, color: '#1f2937', fontWeight: 500 }}>{businessCard.email}</div>
+                    </div>
+                  </div>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+                    <div style={{ width: 36, height: 36, borderRadius: 8, background: '#eff6ff', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#3b82f6', fontSize: 16 }}>🏢</div>
+                    <div>
+                      <div style={{ fontSize: 11, color: '#9ca3af' }}>บริษัท</div>
+                      <div style={{ fontSize: 14, color: '#1f2937', fontWeight: 500 }}>{businessCard.company}</div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              {/* Hint */}
+              <div style={{ textAlign: 'center', padding: '8px 0', color: '#9ca3af', fontSize: 11 }}>
+                👆 แตะสองครั้งเพื่อดูรายละเอียดเพิ่มเติม
+              </div>
+            </div>
+
+            {/* Back Side */}
+            <div style={{
+              position: 'absolute',
+              width: '100%',
+              height: '100%',
+              backfaceVisibility: 'hidden',
+              transform: 'rotateY(180deg)',
+              background: 'linear-gradient(135deg, #1e3a5f 0%, #0d2137 100%)',
+              borderRadius: 16,
+              overflow: 'hidden',
+              boxShadow: '0 25px 50px -12px rgba(0,0,0,0.4)',
+            }}>
+              {/* Back Header */}
+              <div style={{ padding: '24px 28px', borderBottom: '1px solid rgba(255,255,255,0.1)' }}>
+                <div style={{ color: '#fff', fontSize: 18, fontWeight: 700 }}>
+                  📋 ข้อมูลเพิ่มเติม
+                </div>
+              </div>
+
+              {/* Back Content */}
+              <div style={{ padding: '24px 28px', color: '#fff' }}>
+                {/* Experience */}
+                <div style={{ marginBottom: 24 }}>
+                  <div style={{ fontSize: 12, color: 'rgba(255,255,255,0.6)', marginBottom: 8 }}>
+                    🗓️ ประสบการณ์ทำงาน
+                  </div>
+                  <div style={{ fontSize: 24, fontWeight: 700, color: '#22d3ee' }}>
+                    {businessCard.experience}
+                  </div>
+                  <div style={{ fontSize: 12, color: 'rgba(255,255,255,0.6)' }}>
+                    เริ่มงาน: {businessCard.startDate}
+                  </div>
+                </div>
+
+                {/* Skills */}
+                <div style={{ marginBottom: 24 }}>
+                  <div style={{ fontSize: 12, color: 'rgba(255,255,255,0.6)', marginBottom: 8 }}>
+                    💡 ความเชี่ยวชาญ
+                  </div>
+                  <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8 }}>
+                    {businessCard.skills.map((skill: string, idx: number) => (
+                      <span key={idx} style={{
+                        padding: '6px 12px',
+                        background: 'rgba(255,255,255,0.1)',
+                        borderRadius: 20,
+                        fontSize: 12,
+                      }}>{skill}</span>
+                    ))}
+                  </div>
+                </div>
+
+                {/* Achievements */}
+                <div style={{ marginBottom: 24 }}>
+                  <div style={{ fontSize: 12, color: 'rgba(255,255,255,0.6)', marginBottom: 8 }}>
+                    🏆 ผลงานเด่น
+                  </div>
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+                    {businessCard.achievements.map((ach: string, idx: number) => (
+                      <div key={idx} style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                        <span style={{ color: '#fbbf24' }}>★</span>
+                        <span style={{ fontSize: 13 }}>{ach}</span>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+
+                {/* Address */}
+                <div>
+                  <div style={{ fontSize: 12, color: 'rgba(255,255,255,0.6)', marginBottom: 8 }}>
+                    📍 ที่อยู่บริษัท
+                  </div>
+                  <div style={{ fontSize: 12, lineHeight: 1.6 }}>
+                    {businessCard.address}
+                  </div>
+                </div>
+              </div>
+
+              {/* Hint */}
+              <div style={{ textAlign: 'center', padding: '8px 0', color: 'rgba(255,255,255,0.5)', fontSize: 11 }}>
+                👆 แตะสองครั้งเพื่อกลับด้านหน้า
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* Action Buttons */}
+        <div style={{
+          display: 'flex',
+          justifyContent: 'center',
+          gap: 12,
+          marginTop: 16,
+        }}>
+          <Button 
+            type="primary"
+            icon={<ShareAltOutlined />}
+            onClick={shareCard}
+            style={{ borderRadius: 8, background: '#3b82f6' }}
+          >
+            แชร์
+          </Button>
+          <Button 
+            icon={<CopyOutlined />}
+            onClick={copyToClipboard}
+            style={{ borderRadius: 8, background: '#fff' }}
+          >
+            คัดลอก
+          </Button>
+          <Button 
+            icon={<EditOutlined />}
+            onClick={() => navigate('/profile')}
+            style={{ borderRadius: 8, background: '#fff' }}
+          >
+            แก้ไข
+          </Button>
         </div>
       </Modal>
 
