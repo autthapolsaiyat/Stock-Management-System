@@ -255,6 +255,7 @@ let GoodsReceiptService = class GoodsReceiptService {
                         unitCost: item.unitCost,
                         referenceType: 'GR',
                         referenceId: gr.id,
+                        referenceItemId: item.id,
                     }, queryRunner);
                 }
                 else if (item.productId) {
@@ -265,6 +266,7 @@ let GoodsReceiptService = class GoodsReceiptService {
                         unitCost: item.unitCost,
                         referenceType: 'GR',
                         referenceId: gr.id,
+                        referenceItemId: item.id,
                     }, queryRunner);
                 }
                 if (item.poItemId) {
@@ -329,7 +331,7 @@ let GoodsReceiptService = class GoodsReceiptService {
             throw new common_1.BadRequestException('GR is already cancelled');
         }
         if (gr.status === 'POSTED') {
-            throw new common_1.BadRequestException('Posted GR cannot be cancelled');
+            throw new common_1.BadRequestException('Posted GR cannot be cancelled. Use reverse instead.');
         }
         gr.status = 'CANCELLED';
         gr.cancelledAt = new Date();
@@ -363,6 +365,9 @@ let GoodsReceiptService = class GoodsReceiptService {
         if (gr.status !== 'POSTED') {
             throw new common_1.BadRequestException('Only posted GR can be reversed');
         }
+        if (gr.reversedToId) {
+            throw new common_1.BadRequestException('This GR has already been reversed');
+        }
         const queryRunner = this.dataSource.createQueryRunner();
         await queryRunner.connect();
         await queryRunner.startTransaction();
@@ -387,10 +392,10 @@ let GoodsReceiptService = class GoodsReceiptService {
                 remark: gr.remark,
                 status: 'POSTED',
                 subtotal: -Number(gr.subtotal),
-                discountAmount: -Number(gr.discountAmount),
-                taxAmount: -Number(gr.taxAmount),
+                discountAmount: -Number(gr.discountAmount || 0),
+                taxAmount: -Number(gr.taxAmount || 0),
                 totalAmount: -Number(gr.totalAmount),
-                totalExpectedCost: -Number(gr.totalExpectedCost),
+                totalExpectedCost: -Number(gr.totalExpectedCost || 0),
                 totalVariance: 0,
                 variancePercent: 0,
                 hasVarianceAlert: false,
@@ -417,35 +422,41 @@ let GoodsReceiptService = class GoodsReceiptService {
                     unit: item.unit,
                     unitCost: Number(item.unitCost),
                     lineTotal: -Number(item.lineTotal),
-                    expectedUnitCost: Number(item.expectedUnitCost),
+                    expectedUnitCost: Number(item.expectedUnitCost || 0),
                     costVariance: 0,
                     variancePercent: 0,
                     hasVarianceAlert: false,
                 });
                 await queryRunner.manager.save(reverseItem);
                 if (item.productId) {
-                    if (item.productId) {
-                        await this.fifoService.deductFifo(item.productId, gr.warehouseId, Number(item.qty), 'GR_REVERSE', savedReverseGR.id, undefined, queryRunner);
-                    }
-                    if (item.productId) {
-                        await this.fifoService.deductFifo(item.productId, gr.warehouseId, Number(item.qty), 'GR_REVERSE', savedReverseGR.id, undefined, queryRunner);
-                    }
-                    if (item.productId) {
-                        await this.fifoService.deductFifo(item.productId, gr.warehouseId, Number(item.qty), 'GR_REVERSE', savedReverseGR.id, undefined, queryRunner);
-                    }
-                    if (item.productId) {
-                        await this.fifoService.deductFifo(item.productId, gr.warehouseId, Number(item.qty), 'GR_REVERSE', savedReverseGR.id, undefined, queryRunner);
-                    }
-                    if (item.productId) {
-                        await this.fifoService.deductFifo(item.productId, gr.warehouseId, Number(item.qty), 'GR_REVERSE', savedReverseGR.id, undefined, queryRunner);
-                    }
-                    if (item.productId) {
-                        await this.fifoService.deductFifo(item.productId, gr.warehouseId, Number(item.qty), 'GR_REVERSE', savedReverseGR.id, undefined, queryRunner);
-                    }
-                    if (item.productId) {
-                        await this.fifoService.deductFifo(item.productId, gr.warehouseId, Number(item.qty), 'GR_REVERSE', savedReverseGR.id, undefined, queryRunner);
-                    }
+                    await this.fifoService.deductFifo(item.productId, gr.warehouseId, Number(item.qty), 'GR_REVERSE', savedReverseGR.id, reverseItem.id, queryRunner);
                 }
+                if (item.poItemId) {
+                    await queryRunner.manager.query(`
+            UPDATE purchase_order_items 
+            SET qty_received = GREATEST(0, qty_received - $1),
+                qty_remaining = qty_remaining + $1,
+                item_status = CASE 
+                  WHEN qty_received - $1 <= 0 THEN 'PENDING'
+                  ELSE 'PARTIAL'
+                END
+            WHERE id = $2
+          `, [Number(item.qty), item.poItemId]);
+                }
+                if (item.quotationItemId) {
+                    await queryRunner.manager.query(`
+            UPDATE quotation_items 
+            SET qty_received = GREATEST(0, qty_received - $1),
+                item_status = CASE 
+                  WHEN qty_received - $1 <= 0 THEN 'ORDERED'
+                  ELSE item_status
+                END
+            WHERE id = $2
+          `, [Number(item.qty), item.quotationItemId]);
+                }
+            }
+            if (gr.purchaseOrderId) {
+                await this.poService.updateReceiveStatus(gr.purchaseOrderId);
             }
             gr.status = 'REVERSED';
             gr.reversedAt = new Date();

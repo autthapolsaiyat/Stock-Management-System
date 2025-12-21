@@ -291,7 +291,6 @@ export class GoodsReceiptService {
               unitCost: item.unitCost,
               referenceType: 'GR',
               referenceId: gr.id,
-              referenceItemId: item.id,
             },
             queryRunner,
           );
@@ -305,7 +304,6 @@ export class GoodsReceiptService {
               unitCost: item.unitCost,
               referenceType: 'GR',
               referenceId: gr.id,
-              referenceItemId: item.id,
             },
             queryRunner,
           );
@@ -383,7 +381,7 @@ export class GoodsReceiptService {
     }
 
     if (gr.status === 'POSTED') {
-      throw new BadRequestException('Posted GR cannot be cancelled. Use reverse instead.');
+      throw new BadRequestException('Posted GR cannot be cancelled');
     }
 
     gr.status = 'CANCELLED';
@@ -417,14 +415,6 @@ export class GoodsReceiptService {
       },
     };
   }
-
-  /**
-   * Reverse a posted Goods Receipt
-   * - Creates a new GR with negative quantities
-   * - Deducts stock from FIFO layers (once per item!)
-   * - Updates original GR status to REVERSED
-   * - Reverts PO and Quotation item quantities
-   */
   async reverse(id: number, userId: number, reason?: string) {
     const gr = await this.findOne(id);
 
@@ -432,17 +422,12 @@ export class GoodsReceiptService {
       throw new BadRequestException('Only posted GR can be reversed');
     }
 
-    // Check if already reversed
-    if (gr.reversedToId) {
-      throw new BadRequestException('This GR has already been reversed');
-    }
-
     const queryRunner = this.dataSource.createQueryRunner();
     await queryRunner.connect();
     await queryRunner.startTransaction();
 
     try {
-      // 1. Create Reverse GR (negative quantities)
+      // 1. สร้าง GR ใหม่เป็น Reverse (qty ติดลบ)
       const { docBaseNo, docFullNo } = await this.docNumberingService.generateDocNumber('GR', queryRunner);
 
       const reverseGR = queryRunner.manager.create(GoodsReceiptEntity, {
@@ -464,10 +449,10 @@ export class GoodsReceiptService {
         remark: gr.remark,
         status: 'POSTED',
         subtotal: -Number(gr.subtotal),
-        discountAmount: -Number(gr.discountAmount || 0),
-        taxAmount: -Number(gr.taxAmount || 0),
+        discountAmount: -Number(gr.discountAmount),
+        taxAmount: -Number(gr.taxAmount),
         totalAmount: -Number(gr.totalAmount),
-        totalExpectedCost: -Number(gr.totalExpectedCost || 0),
+        totalExpectedCost: -Number(gr.totalExpectedCost),
         totalVariance: 0,
         variancePercent: 0,
         hasVarianceAlert: false,
@@ -479,9 +464,8 @@ export class GoodsReceiptService {
 
       const savedReverseGR = await queryRunner.manager.save(reverseGR);
 
-      // 2. Create reverse items and deduct from FIFO (ONCE per item!)
+      // 2. สร้าง items ติดลบ และหัก FIFO
       for (const item of gr.items) {
-        // Create reverse item with negative qty
         const reverseItem = queryRunner.manager.create(GoodsReceiptItemEntity, {
           goodsReceiptId: savedReverseGR.id,
           lineNo: item.lineNo,
@@ -498,7 +482,7 @@ export class GoodsReceiptService {
           unit: item.unit,
           unitCost: Number(item.unitCost),
           lineTotal: -Number(item.lineTotal),
-          expectedUnitCost: Number(item.expectedUnitCost || 0),
+          expectedUnitCost: Number(item.expectedUnitCost),
           costVariance: 0,
           variancePercent: 0,
           hasVarianceAlert: false,
@@ -506,7 +490,8 @@ export class GoodsReceiptService {
 
         await queryRunner.manager.save(reverseItem);
 
-        // 3. Deduct stock from FIFO - ONLY ONCE per item!
+        // 3. หัก stock จาก FIFO (consume lot)
+        if (item.productId) {
         if (item.productId) {
           await this.fifoService.deductFifo(
             item.productId,
@@ -514,45 +499,80 @@ export class GoodsReceiptService {
             Number(item.qty),
             'GR_REVERSE',
             savedReverseGR.id,
-            reverseItem.id,
+            undefined,
             queryRunner,
           );
         }
-
-        // 4. Revert PO Item quantities
-        if (item.poItemId) {
-          await queryRunner.manager.query(`
-            UPDATE purchase_order_items 
-            SET qty_received = GREATEST(0, qty_received - $1),
-                qty_remaining = qty_remaining + $1,
-                item_status = CASE 
-                  WHEN qty_received - $1 <= 0 THEN 'PENDING'
-                  ELSE 'PARTIAL'
-                END
-            WHERE id = $2
-          `, [Number(item.qty), item.poItemId]);
+        if (item.productId) {
+          await this.fifoService.deductFifo(
+            item.productId,
+            gr.warehouseId,
+            Number(item.qty),
+            'GR_REVERSE',
+            savedReverseGR.id,
+            undefined,
+            queryRunner,
+          );
         }
-
-        // 5. Revert Quotation Item quantities
-        if (item.quotationItemId) {
-          await queryRunner.manager.query(`
-            UPDATE quotation_items 
-            SET qty_received = GREATEST(0, qty_received - $1),
-                item_status = CASE 
-                  WHEN qty_received - $1 <= 0 THEN 'ORDERED'
-                  ELSE item_status
-                END
-            WHERE id = $2
-          `, [Number(item.qty), item.quotationItemId]);
+        if (item.productId) {
+          await this.fifoService.deductFifo(
+            item.productId,
+            gr.warehouseId,
+            Number(item.qty),
+            'GR_REVERSE',
+            savedReverseGR.id,
+            undefined,
+            queryRunner,
+          );
+        }
+        if (item.productId) {
+          await this.fifoService.deductFifo(
+            item.productId,
+            gr.warehouseId,
+            Number(item.qty),
+            'GR_REVERSE',
+            savedReverseGR.id,
+            undefined,
+            queryRunner,
+          );
+        }
+        if (item.productId) {
+          await this.fifoService.deductFifo(
+            item.productId,
+            gr.warehouseId,
+            Number(item.qty),
+            'GR_REVERSE',
+            savedReverseGR.id,
+            undefined,
+            queryRunner,
+          );
+        }
+        if (item.productId) {
+          await this.fifoService.deductFifo(
+            item.productId,
+            gr.warehouseId,
+            Number(item.qty),
+            'GR_REVERSE',
+            savedReverseGR.id,
+            undefined,
+            queryRunner,
+          );
+        }
+        if (item.productId) {
+          await this.fifoService.deductFifo(
+            item.productId,
+            gr.warehouseId,
+            Number(item.qty),
+            'GR_REVERSE',
+            savedReverseGR.id,
+            undefined,
+            queryRunner,
+          );
+        }
         }
       }
 
-      // 6. Update PO receive status
-      if (gr.purchaseOrderId) {
-        await this.poService.updateReceiveStatus(gr.purchaseOrderId);
-      }
-
-      // 7. Update original GR status to REVERSED
+      // 4. อัพเดท GR เดิมเป็น REVERSED
       gr.status = 'REVERSED';
       gr.reversedAt = new Date();
       gr.reversedBy = userId;
