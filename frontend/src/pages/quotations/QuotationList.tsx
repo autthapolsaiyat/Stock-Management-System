@@ -4,7 +4,7 @@ import {
   Table, Button, Tag, Space, Input, Select, Card, message, Popconfirm, Tooltip
 } from 'antd';
 import {
-  PlusOutlined, SearchOutlined, EyeOutlined, EditOutlined, ArrowLeftOutlined,
+  PlusOutlined, SearchOutlined, EyeOutlined, EditOutlined,
   CloseCircleOutlined, DeleteOutlined, FileTextOutlined, PrinterOutlined
 } from '@ant-design/icons';
 import QuotationPrintPreview from '../../components/quotation/QuotationPrintPreview';
@@ -261,13 +261,6 @@ const QuotationList: React.FC = () => {
 
   return (
     <div className="page-container">
-      <Button 
-        icon={<ArrowLeftOutlined />} 
-        onClick={() => navigate('/intro')}
-        style={{ marginBottom: 16 }}
-      >
-        กลับหน้าหลัก
-      </Button>
       <div className="page-header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 24 }}>
         <h1 style={{ margin: 0, fontSize: 24 }}>📋 ใบเสนอราคา</h1>
         <Button
