@@ -746,7 +746,7 @@ END:VCARD`;
                 <div style={{ marginBottom: 20 }}>
                   <div style={{ fontSize: 11, color: 'rgba(255,255,255,0.5)', marginBottom: 6 }}>💡 ความเชี่ยวชาญ</div>
                   <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6 }}>
-                    {businessCard.skills.map((skill, idx) => (
+                    {businessCard.skills.map((skill: string, idx: number) => (
                       <span key={idx} style={{ padding: '4px 10px', background: 'rgba(255,255,255,0.1)', borderRadius: 12, fontSize: 11 }}>{skill}</span>
                     ))}
                   </div>

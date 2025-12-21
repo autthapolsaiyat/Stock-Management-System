@@ -9,7 +9,7 @@ const { TextArea } = Input;
 
 const ProfilePage = () => {
   const navigate = useNavigate();
-  const { user, refreshUser } = useAuth();
+  const { user } = useAuth();
   const [loading, setLoading] = useState(false);
   const [saving, setSaving] = useState(false);
   const [profileForm] = Form.useForm();
@@ -42,7 +42,6 @@ const ProfilePage = () => {
     try {
       await api.put('/api/user-settings/profile', values);
       message.success('บันทึกข้อมูลสำเร็จ');
-      if (refreshUser) refreshUser();
     } catch (error: any) {
       message.error(error.response?.data?.message || 'เกิดข้อผิดพลาด');
     }

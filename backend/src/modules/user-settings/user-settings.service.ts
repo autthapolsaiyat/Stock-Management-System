@@ -70,6 +70,57 @@ export class UserSettingsService {
     await this.settingsRepository.delete({ userId, settingKey: key });
   }
 
+  // Profile methods for business card
+  async getProfile(userId: number): Promise<any> {
+    const profile = await this.get(userId, 'profile');
+    
+    if (profile) {
+      return profile;
+    }
+    
+    // Try to get from employee table
+    const employee = await this.dataSource.query(
+      `SELECT e.position, e.phone, e.email, e.start_date
+       FROM employees e 
+       WHERE e.user_id = $1`,
+      [userId]
+    );
+    
+    if (employee && employee.length > 0) {
+      const emp = employee[0];
+      return {
+        position: emp.position || '',
+        department: '',
+        phone: emp.phone || '',
+        startDate: emp.start_date || '',
+        skills: '',
+        achievements: '',
+      };
+    }
+    
+    return {
+      position: '',
+      department: '',
+      phone: '',
+      startDate: '',
+      skills: '',
+      achievements: '',
+    };
+  }
+
+  async updateProfile(userId: number, data: any): Promise<any> {
+    await this.set(userId, 'profile', {
+      position: data.position || '',
+      department: data.department || '',
+      phone: data.phone || '',
+      startDate: data.startDate || '',
+      skills: data.skills || '',
+      achievements: data.achievements || '',
+    });
+    
+    return { success: true, message: 'บันทึกข้อมูลโปรไฟล์สำเร็จ' };
+  }
+
   async getEmployeeList(): Promise<any[]> {
     const employees = await this.dataSource.query(
       `SELECT id, employee_code, full_name_th, nickname, position, phone, email, signature_url

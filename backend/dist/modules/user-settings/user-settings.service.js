@@ -73,6 +73,45 @@ let UserSettingsService = class UserSettingsService {
     async delete(userId, key) {
         await this.settingsRepository.delete({ userId, settingKey: key });
     }
+    async getProfile(userId) {
+        const profile = await this.get(userId, 'profile');
+        if (profile) {
+            return profile;
+        }
+        const employee = await this.dataSource.query(`SELECT e.position, e.phone, e.email, e.start_date
+       FROM employees e 
+       WHERE e.user_id = $1`, [userId]);
+        if (employee && employee.length > 0) {
+            const emp = employee[0];
+            return {
+                position: emp.position || '',
+                department: '',
+                phone: emp.phone || '',
+                startDate: emp.start_date || '',
+                skills: '',
+                achievements: '',
+            };
+        }
+        return {
+            position: '',
+            department: '',
+            phone: '',
+            startDate: '',
+            skills: '',
+            achievements: '',
+        };
+    }
+    async updateProfile(userId, data) {
+        await this.set(userId, 'profile', {
+            position: data.position || '',
+            department: data.department || '',
+            phone: data.phone || '',
+            startDate: data.startDate || '',
+            skills: data.skills || '',
+            achievements: data.achievements || '',
+        });
+        return { success: true, message: 'บันทึกข้อมูลโปรไฟล์สำเร็จ' };
+    }
     async getEmployeeList() {
         const employees = await this.dataSource.query(`SELECT id, employee_code, full_name_th, nickname, position, phone, email, signature_url
        FROM employees 

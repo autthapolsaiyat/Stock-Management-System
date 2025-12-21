@@ -9,6 +9,8 @@ export declare class UserSettingsService {
     set(userId: number, key: string, value: any): Promise<UserSettingEntity>;
     setBulk(userId: number, settings: Record<string, any>): Promise<void>;
     delete(userId: number, key: string): Promise<void>;
+    getProfile(userId: number): Promise<any>;
+    updateProfile(userId: number, data: any): Promise<any>;
     getEmployeeList(): Promise<any[]>;
     getEmployeeById(id: number): Promise<any>;
     getSellerSettings(userId: number): Promise<any>;

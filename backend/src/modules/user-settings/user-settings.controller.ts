@@ -16,6 +16,18 @@ export class UserSettingsController {
     return this.settingsService.getAll(req.user.sub);
   }
 
+  @Get('profile')
+  @ApiOperation({ summary: 'Get user profile for business card' })
+  async getProfile(@Request() req: any) {
+    return this.settingsService.getProfile(req.user.sub);
+  }
+
+  @Put('profile')
+  @ApiOperation({ summary: 'Update user profile for business card' })
+  async updateProfile(@Request() req: any, @Body() body: any) {
+    return this.settingsService.updateProfile(req.user.sub, body);
+  }
+
   @Get('employees')
   @ApiOperation({ summary: 'Get all employees for seller selection' })
   async getEmployees() {

@@ -327,7 +327,7 @@ const UserSettings: React.FC = () => {
   ];
 
   return (
-    <div>
+    <div className="page-container">
       <Button 
         icon={<ArrowLeftOutlined />} 
         onClick={() => navigate('/intro')}
@@ -335,7 +335,6 @@ const UserSettings: React.FC = () => {
       >
         กลับหน้าหลัก
       </Button>
-    <div className="page-container">
       <div style={{ marginBottom: 24 }}>
         <h1 style={{ margin: 0, fontSize: 24 }}>⚙️ ตั้งค่าส่วนตัว</h1>
         <p style={{ color: 'rgba(255,255,255,0.6)', marginTop: 8 }}>

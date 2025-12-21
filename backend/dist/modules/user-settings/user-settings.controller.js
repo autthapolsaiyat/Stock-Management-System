@@ -24,6 +24,12 @@ let UserSettingsController = class UserSettingsController {
     async getAll(req) {
         return this.settingsService.getAll(req.user.sub);
     }
+    async getProfile(req) {
+        return this.settingsService.getProfile(req.user.sub);
+    }
+    async updateProfile(req, body) {
+        return this.settingsService.updateProfile(req.user.sub, body);
+    }
     async getEmployees() {
         return this.settingsService.getEmployeeList();
     }
@@ -65,6 +71,23 @@ __decorate([
     __metadata("design:paramtypes", [Object]),
     __metadata("design:returntype", Promise)
 ], UserSettingsController.prototype, "getAll", null);
+__decorate([
+    (0, common_1.Get)('profile'),
+    (0, swagger_1.ApiOperation)({ summary: 'Get user profile for business card' }),
+    __param(0, (0, common_1.Request)()),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [Object]),
+    __metadata("design:returntype", Promise)
+], UserSettingsController.prototype, "getProfile", null);
+__decorate([
+    (0, common_1.Put)('profile'),
+    (0, swagger_1.ApiOperation)({ summary: 'Update user profile for business card' }),
+    __param(0, (0, common_1.Request)()),
+    __param(1, (0, common_1.Body)()),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [Object, Object]),
+    __metadata("design:returntype", Promise)
+], UserSettingsController.prototype, "updateProfile", null);
 __decorate([
     (0, common_1.Get)('employees'),
     (0, swagger_1.ApiOperation)({ summary: 'Get all employees for seller selection' }),
