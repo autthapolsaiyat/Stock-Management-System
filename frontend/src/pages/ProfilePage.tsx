@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { Card, Form, Input, Button, message, Avatar, Descriptions, Divider, Space, Tag } from 'antd';
-import { UserOutlined, KeyOutlined, MailOutlined, PhoneOutlined, SaveOutlined } from '@ant-design/icons';
+import { UserOutlined, KeyOutlined, MailOutlined, SaveOutlined } from '@ant-design/icons';
 import { useAuth } from '../contexts/AuthContext';
 import api from '../services/api';
 

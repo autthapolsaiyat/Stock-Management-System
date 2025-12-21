@@ -19,5 +19,8 @@ export declare class AuthService {
         permissions: string[];
         quotationType: string;
     }>;
+    changePassword(userId: number, currentPassword: string, newPassword: string): Promise<{
+        message: string;
+    }>;
     validateUser(payload: any): Promise<UserEntity | null>;
 }

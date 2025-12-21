@@ -1,4 +1,4 @@
-import { Injectable, UnauthorizedException } from '@nestjs/common';
+import { Injectable, UnauthorizedException, BadRequestException } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
@@ -52,6 +52,28 @@ export class AuthService {
       permissions,
       quotationType: user.quotationType,
     };
+  }
+
+  async changePassword(userId: number, currentPassword: string, newPassword: string) {
+    const user = await this.userRepository.findOne({ where: { id: userId } });
+    
+    if (!user) {
+      throw new BadRequestException('ไม่พบผู้ใช้');
+    }
+
+    const isValid = await bcrypt.compare(currentPassword, user.passwordHash);
+    if (!isValid) {
+      throw new BadRequestException('รหัสผ่านปัจจุบันไม่ถูกต้อง');
+    }
+
+    if (newPassword.length < 6) {
+      throw new BadRequestException('รหัสผ่านใหม่ต้องมีอย่างน้อย 6 ตัวอักษร');
+    }
+
+    user.passwordHash = await bcrypt.hash(newPassword, 10);
+    await this.userRepository.save(user);
+
+    return { message: 'เปลี่ยนรหัสผ่านสำเร็จ' };
   }
 
   async validateUser(payload: any): Promise<UserEntity | null> {

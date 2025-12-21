@@ -16,4 +16,10 @@ export declare class AuthController {
         permissions: string[];
         quotationType: string;
     }>;
+    changePassword(req: any, body: {
+        currentPassword: string;
+        newPassword: string;
+    }): Promise<{
+        message: string;
+    }>;
 }

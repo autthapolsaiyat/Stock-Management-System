@@ -56,6 +56,22 @@ let AuthService = class AuthService {
             quotationType: user.quotationType,
         };
     }
+    async changePassword(userId, currentPassword, newPassword) {
+        const user = await this.userRepository.findOne({ where: { id: userId } });
+        if (!user) {
+            throw new common_1.BadRequestException('ไม่พบผู้ใช้');
+        }
+        const isValid = await bcrypt.compare(currentPassword, user.passwordHash);
+        if (!isValid) {
+            throw new common_1.BadRequestException('รหัสผ่านปัจจุบันไม่ถูกต้อง');
+        }
+        if (newPassword.length < 6) {
+            throw new common_1.BadRequestException('รหัสผ่านใหม่ต้องมีอย่างน้อย 6 ตัวอักษร');
+        }
+        user.passwordHash = await bcrypt.hash(newPassword, 10);
+        await this.userRepository.save(user);
+        return { message: 'เปลี่ยนรหัสผ่านสำเร็จ' };
+    }
     async validateUser(payload) {
         return this.userRepository.findOne({
             where: { id: payload.sub, isActive: true },
