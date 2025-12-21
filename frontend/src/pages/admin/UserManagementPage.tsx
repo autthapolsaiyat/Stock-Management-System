@@ -139,7 +139,7 @@ const UserManagementPage = () => {
 
   const handleToggleActive = async (user: User) => {
     try {
-      await api.put(`/users/${user.id}/toggle-active`: !user.isActive });
+      await api.put(`/users/${user.id}/toggle-active`);
       message.success(user.isActive ? 'ระงับผู้ใช้สำเร็จ' : 'เปิดใช้งานผู้ใช้สำเร็จ');
       fetchUsers();
     } catch (error) {
