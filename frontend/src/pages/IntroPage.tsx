@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Avatar, Button, Modal, QRCode, Space, Switch, message } from 'antd';
 import { 
-  UserOutlined, 
+  UserOutlined, SafetyOutlined, 
   EnvironmentOutlined, 
   FileTextOutlined,
   ShareAltOutlined,
