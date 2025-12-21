@@ -29,8 +29,7 @@ let CustomerService = class CustomerService {
     }
     async findOne(id) {
         const customer = await this.customerRepository.findOne({
-            where: { id },
-            relations: ['contacts']
+            where: { id }
         });
         if (!customer)
             throw new common_1.NotFoundException('Customer not found');
