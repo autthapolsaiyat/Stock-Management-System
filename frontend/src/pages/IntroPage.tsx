@@ -21,6 +21,7 @@ const IntroPage = () => {
   // Stats
   const [quotationStats, setQuotationStats] = useState({ total: 0, ordered: 0, totalAmount: 0 });
   const [adminStats, setAdminStats] = useState({ users: 0, roles: 0, logs: 0 });
+  const [profile, setProfile] = useState<any>({});
   
   // Mock check-in data
   const checkInStats = { present: 18, leave: 2, month: 'ธ.ค. 2568' };
@@ -41,6 +42,14 @@ const IntroPage = () => {
   const fetchStats = async () => {
     setLoading(true);
     try {
+      // Fetch profile
+      try {
+        const profileRes = await api.get('/api/user-settings/profile');
+        setProfile(profileRes.data || {});
+      } catch (e) {
+        console.log('No profile yet');
+      }
+
       // Fetch quotation stats
       if (isSales) {
         const qtRes = await api.get('/quotations');
@@ -74,16 +83,37 @@ const IntroPage = () => {
 
   const firstName = user?.fullName?.split(' ').pop() || user?.fullName?.split(' ')[0] || 'User';
 
+  const calculateExperience = (startDate: string) => {
+    if (!startDate) return '';
+    try {
+      const parts = startDate.split(' ');
+      const thaiMonths: Record<string, number> = {
+        'ม.ค.': 0, 'ก.พ.': 1, 'มี.ค.': 2, 'เม.ย.': 3, 'พ.ค.': 4, 'มิ.ย.': 5,
+        'ก.ค.': 6, 'ส.ค.': 7, 'ก.ย.': 8, 'ต.ค.': 9, 'พ.ย.': 10, 'ธ.ค.': 11
+      };
+      const day = parseInt(parts[0]);
+      const month = thaiMonths[parts[1]] || 0;
+      const year = parseInt(parts[2]) - 543;
+      const start = new Date(year, month, day);
+      const now = new Date();
+      const years = Math.floor((now.getTime() - start.getTime()) / (365.25 * 24 * 60 * 60 * 1000));
+      return years + ' ปี';
+    } catch {
+      return '';
+    }
+  };
+
   const businessCard = {
     name: user?.fullName || 'ไม่ระบุชื่อ',
-    position: 'Technology & AI Program Director',
-    department: 'ฝ่ายเทคโนโลยี',
-    phone: '085-070-9938',
+    position: profile?.position || '',
+    department: profile?.department || '',
+    phone: profile?.phone || '',
     email: user?.email || '',
     company: 'บริษัท แสงวิทย์ ซายน์ จำกัด',
-    startDate: '15 ธ.ค. 2551',
-    experience: '17 ปี',
-    skills: ['Sales', 'Customer Service', 'Product Knowledge'],
+    startDate: profile?.startDate || '',
+    experience: profile?.startDate ? calculateExperience(profile.startDate) : '',
+    skills: profile?.skills ? profile.skills.split(',').map((s: string) => s.trim()).filter(Boolean) : [],
+    achievements: profile?.achievements ? profile.achievements.split(',').map((s: string) => s.trim()).filter(Boolean) : [],
   };
 
   const vCardData = `BEGIN:VCARD

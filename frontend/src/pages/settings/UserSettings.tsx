@@ -1,12 +1,14 @@
 import React, { useState, useEffect } from 'react';
 import { Card, Form, Input, Button, Switch, Row, Col, Upload, message, Tabs, Divider, InputNumber, Select } from 'antd';
-import { SaveOutlined, UploadOutlined, UserOutlined, FileTextOutlined } from '@ant-design/icons';
+import { SaveOutlined, UploadOutlined, UserOutlined, FileTextOutlined, ArrowLeftOutlined } from '@ant-design/icons';
+import { useNavigate } from 'react-router-dom';
 import { userSettingsApi } from '../../services/api';
 
 const { TextArea } = Input;
 const { Option } = Select;
 
 const UserSettings: React.FC = () => {
+  const navigate = useNavigate();
   const [sellerForm] = Form.useForm();
   const [defaultsForm] = Form.useForm();
   const [loading, setLoading] = useState(false);
@@ -325,6 +327,14 @@ const UserSettings: React.FC = () => {
   ];
 
   return (
+    <div>
+      <Button 
+        icon={<ArrowLeftOutlined />} 
+        onClick={() => navigate('/intro')}
+        style={{ marginBottom: 16 }}
+      >
+        กลับหน้าหลัก
+      </Button>
     <div className="page-container">
       <div style={{ marginBottom: 24 }}>
         <h1 style={{ margin: 0, fontSize: 24 }}>⚙️ ตั้งค่าส่วนตัว</h1>
