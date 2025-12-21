@@ -26,6 +26,7 @@ import { useAuth } from '../contexts/AuthContext';
 import { SettingOutlined } from '@ant-design/icons';
 import { useTheme } from '../contexts/ThemeContext';
 import FloatingFlowProgress from '../components/FloatingFlowProgress';
+import FloatingHomeButton from '../components/FloatingHomeButton';
 
 const { Sider, Content, Header, Footer } = Layout;
 
@@ -279,6 +280,9 @@ const MainLayout: React.FC = () => {
         >
           <Outlet />
         </Content>
+
+        {/* Floating Home Button */}
+        <FloatingHomeButton />
 
         {/* Floating Flow Progress */}
         <FloatingFlowProgress />
