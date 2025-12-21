@@ -153,7 +153,7 @@ END:VCARD`;
           color: '#22c55e',
           margin: 0,
         }}>
-          SVS Stock
+          SVS Business Suite
         </h1>
         
         <div style={{ display: 'flex', alignItems: 'center', gap: 16 }}>
@@ -598,7 +598,7 @@ END:VCARD`;
         color: darkMode ? 'rgba(255,255,255,0.3)' : '#9ca3af',
         fontSize: 12,
       }}>
-        © 2025 Saengvith Science Co.,Ltd. | SVS Stock v1.0
+        Developed by Boy © Autthapol Saiyat
       </div>
 
       {/* Profile Modal - Business Card with Flip */}
