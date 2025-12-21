@@ -400,6 +400,112 @@ END:VCARD`;
         )}
       </div>
 
+
+        {/* Card 4: Super Admin (Admin Only) */}
+        {isAdmin && (
+          <div 
+            onClick={() => navigate('/admin/users')}
+            style={{
+              width: 320,
+              padding: 32,
+              borderRadius: 24,
+              background: darkMode 
+                ? 'rgba(255,255,255,0.05)'
+                : 'rgba(255,255,255,0.9)',
+              backdropFilter: 'blur(20px)',
+              border: darkMode 
+                ? '1px solid rgba(255,255,255,0.1)'
+                : '1px solid rgba(0,0,0,0.1)',
+              cursor: 'pointer',
+              transition: 'all 0.3s ease',
+              textAlign: 'center',
+              position: 'relative',
+            }}
+            onMouseEnter={(e) => {
+              e.currentTarget.style.transform = 'translateY(-8px) scale(1.02)';
+              e.currentTarget.style.boxShadow = '0 20px 40px rgba(239,68,68,0.3)';
+            }}
+            onMouseLeave={(e) => {
+              e.currentTarget.style.transform = 'translateY(0) scale(1)';
+              e.currentTarget.style.boxShadow = 'none';
+            }}
+          >
+            <div style={{
+              position: 'absolute',
+              top: 16,
+              right: 16,
+              padding: '4px 12px',
+              borderRadius: 12,
+              background: 'linear-gradient(135deg, #ef4444, #dc2626)',
+              color: '#fff',
+              fontSize: 11,
+              fontWeight: 600,
+            }}>
+              Admin
+            </div>
+            <div style={{
+              width: 80,
+              height: 80,
+              borderRadius: '50%',
+              background: 'linear-gradient(135deg, #ef4444, #dc2626)',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              margin: '0 auto 20px',
+              fontSize: 36,
+              color: '#fff',
+            }}>
+              <SafetyOutlined />
+            </div>
+            <h3 style={{ 
+              fontSize: 20, 
+              fontWeight: 600, 
+              color: darkMode ? '#fff' : '#1f2937',
+              marginBottom: 8,
+            }}>
+              Super Admin
+            </h3>
+            <p style={{ 
+              fontSize: 14, 
+              color: darkMode ? 'rgba(255,255,255,0.6)' : '#6b7280',
+              marginBottom: 16,
+            }}>
+              จัดการผู้ใช้และสิทธิ์
+            </p>
+            
+            <div style={{
+              display: 'grid',
+              gridTemplateColumns: 'repeat(2, 1fr)',
+              gap: 8,
+            }}>
+              <Button
+                size="small"
+                onClick={(e) => { e.stopPropagation(); navigate('/admin/users'); }}
+                style={{
+                  borderRadius: 8,
+                  background: darkMode ? 'rgba(255,255,255,0.1)' : '#fef2f2',
+                  border: 'none',
+                  color: darkMode ? '#fff' : '#dc2626',
+                }}
+              >
+                👥 ผู้ใช้
+              </Button>
+              <Button
+                size="small"
+                onClick={(e) => { e.stopPropagation(); navigate('/admin/activity-logs'); }}
+                style={{
+                  borderRadius: 8,
+                  background: darkMode ? 'rgba(255,255,255,0.1)' : '#fef2f2',
+                  border: 'none',
+                  color: darkMode ? '#fff' : '#dc2626',
+                }}
+              >
+                📋 Log
+              </Button>
+            </div>
+          </div>
+        )}
+
       {/* Quick Access - Role Based */}
       <div style={{ 
         maxWidth: 1000, 
