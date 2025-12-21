@@ -52,10 +52,10 @@ const InstallAppPage: React.FC = () => {
             style={{ width: 100, height: 100, marginBottom: 20 }}
           />
           <Title level={2} style={{ color: '#fff', margin: 0 }}>
-            SVS Stock Management System
+            SVS Business Suite
           </Title>
           <Text style={{ color: '#9ca3af', fontSize: 16 }}>
-            ระบบจัดการสต็อกสินค้า
+            Saengvith Science Co., Ltd.
           </Text>
         </div>
 
@@ -285,7 +285,7 @@ const InstallAppPage: React.FC = () => {
         {/* Footer */}
         <div style={{ textAlign: 'center', marginTop: 40 }}>
           <Text style={{ color: '#6b7280' }}>
-            © 2024 SVS Stock Management System
+            Developed by Boy © Autthapol Saiyat
           </Text>
         </div>
       </div>
