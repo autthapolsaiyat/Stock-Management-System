@@ -5,6 +5,7 @@ import MainLayout from './layouts/MainLayout';
 import {
   LoginPage,
   DashboardPage,
+  DashboardDetailPage,
   IntroPage, ProfilePage,
   UserManagementPage,
   ActivityLogPage,
@@ -25,7 +26,6 @@ import {
   UserSettingsPage,
   CompanySettingsPage,
 } from './pages';
-import InstallAppPage from './pages/InstallAppPage';
 import { useAuth } from './contexts/AuthContext';
 
 // Protected Route Component
@@ -60,12 +60,18 @@ const App: React.FC = () => {
     <Routes>
       {/* Public Routes */}
       <Route path="/login" element={<LoginPage />} />
-      <Route path="/install" element={<InstallAppPage />} />
       
       {/* Intro Page - No Layout */}
       <Route path="/intro" element={
         <ProtectedRoute>
           <IntroPage />
+        </ProtectedRoute>
+      } />
+
+      {/* Dashboard Detail - No Layout */}
+      <Route path="/dashboard-detail" element={
+        <ProtectedRoute>
+          <DashboardDetailPage />
         </ProtectedRoute>
       } />
 
