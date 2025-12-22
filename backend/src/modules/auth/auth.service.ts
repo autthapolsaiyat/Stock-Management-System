@@ -17,7 +17,7 @@ export class AuthService {
   async login(dto: LoginDto) {
     const user = await this.userRepository.findOne({
       where: { username: dto.username, isActive: true },
-      relations: ['userRoles', 'userRoles.role', 'userRoles.role.rolePermissions', 'userRoles.role.rolePermissions.permission'],
+      relations: ['userRoles', 'userRoles.role', 'userRoles.role.rolePermissions', 'userRoles.role.rolePermissions.permission', 'customerGroup'],
     });
 
     if (!user || !(await bcrypt.compare(dto.password, user.passwordHash))) {
@@ -37,6 +37,7 @@ export class AuthService {
       roles, 
       permissions,
       quotationType: user.quotationType,
+      customerGroupId: user.customerGroupId,
     };
     
     return {
@@ -46,11 +47,14 @@ export class AuthService {
         fullName: user.fullName, 
         email: user.email,
         quotationType: user.quotationType,
+        customerGroupId: user.customerGroupId,
+        customerGroup: user.customerGroup,
       },
       accessToken: this.jwtService.sign(payload),
       roles,
       permissions,
       quotationType: user.quotationType,
+      customerGroupId: user.customerGroupId,
     };
   }
 

@@ -9,32 +9,72 @@ import {
   Form,
   InputNumber,
   Tag,
+  Select,
   message,
 } from 'antd';
 import {
   PlusOutlined,
   SearchOutlined,
   EditOutlined,
+  FilterOutlined,
 } from '@ant-design/icons';
-import { customersApi } from '../services/api';
+import { customersApi, customerGroupsApi } from '../services/api';
 import { Customer } from '../types';
+
+interface CustomerGroup {
+  id: number;
+  code: string;
+  name: string;
+  description?: string;
+}
 
 const CustomersPage: React.FC = () => {
   const [customers, setCustomers] = useState<Customer[]>([]);
+  const [customerGroups, setCustomerGroups] = useState<CustomerGroup[]>([]);
   const [loading, setLoading] = useState(true);
   const [modalVisible, setModalVisible] = useState(false);
   const [editingCustomer, setEditingCustomer] = useState<Customer | null>(null);
   const [searchText, setSearchText] = useState('');
+  const [selectedGroupId, setSelectedGroupId] = useState<number | undefined>(undefined);
   const [form] = Form.useForm();
+
+  // ดึง user's groupId จาก localStorage (ถ้ามี)
+  const getUserGroupId = (): number | undefined => {
+    const user = localStorage.getItem('user');
+    if (user) {
+      const parsed = JSON.parse(user);
+      return parsed.customerGroupId || undefined;
+    }
+    return undefined;
+  };
+
+  useEffect(() => {
+    loadCustomerGroups();
+  }, []);
 
   useEffect(() => {
     loadData();
-  }, []);
+  }, [selectedGroupId]);
+
+  const loadCustomerGroups = async () => {
+    try {
+      const response = await customerGroupsApi.getAll();
+      setCustomerGroups(response.data || []);
+      
+      // ตั้งค่า default groupId จาก user (ถ้ามี)
+      const userGroupId = getUserGroupId();
+      if (userGroupId) {
+        setSelectedGroupId(userGroupId);
+      }
+    } catch (error) {
+      console.error('Error loading customer groups:', error);
+    }
+  };
 
   const loadData = async () => {
     setLoading(true);
     try {
-      const response = await customersApi.getAll();
+      const response = await customersApi.getAll(selectedGroupId);
       setCustomers(response.data || []);
     } catch (error) {
       message.error('ไม่สามารถโหลดข้อมูลได้');
@@ -46,6 +86,10 @@ const CustomersPage: React.FC = () => {
   const handleCreate = () => {
     setEditingCustomer(null);
     form.resetFields();
+    // ตั้งค่า default groupId
+    if (selectedGroupId) {
+      form.setFieldsValue({ groupId: selectedGroupId });
+    }
     setModalVisible(true);
   };
 
@@ -71,23 +115,39 @@ const CustomersPage: React.FC = () => {
     }
   };
 
+  const getGroupTag = (groupId: number | undefined) => {
+    if (!groupId) return <Tag>ไม่ระบุกลุ่ม</Tag>;
+    const group = customerGroups.find(g => g.id === groupId);
+    if (!group) return <Tag>-</Tag>;
+    
+    const colors: Record<string, string> = {
+      'ACC': 'purple',
+      'FOR': 'blue',
+      'SVC': 'orange',
+      'SCI': 'green',
+      'GEN': 'default',
+    };
+    return <Tag color={colors[group.code] || 'default'}>{group.name}</Tag>;
+  };
+
   const columns = [
     { title: 'รหัส', dataIndex: 'code', key: 'code', width: 120 },
     { title: 'ชื่อลูกค้า', dataIndex: 'name', key: 'name' },
+    {
+      title: 'กลุ่ม',
+      dataIndex: 'groupId',
+      key: 'groupId',
+      width: 180,
+      render: (groupId: number) => getGroupTag(groupId),
+    },
     { title: 'เลขประจำตัวผู้เสียภาษี', dataIndex: 'taxId', key: 'taxId' },
     { title: 'โทรศัพท์', dataIndex: 'phone', key: 'phone' },
     { title: 'อีเมล', dataIndex: 'email', key: 'email' },
     {
-      title: 'วงเงินเครดิต',
-      dataIndex: 'creditLimit',
-      key: 'creditLimit',
-      align: 'right' as const,
-      render: (val: number) => val ? `฿${val.toLocaleString()}` : '-',
-    },
-    {
       title: 'สถานะ',
       dataIndex: 'isActive',
       key: 'isActive',
+      width: 100,
       render: (isActive: boolean) => (
         <Tag color={isActive !== false ? 'success' : 'default'}>
           {isActive !== false ? 'ใช้งาน' : 'ไม่ใช้งาน'}
@@ -124,13 +184,29 @@ const CustomersPage: React.FC = () => {
 
       <Card className="card-holo">
         <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 16, flexWrap: 'wrap', gap: 12 }}>
-          <Input
-            placeholder="ค้นหาลูกค้า..."
-            prefix={<SearchOutlined style={{ color: '#9ca3af' }} />}
-            value={searchText}
-            onChange={(e) => setSearchText(e.target.value)}
-            style={{ width: 300 }}
-          />
+          <Space wrap>
+            <Input
+              placeholder="ค้นหาลูกค้า..."
+              prefix={<SearchOutlined style={{ color: '#9ca3af' }} />}
+              value={searchText}
+              onChange={(e) => setSearchText(e.target.value)}
+              style={{ width: 250 }}
+            />
+            <Select
+              placeholder="เลือกกลุ่มลูกค้า"
+              value={selectedGroupId}
+              onChange={(value) => setSelectedGroupId(value)}
+              allowClear
+              style={{ width: 200 }}
+              suffixIcon={<FilterOutlined />}
+            >
+              {customerGroups.map(group => (
+                <Select.Option key={group.id} value={group.id}>
+                  {group.name}
+                </Select.Option>
+              ))}
+            </Select>
+          </Space>
           <Button type="primary" icon={<PlusOutlined />} onClick={handleCreate} className="btn-holo">
             เพิ่มลูกค้า
           </Button>
@@ -161,6 +237,16 @@ const CustomersPage: React.FC = () => {
               <Input placeholder="ชื่อลูกค้า" />
             </Form.Item>
           </Space>
+
+          <Form.Item name="groupId" label="กลุ่มลูกค้า">
+            <Select placeholder="เลือกกลุ่มลูกค้า" allowClear>
+              {customerGroups.map(group => (
+                <Select.Option key={group.id} value={group.id}>
+                  {group.name}
+                </Select.Option>
+              ))}
+            </Select>
+          </Form.Item>
 
           <Form.Item name="taxId" label="เลขประจำตัวผู้เสียภาษี">
             <Input placeholder="เลขประจำตัวผู้เสียภาษี 13 หลัก" />

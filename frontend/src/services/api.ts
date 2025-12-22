@@ -73,13 +73,6 @@ export const unitsApi = {
   create: (data: any) => api.post('/api/products/units', data),
 };
 
-// Customers API
-export const customersApi = {
-  getAll: () => api.get('/api/customers'),
-  getById: (id: number) => api.get(`/api/customers/${id}`),
-  create: (data: any) => api.post('/api/customers', data),
-  update: (id: number, data: any) => api.put(`/api/customers/${id}`, data),
-  delete: (id: number) => api.delete(`/api/customers/${id}`),
 };
 
 // Suppliers API
@@ -211,5 +204,20 @@ export const uploadApi = {
   uploadBase64: (base64: string, folder: string) => 
     api.post('/api/upload/base64', { base64, folder }),
 };
+// Customer Groups API
+export const customerGroupsApi = {
+  getAll: () => api.get('/api/customer-groups'),
+  getById: (id: number) => api.get(`/api/customer-groups/${id}`),
+  create: (data: any) => api.post('/api/customer-groups', data),
+  update: (id: number, data: any) => api.put(`/api/customer-groups/${id}`, data),
+  delete: (id: number) => api.delete(`/api/customer-groups/${id}`),
+};
 
+export const customersApi = {
+  getAll: (groupId?: number) => api.get('/api/customers', { params: { groupId } }),
+  getById: (id: number) => api.get(`/api/customers/${id}`),
+  create: (data: any) => api.post('/api/customers', data),
+  update: (id: number, data: any) => api.put(`/api/customers/${id}`, data),
+  delete: (id: number) => api.delete(`/api/customers/${id}`),
+};
 export default api;

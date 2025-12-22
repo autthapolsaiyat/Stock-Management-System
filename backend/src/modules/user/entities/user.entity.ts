@@ -5,8 +5,11 @@ import {
   CreateDateColumn,
   UpdateDateColumn,
   OneToMany,
+  ManyToOne,
+  JoinColumn,
 } from 'typeorm';
 import { UserRoleEntity } from './user-role.entity';
+import { CustomerGroupEntity } from '../../customer-group/entities/customer-group.entity';
 
 @Entity('users')
 export class UserEntity {
@@ -30,6 +33,13 @@ export class UserEntity {
 
   @Column({ name: 'quotation_type', nullable: true })
   quotationType: string; // STANDARD, FORENSIC, MAINTENANCE, null = all
+
+  @Column({ name: 'customer_group_id', nullable: true })
+  customerGroupId: number;
+
+  @ManyToOne(() => CustomerGroupEntity)
+  @JoinColumn({ name: 'customer_group_id' })
+  customerGroup: CustomerGroupEntity;
 
   @Column({ name: 'last_login_at', nullable: true })
   lastLoginAt: Date;
