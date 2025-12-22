@@ -10,16 +10,24 @@ export class CustomerService {
     private customerRepository: Repository<CustomerEntity>,
   ) {}
 
-  async findAll() {
-    return this.customerRepository.find({ 
-      where: { isActive: true },
-      order: { code: 'ASC' } 
-    });
+  async findAll(groupId?: number) {
+    const query = this.customerRepository.createQueryBuilder('customer')
+      .leftJoinAndSelect('customer.group', 'group')
+      .where('customer.isActive = :isActive', { isActive: true });
+    
+    if (groupId) {
+      query.andWhere('customer.groupId = :groupId', { groupId });
+    }
+    
+    query.orderBy('customer.code', 'ASC');
+    
+    return query.getMany();
   }
 
   async findOne(id: number) {
     const customer = await this.customerRepository.findOne({ 
-      where: { id }
+      where: { id },
+      relations: ['group']
     });
     if (!customer) throw new NotFoundException('Customer not found');
     return customer;
@@ -36,9 +44,16 @@ export class CustomerService {
     return this.customerRepository.save(customer);
   }
 
-  async delete(id: number) {
-    const customer = await this.findOne(id);
-    customer.isActive = false;
-    return this.customerRepository.save(customer);
+  async updateGroup(id: number, groupId: number) {
+    await this.customerRepository.update(id, { groupId });
+    return this.findOne(id);
+  }
+
+  async findByGroup(groupId: number) {
+    return this.customerRepository.find({
+      where: { groupId, isActive: true },
+      relations: ['group'],
+      order: { code: 'ASC' }
+    });
   }
 }

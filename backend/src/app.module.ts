@@ -22,6 +22,7 @@ import { UploadModule } from './upload/upload.module';
 import { UserSettingsModule } from './modules/user-settings/user-settings.module';
 import { VCardModule } from './modules/vcard/vcard.module';
 import { CategoryModule } from './modules/category/category.module';
+import { CustomerGroupModule } from './modules/customer-group/customer-group.module';
 
 @Module({
   imports: [
@@ -62,6 +63,7 @@ import { CategoryModule } from './modules/category/category.module';
     UserSettingsModule,
     VCardModule,
     CategoryModule,
+    CustomerGroupModule,
   ],
 })
 export class AppModule {}

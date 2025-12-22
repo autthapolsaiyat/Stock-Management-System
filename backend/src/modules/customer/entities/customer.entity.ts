@@ -1,4 +1,5 @@
-import { Entity, Column, PrimaryGeneratedColumn, CreateDateColumn, UpdateDateColumn } from 'typeorm';
+import { Entity, Column, PrimaryGeneratedColumn, CreateDateColumn, UpdateDateColumn, ManyToOne, JoinColumn } from 'typeorm';
+import { CustomerGroupEntity } from '../../customer-group/entities/customer-group.entity';
 
 @Entity('customers')
 export class CustomerEntity {
@@ -37,6 +38,13 @@ export class CustomerEntity {
 
   @Column({ name: 'credit_term_days', default: 30 })
   creditTermDays: number;
+
+  @Column({ name: 'group_id', nullable: true })
+  groupId: number;
+
+  @ManyToOne(() => CustomerGroupEntity)
+  @JoinColumn({ name: 'group_id' })
+  group: CustomerGroupEntity;
 
   @Column({ name: 'is_active', default: true })
   isActive: boolean;

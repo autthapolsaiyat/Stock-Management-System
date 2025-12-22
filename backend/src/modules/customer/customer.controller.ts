@@ -1,5 +1,5 @@
-import { Controller, Get, Post, Put, Delete, Body, Param, ParseIntPipe, UseGuards } from '@nestjs/common';
-import { ApiTags, ApiBearerAuth } from '@nestjs/swagger';
+import { Controller, Get, Post, Put, Body, Param, Query, ParseIntPipe, UseGuards } from '@nestjs/common';
+import { ApiTags, ApiBearerAuth, ApiQuery } from '@nestjs/swagger';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { CustomerService } from './customer.service';
 
@@ -11,7 +11,10 @@ export class CustomerController {
   constructor(private readonly customerService: CustomerService) {}
 
   @Get()
-  findAll() { return this.customerService.findAll(); }
+  @ApiQuery({ name: 'groupId', required: false, type: Number })
+  findAll(@Query('groupId') groupId?: string) { 
+    return this.customerService.findAll(groupId ? parseInt(groupId) : undefined); 
+  }
 
   @Get(':id')
   findOne(@Param('id', ParseIntPipe) id: number) { return this.customerService.findOne(id); }
@@ -22,6 +25,11 @@ export class CustomerController {
   @Put(':id')
   update(@Param('id', ParseIntPipe) id: number, @Body() dto: any) { return this.customerService.update(id, dto); }
 
-  @Delete(':id')
-  delete(@Param('id', ParseIntPipe) id: number) { return this.customerService.delete(id); }
+  @Put(':id/group')
+  updateGroup(
+    @Param('id', ParseIntPipe) id: number, 
+    @Body('groupId', ParseIntPipe) groupId: number
+  ) { 
+    return this.customerService.updateGroup(id, groupId); 
+  }
 }
