@@ -6,7 +6,7 @@ import {
   ShareAltOutlined, CopyOutlined, EditOutlined, SettingOutlined,
   AppstoreOutlined, TeamOutlined, BarChartOutlined
 } from '@ant-design/icons';
-import { QRCode } from 'antd';
+import { QRCodeSVG } from 'qrcode.react';
 import { useAuth } from '../contexts/AuthContext';
 import api from '../services/api';
 
@@ -669,8 +669,13 @@ const IntroPage = () => {
                   <div style={{ color: '#fff', fontSize: 14, fontWeight: 700 }}>SAENGVITH SCIENCE</div>
                   <div style={{ color: 'rgba(255,255,255,0.6)', fontSize: 10 }}>Scientific Equipment & Services</div>
                 </div>
-                <div style={{ background: '#fff', borderRadius: 6, padding: 6 }}>
-                  <QRCode value={vCardUrl} size={60} errorLevel="M" />
+                <div style={{ background: '#fff', borderRadius: 8, padding: 8 }}>
+                  <QRCodeSVG 
+                    value={vCardUrl} 
+                    size={64}
+                    level="M"
+                    includeMargin={false}
+                  />
                 </div>
               </div>
 
