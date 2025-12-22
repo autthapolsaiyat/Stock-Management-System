@@ -161,7 +161,8 @@ const QuotationDetail: React.FC = () => {
     try {
       await purchaseOrdersApi.createFromQuotation(parseInt(id!));
       message.success('สร้างใบสั่งซื้อสำเร็จ');
-      navigate('/purchase-orders');
+      // Reload quotation to update timeline
+      await loadQuotation(parseInt(id!));
     } catch (error: any) {
       message.error(error.response?.data?.message || 'ไม่สามารถสร้างใบสั่งซื้อได้');
     }
@@ -171,7 +172,8 @@ const QuotationDetail: React.FC = () => {
     try {
       await salesInvoicesApi.createFromQuotation(parseInt(id!));
       message.success('สร้างใบแจ้งหนี้สำเร็จ');
-      navigate('/sales-invoices');
+      // Reload quotation to update timeline
+      await loadQuotation(parseInt(id!));
     } catch (error: any) {
       message.error(error.response?.data?.message || 'ไม่สามารถสร้างใบแจ้งหนี้ได้');
     }
@@ -186,7 +188,7 @@ const QuotationDetail: React.FC = () => {
     try {
       await salesInvoicesApi.markPaid(inv.id, { paymentMethod: "CASH", paymentReference: "" });
       message.success("บันทึกชำระเงินสำเร็จ");
-      loadQuotation(parseInt(id!));
+      await loadQuotation(parseInt(id!));
     } catch (error: any) {
       message.error(error.response?.data?.message || "ไม่สามารถบันทึกชำระเงินได้");
     }
@@ -376,13 +378,21 @@ const QuotationDetail: React.FC = () => {
             status: best.status,
           } : undefined; })(),
         }}
-    	        onNavigate={(type) => {
-          if (type === "po") navigate("/purchase-orders");
-          if (type === "gr") navigate("/goods-receipts");
-          if (type === "inv") navigate("/sales-invoices");
+    	        onNavigate={(type, docId) => {
+          if (type === "po") navigate(`/purchase-orders`);
+          if (type === "gr") navigate(`/goods-receipts`);
+          if (type === "inv") navigate(`/sales-invoices`);
         }}
         onCreatePO={handleCreatePO}
-        onCreateGR={() => navigate("/goods-receipts")}
+        onCreateGR={() => {
+          // Navigate to GR page with PO info
+          const po = relatedDocs.purchaseOrders.find(p => p.status === 'APPROVED');
+          if (po) {
+            navigate(`/goods-receipts?poId=${po.id}`);
+          } else {
+            navigate("/goods-receipts");
+          }
+        }}
         onCreateInvoice={handleCreateInvoice}
         onMarkPaid={handleMarkPaid}
       />
