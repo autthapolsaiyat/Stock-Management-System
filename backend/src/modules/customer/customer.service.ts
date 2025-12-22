@@ -16,7 +16,11 @@ export class CustomerService {
       .where('customer.isActive = :isActive', { isActive: true });
     
     if (groupId) {
-      query.andWhere('customer.groupId = :groupId', { groupId });
+      // ดึงลูกค้ากลุ่มตัวเอง + GEN (ลูกค้าทั่วไป)
+      query.andWhere('(customer.groupId = :groupId OR group.code = :genCode)', { 
+        groupId, 
+        genCode: 'GEN' 
+      });
     }
     
     query.orderBy('customer.code', 'ASC');
