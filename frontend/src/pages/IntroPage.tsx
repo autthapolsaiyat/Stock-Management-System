@@ -670,7 +670,7 @@ const IntroPage = () => {
                   <div style={{ color: 'rgba(255,255,255,0.6)', fontSize: 10 }}>Scientific Equipment & Services</div>
                 </div>
                 <div style={{ background: '#fff', borderRadius: 6, padding: 6 }}>
-                  <QRCode value={vCardUrl} size={50} />
+                  <QRCode value={vCardUrl} size={60} errorLevel="M" />
                 </div>
               </div>
 
