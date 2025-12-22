@@ -48,19 +48,26 @@ const LoginPage: React.FC = () => {
       >
         {/* Logo */}
         <div style={{ textAlign: 'center', marginBottom: 32 }}>
+          <img 
+            src="/icons/icon-192x192.png" 
+            alt="SVS Logo" 
+            style={{ 
+              width: 80, 
+              height: 80, 
+              marginBottom: 16,
+              filter: 'drop-shadow(0 4px 20px rgba(124,58,237,0.3))'
+            }} 
+          />
           <h1
             className="text-gradient"
             style={{
-              fontSize: 36,
+              fontSize: 32,
               fontWeight: 700,
-              marginBottom: 8,
+              marginBottom: 0,
             }}
           >
-            SVS Stock
+            SVS Business Suite
           </h1>
-          <p style={{ color: 'rgba(255,255,255,0.6)', margin: 0 }}>
-            ระบบจัดการคลังสินค้า
-          </p>
         </div>
 
         {/* Error Alert - Bug #7 Fix */}
