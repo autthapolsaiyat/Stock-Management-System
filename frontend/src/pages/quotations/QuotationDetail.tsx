@@ -360,17 +360,31 @@ const QuotationDetail: React.FC = () => {
         if (!po) return <Card><div style={{ textAlign: 'center', color: '#666', padding: 40 }}>ยังไม่มีใบสั่งซื้อ</div></Card>;
         return (
           <Card title={<span>🛒 ใบสั่งซื้อ: {po.docFullNo}</span>} extra={<Button icon={<PrinterOutlined />} onClick={() => setPoPrintOpen(true)}>พิมพ์</Button>}>
-            <Descriptions column={{ xs: 1, sm: 2 }} size="small">
-              <Descriptions.Item label="เลขที่">{po.docFullNo}</Descriptions.Item>
-              <Descriptions.Item label="สถานะ"><Tag color={statusColors[po.status]}>{po.status}</Tag></Descriptions.Item>
-              <Descriptions.Item label="ผู้จำหน่าย">{po.supplierName || '-'}</Descriptions.Item>
-              <Descriptions.Item label="วันที่">{po.docDate ? new Date(po.docDate).toLocaleDateString('th-TH') : '-'}</Descriptions.Item>
-              <Descriptions.Item label="ยอดรวม">฿{Number(po.grandTotal || 0).toLocaleString()}</Descriptions.Item>
-              <Descriptions.Item label="จำนวนรายการ">{po.items?.length || po.totalItems || 0} รายการ</Descriptions.Item>
-            </Descriptions>
+            <Row gutter={16}>
+              <Col xs={24} md={12}>
+                <Card type="inner" title="📋 ข้อมูลเอกสาร" size="small" style={{ marginBottom: 16 }}>
+                  <Descriptions column={1} size="small">
+                    <Descriptions.Item label="เลขที่">{po.docFullNo}</Descriptions.Item>
+                    <Descriptions.Item label="สถานะ"><Tag color={statusColors[po.status]}>{po.status}</Tag></Descriptions.Item>
+                    <Descriptions.Item label="วันที่">{po.docDate ? new Date(po.docDate).toLocaleDateString('th-TH') : '-'}</Descriptions.Item>
+                    <Descriptions.Item label="กำหนดส่ง">{po.expectedDeliveryDate ? new Date(po.expectedDeliveryDate).toLocaleDateString('th-TH') : '-'}</Descriptions.Item>
+                    <Descriptions.Item label="ยอดรวม"><strong style={{ color: '#1890ff', fontSize: 16 }}>฿{Number(po.grandTotal || 0).toLocaleString()}</strong></Descriptions.Item>
+                  </Descriptions>
+                </Card>
+              </Col>
+              <Col xs={24} md={12}>
+                <Card type="inner" title="🏭 ข้อมูลผู้จำหน่าย" size="small" style={{ marginBottom: 16 }}>
+                  <Descriptions column={1} size="small">
+                    <Descriptions.Item label="ชื่อ"><strong>{po.supplierName || '-'}</strong></Descriptions.Item>
+                    <Descriptions.Item label="ที่อยู่">{po.supplierAddress || '-'}</Descriptions.Item>
+                    <Descriptions.Item label="ติดต่อ">{po.supplierContact || po.contactPerson || '-'}</Descriptions.Item>
+                    <Descriptions.Item label="โทร">{po.supplierPhone || '-'}</Descriptions.Item>
+                  </Descriptions>
+                </Card>
+              </Col>
+            </Row>
             {po.items && po.items.length > 0 && (
               <Table
-                style={{ marginTop: 16 }}
                 dataSource={po.items}
                 rowKey="id"
                 size="small"
@@ -378,7 +392,8 @@ const QuotationDetail: React.FC = () => {
                 columns={[
                   { title: 'สินค้า', dataIndex: 'itemName', ellipsis: true },
                   { title: 'จำนวน', dataIndex: 'qty', width: 80, align: 'center' as const, render: (v: number, r: any) => `${v} ${r.unit}` },
-                  { title: 'ราคา', dataIndex: 'unitPrice', width: 100, align: 'right' as const, render: (v: number) => `฿${Number(v||0).toLocaleString()}` },
+                  { title: 'ราคา/หน่วย', dataIndex: 'unitPrice', width: 100, align: 'right' as const, render: (v: number) => `฿${Number(v||0).toLocaleString()}` },
+                  { title: 'รวม', dataIndex: 'lineTotal', width: 100, align: 'right' as const, render: (v: number) => `฿${Number(v||0).toLocaleString()}` },
                 ]}
               />
             )}
