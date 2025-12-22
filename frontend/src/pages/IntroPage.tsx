@@ -7,7 +7,7 @@ import {
   LogoutOutlined, ShoppingCartOutlined, InboxOutlined, ToolOutlined,
   DollarOutlined, FileSearchOutlined, BarChartOutlined
 } from '@ant-design/icons';
-import { QRCode } from 'antd';
+import QRCode from 'qrcode.react';
 import { useAuth } from '../contexts/AuthContext';
 import api from '../services/api';
 
@@ -304,7 +304,7 @@ const IntroPage = () => {
             <div style={{ position: 'absolute', width: '100%', height: '100%', backfaceVisibility: 'hidden', background: '#fff', borderRadius: 16, overflow: 'hidden', boxShadow: '0 25px 50px -12px rgba(0,0,0,0.4)' }}>
               <div style={{ background: 'linear-gradient(135deg, #1e3a5f 0%, #0d2137 100%)', padding: '20px 24px', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
                 <div><div style={{ color: '#fff', fontSize: 14, fontWeight: 700 }}>SAENGVITH SCIENCE</div><div style={{ color: 'rgba(255,255,255,0.6)', fontSize: 10 }}>Scientific Equipment & Services</div></div>
-                <div style={{ background: '#fff', borderRadius: 6, padding: 6 }}><QRCode value={vCardData} size={50} /></div>
+                <div style={{ background: '#fff', borderRadius: 6, padding: 6 }}><QRCode value={vCardData} size={50} level="M" /></div>
               </div>
               <div style={{ padding: '20px 24px' }}>
                 <div style={{ display: 'flex', gap: 16, marginBottom: 16 }}>
