@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import {
   Card, Modal, Button, Tag, Space, Descriptions, Table, Divider,
-  message, Popconfirm, Row, Col, Progress, Select
+  message, Popconfirm, Row, Col, Progress, Select, Input, Radio
 } from 'antd';
 import {
   EditOutlined, SendOutlined, CheckCircleOutlined,
@@ -12,7 +12,7 @@ import {
 import QuotationFlowProgress from '../../components/quotation/QuotationFlowProgress';
 import QuotationPrintPreview from '../../components/quotation/QuotationPrintPreview';
 import { PurchaseOrderPrintPreview, GoodsReceiptPrintPreview, TaxInvoicePrintPreview, ReceiptPrintPreview } from '../../components/print';
-import { quotationsApi, purchaseOrdersApi, salesInvoicesApi, goodsReceiptsApi, suppliersApi } from '../../services/api';
+import { quotationsApi, purchaseOrdersApi, salesInvoicesApi, goodsReceiptsApi, suppliersApi, warehousesApi } from '../../services/api';
 import type { Quotation, QuotationItem, QuotationType, QuotationStatus } from '../../types/quotation';
 import { useActiveQuotation } from '../../contexts/ActiveQuotationContext';
 
@@ -66,6 +66,18 @@ const QuotationDetail: React.FC = () => {
   const [suppliers, setSuppliers] = useState<any[]>([]);
   const [selectedSupplierId, setSelectedSupplierId] = useState<number | null>(null);
   const [creatingPO, setCreatingPO] = useState(false);
+  
+  // Warehouse selection modal (for GR)
+  const [warehouseModalOpen, setWarehouseModalOpen] = useState(false);
+  const [warehouses, setWarehouses] = useState<any[]>([]);
+  const [selectedWarehouseId, setSelectedWarehouseId] = useState<number | null>(null);
+  const [creatingGR, setCreatingGR] = useState(false);
+  
+  // Payment modal (for Mark Paid)
+  const [paymentModalOpen, setPaymentModalOpen] = useState(false);
+  const [paymentMethod, setPaymentMethod] = useState<string>('TRANSFER');
+  const [paymentReference, setPaymentReference] = useState<string>('');
+  const [processingPayment, setProcessingPayment] = useState(false);
 
   useEffect(() => {
     if (id) {
@@ -80,12 +92,32 @@ const QuotationDetail: React.FC = () => {
     }
   }, [supplierModalOpen]);
   
+  useEffect(() => {
+    // Load warehouses when modal opens
+    if (warehouseModalOpen) {
+      loadWarehouses();
+    }
+  }, [warehouseModalOpen]);
+  
   const loadSuppliers = async () => {
     try {
       const res = await suppliersApi.getAll();
       setSuppliers(res.data || []);
     } catch (error) {
       console.error('Failed to load suppliers:', error);
+    }
+  };
+  
+  const loadWarehouses = async () => {
+    try {
+      const res = await warehousesApi.getAll();
+      setWarehouses(res.data || []);
+      // Auto-select first warehouse if only one
+      if (res.data?.length === 1) {
+        setSelectedWarehouseId(res.data[0].id);
+      }
+    } catch (error) {
+      console.error('Failed to load warehouses:', error);
     }
   };
 
@@ -222,18 +254,33 @@ const QuotationDetail: React.FC = () => {
     }
   };
 
-  const handleMarkPaid = async () => {
+  // Open payment modal
+  const handleMarkPaid = () => {
     const inv = relatedDocs.invoices.find(i => i.status === "POSTED") || relatedDocs.invoices[0];
     if (!inv) {
       message.error("ไม่พบใบแจ้งหนี้ที่สามารถบันทึกชำระได้");
       return;
     }
+    setPaymentMethod('TRANSFER');
+    setPaymentReference('');
+    setPaymentModalOpen(true);
+  };
+  
+  // Confirm payment
+  const handleConfirmPayment = async () => {
+    const inv = relatedDocs.invoices.find(i => i.status === "POSTED") || relatedDocs.invoices[0];
+    if (!inv) return;
+    
+    setProcessingPayment(true);
     try {
-      await salesInvoicesApi.markPaid(inv.id, { paymentMethod: "CASH", paymentReference: "" });
+      await salesInvoicesApi.markPaid(inv.id, { paymentMethod, paymentReference });
       message.success("บันทึกชำระเงินสำเร็จ");
+      setPaymentModalOpen(false);
       await loadQuotation(parseInt(id!));
     } catch (error: any) {
       message.error(error.response?.data?.message || "ไม่สามารถบันทึกชำระเงินได้");
+    } finally {
+      setProcessingPayment(false);
     }
   };
 
@@ -253,20 +300,37 @@ const QuotationDetail: React.FC = () => {
     }
   };
 
-  // NEW: Create GR from approved PO
-  const handleCreateGR = async () => {
+  // Open warehouse modal for GR
+  const handleCreateGR = () => {
     const po = relatedDocs.purchaseOrders.find(p => p.status === 'APPROVED' || p.status === 'SENT');
     if (!po) {
       message.error("ไม่พบใบสั่งซื้อที่อนุมัติแล้ว");
       return;
     }
+    setSelectedWarehouseId(null);
+    setWarehouseModalOpen(true);
+  };
+  
+  // Confirm create GR with selected warehouse
+  const handleConfirmCreateGR = async () => {
+    if (!selectedWarehouseId) {
+      message.warning('กรุณาเลือกคลังสินค้า');
+      return;
+    }
+    
+    const po = relatedDocs.purchaseOrders.find(p => p.status === 'APPROVED' || p.status === 'SENT');
+    if (!po) return;
+    
+    setCreatingGR(true);
     try {
-      // Use default warehouse ID = 1 (can be improved later)
-      await goodsReceiptsApi.createFromPO(po.id);
+      await goodsReceiptsApi.createFromPO(po.id, selectedWarehouseId);
       message.success("สร้างใบรับสินค้าสำเร็จ");
+      setWarehouseModalOpen(false);
       await loadQuotation(parseInt(id!));
     } catch (error: any) {
       message.error(error.response?.data?.message || "ไม่สามารถสร้างใบรับสินค้าได้");
+    } finally {
+      setCreatingGR(false);
     }
   };
 
@@ -853,6 +917,83 @@ const QuotationDetail: React.FC = () => {
             })()}
           </div>
         )}
+      </Modal>
+
+      {/* Warehouse Selection Modal for GR */}
+      <Modal
+        title="📦 เลือกคลังสินค้า"
+        open={warehouseModalOpen}
+        onCancel={() => setWarehouseModalOpen(false)}
+        onOk={handleConfirmCreateGR}
+        okText="สร้างใบรับสินค้า"
+        cancelText="ยกเลิก"
+        confirmLoading={creatingGR}
+        okButtonProps={{ disabled: !selectedWarehouseId }}
+      >
+        <div style={{ marginBottom: 16 }}>
+          <p>เลือกคลังสินค้าสำหรับรับสินค้า:</p>
+        </div>
+        <Select
+          style={{ width: '100%' }}
+          placeholder="-- เลือกคลังสินค้า --"
+          value={selectedWarehouseId}
+          onChange={(value) => setSelectedWarehouseId(value)}
+        >
+          {warehouses.map((wh: any) => (
+            <Select.Option key={wh.id} value={wh.id}>
+              {wh.name}
+            </Select.Option>
+          ))}
+        </Select>
+        {selectedWarehouseId && (
+          <div style={{ marginTop: 16, padding: 12, background: '#f5f5f5', borderRadius: 8 }}>
+            {(() => {
+              const selected = warehouses.find(w => w.id === selectedWarehouseId);
+              if (!selected) return null;
+              return (
+                <>
+                  <div><strong>{selected.name}</strong></div>
+                  {selected.location && <div style={{ fontSize: 12, color: '#666', marginTop: 4 }}>ที่ตั้ง: {selected.location}</div>}
+                  {selected.description && <div style={{ fontSize: 12, marginTop: 4 }}>{selected.description}</div>}
+                </>
+              );
+            })()}
+          </div>
+        )}
+      </Modal>
+
+      {/* Payment Method Modal */}
+      <Modal
+        title="💰 บันทึกการชำระเงิน"
+        open={paymentModalOpen}
+        onCancel={() => setPaymentModalOpen(false)}
+        onOk={handleConfirmPayment}
+        okText="บันทึกชำระเงิน"
+        cancelText="ยกเลิก"
+        confirmLoading={processingPayment}
+      >
+        <div style={{ marginBottom: 16 }}>
+          <p><strong>ยอดชำระ:</strong> <span style={{ color: '#52c41a', fontSize: 18 }}>฿{Number(relatedDocs.invoices.find(i => i.status === 'POSTED')?.grandTotal || 0).toLocaleString()}</span></p>
+        </div>
+        
+        <div style={{ marginBottom: 16 }}>
+          <p style={{ marginBottom: 8 }}><strong>วิธีการชำระเงิน:</strong></p>
+          <Radio.Group value={paymentMethod} onChange={(e) => setPaymentMethod(e.target.value)}>
+            <Radio.Button value="TRANSFER">โอนเงิน</Radio.Button>
+            <Radio.Button value="CASH">เงินสด</Radio.Button>
+            <Radio.Button value="CHEQUE">เช็ค</Radio.Button>
+            <Radio.Button value="CREDIT_CARD">บัตรเครดิต</Radio.Button>
+          </Radio.Group>
+        </div>
+        
+        <div>
+          <p style={{ marginBottom: 8 }}><strong>เลขที่อ้างอิง:</strong></p>
+          <Input
+            placeholder={paymentMethod === 'TRANSFER' ? 'เลขที่รายการโอน' : paymentMethod === 'CHEQUE' ? 'เลขที่เช็ค' : 'เลขที่อ้างอิง (ถ้ามี)'}
+            value={paymentReference}
+            onChange={(e) => setPaymentReference(e.target.value)}
+          />
+        </div>
       </Modal>
     </div>
   );
