@@ -38,6 +38,8 @@ interface QuotationFlowProgressProps {
     gr?: { id: number; docNo: string; status: string; date?: string };
     inv?: { id: number; docNo: string; status: string; date?: string };
   };
+  selectedStep?: 'QT' | 'PO' | 'GR' | 'INV' | 'PAID';
+  onStepClick?: (step: 'QT' | 'PO' | 'GR' | 'INV' | 'PAID') => void;
   onNavigate?: (type: string, id: number) => void;
   onCreatePO?: () => void;
   onApprovePO?: () => void;
@@ -51,6 +53,8 @@ interface QuotationFlowProgressProps {
 const QuotationFlowProgress: React.FC<QuotationFlowProgressProps> = ({
   quotation,
   relatedDocs,
+  selectedStep,
+  onStepClick,
   onNavigate,
   onCreatePO,
   onApprovePO,
@@ -277,22 +281,23 @@ const QuotationFlowProgress: React.FC<QuotationFlowProgressProps> = ({
 
         {steps.map((step) => {
           const stepAction = getStepAction(step.key);
+          const isSelected = selectedStep === step.key;
           
           return (
             <Tooltip 
               key={step.key} 
-              title={step.onClick ? 'คลิกเพื่อดูรายละเอียด' : ''}
+              title="คลิกเพื่อดูรายละเอียด"
             >
               <div 
                 style={{ 
                   display: 'flex', 
                   flexDirection: 'column', 
                   alignItems: 'center',
-                  cursor: step.onClick ? 'pointer' : 'default',
+                  cursor: 'pointer',
                   zIndex: 2,
                   flex: 1,
                 }}
-                onClick={step.onClick}
+                onClick={() => onStepClick?.(step.key as 'QT' | 'PO' | 'GR' | 'INV' | 'PAID')}
               >
                 {/* Step Box */}
                 <div style={{
@@ -304,7 +309,9 @@ const QuotationFlowProgress: React.FC<QuotationFlowProgressProps> = ({
                     : step.status === 'current'
                     ? 'linear-gradient(135deg, #92400e 0%, #b45309 100%)'
                     : '#1f2937',
-                  border: step.status === 'completed' 
+                  border: isSelected 
+                    ? '3px solid #3b82f6'
+                    : step.status === 'completed' 
                     ? '2px solid #10b981'
                     : step.status === 'current'
                     ? '2px solid #f59e0b'
@@ -315,7 +322,10 @@ const QuotationFlowProgress: React.FC<QuotationFlowProgressProps> = ({
                   justifyContent: 'center',
                   marginBottom: 12,
                   transition: 'all 0.3s ease',
-                  boxShadow: step.status !== 'pending' ? '0 4px 12px rgba(0,0,0,0.3)' : 'none',
+                  boxShadow: isSelected 
+                    ? '0 0 20px rgba(59,130,246,0.5)' 
+                    : step.status !== 'pending' ? '0 4px 12px rgba(0,0,0,0.3)' : 'none',
+                  transform: isSelected ? 'scale(1.05)' : 'scale(1)',
                 }}>
                   <div style={{ color: step.status === 'pending' ? '#6b7280' : '#fff' }}>
                     {step.icon}

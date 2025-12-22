@@ -49,6 +49,7 @@ const QuotationDetail: React.FC = () => {
   const [quotation, setQuotation] = useState<Quotation | null>(null);
   const [loading, setLoading] = useState(true);
   const [printPreviewOpen, setPrintPreviewOpen] = useState(false);
+  const [selectedStep, setSelectedStep] = useState<'QT' | 'PO' | 'GR' | 'INV' | 'PAID'>('QT');
   const [relatedDocs, setRelatedDocs] = useState<{
     purchaseOrders: any[];
     goodsReceipts: any[];
@@ -338,6 +339,185 @@ const QuotationDetail: React.FC = () => {
     },
   ];
 
+  // Render detail card based on selected step
+  const renderStepDetail = () => {
+    const po = relatedDocs.purchaseOrders[0];
+    const gr = relatedDocs.goodsReceipts[0];
+    const inv = relatedDocs.invoices.find(i => i.status === 'PAID') || relatedDocs.invoices.find(i => i.status === 'POSTED') || relatedDocs.invoices[0];
+
+    const statusColors: Record<string, string> = {
+      DRAFT: 'default', CONFIRMED: 'cyan', APPROVED: 'green', POSTED: 'green', 
+      PAID: 'green', PENDING: 'orange', SENT: 'blue', CANCELLED: 'red'
+    };
+
+    switch (selectedStep) {
+      case 'PO':
+        if (!po) return <Card><div style={{ textAlign: 'center', color: '#666', padding: 40 }}>ยังไม่มีใบสั่งซื้อ</div></Card>;
+        return (
+          <Card title={<span>🛒 ใบสั่งซื้อ: {po.docFullNo}</span>}>
+            <Descriptions column={{ xs: 1, sm: 2 }} size="small">
+              <Descriptions.Item label="เลขที่">{po.docFullNo}</Descriptions.Item>
+              <Descriptions.Item label="สถานะ"><Tag color={statusColors[po.status]}>{po.status}</Tag></Descriptions.Item>
+              <Descriptions.Item label="ผู้จำหน่าย">{po.supplierName || '-'}</Descriptions.Item>
+              <Descriptions.Item label="วันที่">{po.docDate ? new Date(po.docDate).toLocaleDateString('th-TH') : '-'}</Descriptions.Item>
+              <Descriptions.Item label="ยอดรวม">฿{Number(po.grandTotal || 0).toLocaleString()}</Descriptions.Item>
+              <Descriptions.Item label="จำนวนรายการ">{po.items?.length || po.totalItems || 0} รายการ</Descriptions.Item>
+            </Descriptions>
+            {po.items && po.items.length > 0 && (
+              <Table
+                style={{ marginTop: 16 }}
+                dataSource={po.items}
+                rowKey="id"
+                size="small"
+                pagination={false}
+                columns={[
+                  { title: 'สินค้า', dataIndex: 'itemName', ellipsis: true },
+                  { title: 'จำนวน', dataIndex: 'qty', width: 80, align: 'center' as const, render: (v: number, r: any) => `${v} ${r.unit}` },
+                  { title: 'ราคา', dataIndex: 'unitPrice', width: 100, align: 'right' as const, render: (v: number) => `฿${Number(v||0).toLocaleString()}` },
+                ]}
+              />
+            )}
+          </Card>
+        );
+
+      case 'GR':
+        if (!gr) return <Card><div style={{ textAlign: 'center', color: '#666', padding: 40 }}>ยังไม่มีใบรับสินค้า</div></Card>;
+        return (
+          <Card title={<span>📦 ใบรับสินค้า: {gr.docFullNo}</span>}>
+            <Descriptions column={{ xs: 1, sm: 2 }} size="small">
+              <Descriptions.Item label="เลขที่">{gr.docFullNo}</Descriptions.Item>
+              <Descriptions.Item label="สถานะ"><Tag color={statusColors[gr.status]}>{gr.status}</Tag></Descriptions.Item>
+              <Descriptions.Item label="คลังสินค้า">{gr.warehouseName || '-'}</Descriptions.Item>
+              <Descriptions.Item label="วันที่รับ">{gr.receiveDate ? new Date(gr.receiveDate).toLocaleDateString('th-TH') : '-'}</Descriptions.Item>
+              <Descriptions.Item label="ยอดรวม">฿{Number(gr.grandTotal || 0).toLocaleString()}</Descriptions.Item>
+              <Descriptions.Item label="จำนวนรายการ">{gr.items?.length || gr.totalItems || 0} รายการ</Descriptions.Item>
+            </Descriptions>
+            {gr.items && gr.items.length > 0 && (
+              <Table
+                style={{ marginTop: 16 }}
+                dataSource={gr.items}
+                rowKey="id"
+                size="small"
+                pagination={false}
+                columns={[
+                  { title: 'สินค้า', dataIndex: 'itemName', ellipsis: true },
+                  { title: 'จำนวนรับ', dataIndex: 'qty', width: 80, align: 'center' as const, render: (v: number, r: any) => `${v} ${r.unit}` },
+                  { title: 'ต้นทุน', dataIndex: 'unitCost', width: 100, align: 'right' as const, render: (v: number) => `฿${Number(v||0).toLocaleString()}` },
+                ]}
+              />
+            )}
+          </Card>
+        );
+
+      case 'INV':
+        if (!inv) return <Card><div style={{ textAlign: 'center', color: '#666', padding: 40 }}>ยังไม่มีใบแจ้งหนี้</div></Card>;
+        return (
+          <Card title={<span>📄 ใบแจ้งหนี้: {inv.docFullNo}</span>}>
+            <Descriptions column={{ xs: 1, sm: 2 }} size="small">
+              <Descriptions.Item label="เลขที่">{inv.docFullNo}</Descriptions.Item>
+              <Descriptions.Item label="สถานะ"><Tag color={statusColors[inv.status]}>{inv.status}</Tag></Descriptions.Item>
+              <Descriptions.Item label="ลูกค้า">{inv.customerName || quotation.customerName}</Descriptions.Item>
+              <Descriptions.Item label="วันที่">{inv.docDate ? new Date(inv.docDate).toLocaleDateString('th-TH') : '-'}</Descriptions.Item>
+              <Descriptions.Item label="ยอดรวม">฿{Number(inv.grandTotal || 0).toLocaleString()}</Descriptions.Item>
+              <Descriptions.Item label="จำนวนรายการ">{inv.items?.length || inv.totalItems || 0} รายการ</Descriptions.Item>
+            </Descriptions>
+            {inv.items && inv.items.length > 0 && (
+              <Table
+                style={{ marginTop: 16 }}
+                dataSource={inv.items}
+                rowKey="id"
+                size="small"
+                pagination={false}
+                columns={[
+                  { title: 'สินค้า', dataIndex: 'itemName', ellipsis: true },
+                  { title: 'จำนวน', dataIndex: 'qty', width: 80, align: 'center' as const, render: (v: number, r: any) => `${v} ${r.unit}` },
+                  { title: 'ราคา', dataIndex: 'unitPrice', width: 100, align: 'right' as const, render: (v: number) => `฿${Number(v||0).toLocaleString()}` },
+                ]}
+              />
+            )}
+          </Card>
+        );
+
+      case 'PAID':
+        if (!inv || inv.status !== 'PAID') return <Card><div style={{ textAlign: 'center', color: '#666', padding: 40 }}>ยังไม่ได้ชำระเงิน</div></Card>;
+        return (
+          <Card title={<span>💰 การชำระเงิน</span>}>
+            <Descriptions column={{ xs: 1, sm: 2 }} size="small">
+              <Descriptions.Item label="ใบแจ้งหนี้">{inv.docFullNo}</Descriptions.Item>
+              <Descriptions.Item label="สถานะ"><Tag color="green">ชำระแล้ว</Tag></Descriptions.Item>
+              <Descriptions.Item label="ยอดชำระ">฿{Number(inv.grandTotal || 0).toLocaleString()}</Descriptions.Item>
+              <Descriptions.Item label="วิธีชำระ">{inv.paymentMethod || 'เงินสด'}</Descriptions.Item>
+              <Descriptions.Item label="วันที่ชำระ">{inv.paidAt ? new Date(inv.paidAt).toLocaleDateString('th-TH') : '-'}</Descriptions.Item>
+              <Descriptions.Item label="อ้างอิง">{inv.paymentReference || '-'}</Descriptions.Item>
+            </Descriptions>
+          </Card>
+        );
+
+      default: // QT
+        return (
+          <>
+            <Card title="ข้อมูลลูกค้า" style={{ marginBottom: 16 }}>
+              <Descriptions column={{ xs: 1, sm: 2 }}>
+                <Descriptions.Item label="ลูกค้า">{quotation.customerName}</Descriptions.Item>
+                <Descriptions.Item label="ผู้ติดต่อ">{quotation.contactPerson}</Descriptions.Item>
+                <Descriptions.Item label="โทรศัพท์">{quotation.contactPhone}</Descriptions.Item>
+                <Descriptions.Item label="อีเมล">{quotation.contactEmail}</Descriptions.Item>
+                <Descriptions.Item label="ที่อยู่" span={2}>{quotation.customerAddress}</Descriptions.Item>
+              </Descriptions>
+            </Card>
+
+            <Card title="รายการสินค้า" style={{ marginBottom: 16 }}>
+              <Table
+                columns={itemColumns}
+                dataSource={quotation.items}
+                rowKey="id"
+                pagination={false}
+                size="small"
+              />
+            </Card>
+
+            <Card title="สรุปยอด">
+              <Row gutter={24}>
+                <Col xs={24} md={12}>
+                  <Descriptions column={1} size="small">
+                    <Descriptions.Item label="วันที่">
+                      {new Date(quotation.docDate).toLocaleDateString('th-TH')}
+                    </Descriptions.Item>
+                    <Descriptions.Item label="ยืนราคา">{quotation.validDays} วัน</Descriptions.Item>
+                    <Descriptions.Item label="กำหนดส่งมอบ">{quotation.deliveryDays} วัน</Descriptions.Item>
+                    <Descriptions.Item label="เครดิต">{quotation.creditTermDays} วัน</Descriptions.Item>
+                  </Descriptions>
+                </Col>
+                <Col xs={24} md={12}>
+                  <div style={{ fontSize: 16 }}>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 8 }}>
+                      <span>รวมสินค้า:</span>
+                      <span>฿{Number(quotation.subtotal || 0).toLocaleString()}</span>
+                    </div>
+                    {Number(quotation.discountAmount || 0) > 0 && (
+                      <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 8, color: '#f5222d' }}>
+                        <span>ส่วนลด:</span>
+                        <span>-฿{Number(quotation.discountAmount).toLocaleString()}</span>
+                      </div>
+                    )}
+                    <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 8 }}>
+                      <span>VAT {quotation.taxRate}%:</span>
+                      <span>฿{Number(quotation.taxAmount || 0).toLocaleString()}</span>
+                    </div>
+                    <Divider style={{ margin: '8px 0' }} />
+                    <div style={{ display: 'flex', justifyContent: 'space-between', fontWeight: 'bold', fontSize: 18 }}>
+                      <span>ยอดสุทธิ:</span>
+                      <span>฿{Number(quotation.grandTotal || 0).toLocaleString()}</span>
+                    </div>
+                  </div>
+                </Col>
+              </Row>
+            </Card>
+          </>
+        );
+    }
+  };
+
   return (
     <div className="page-container">
       {/* Header */}
@@ -448,6 +628,8 @@ const QuotationDetail: React.FC = () => {
           if (type === "gr") navigate(`/goods-receipts`);
           if (type === "inv") navigate(`/sales-invoices`);
         }}
+        selectedStep={selectedStep}
+        onStepClick={setSelectedStep}
         onCreatePO={handleCreatePO}
         onApprovePO={handleApprovePO}
         onCreateGR={handleCreateGR}
@@ -458,63 +640,7 @@ const QuotationDetail: React.FC = () => {
       />
       <Row gutter={24}>
         <Col xs={24} lg={16}>
-          <Card title="ข้อมูลลูกค้า" style={{ marginBottom: 16 }}>
-            <Descriptions column={{ xs: 1, sm: 2 }}>
-              <Descriptions.Item label="ลูกค้า">{quotation.customerName}</Descriptions.Item>
-              <Descriptions.Item label="ผู้ติดต่อ">{quotation.contactPerson}</Descriptions.Item>
-              <Descriptions.Item label="โทรศัพท์">{quotation.contactPhone}</Descriptions.Item>
-              <Descriptions.Item label="อีเมล">{quotation.contactEmail}</Descriptions.Item>
-              <Descriptions.Item label="ที่อยู่" span={2}>{quotation.customerAddress}</Descriptions.Item>
-            </Descriptions>
-          </Card>
-
-          <Card title="รายการสินค้า" style={{ marginBottom: 16 }}>
-            <Table
-              columns={itemColumns}
-              dataSource={quotation.items}
-              rowKey="id"
-              pagination={false}
-              size="small"
-            />
-          </Card>
-
-          <Card title="สรุปยอด">
-            <Row gutter={24}>
-              <Col xs={24} md={12}>
-                <Descriptions column={1} size="small">
-                  <Descriptions.Item label="วันที่">
-                    {new Date(quotation.docDate).toLocaleDateString('th-TH')}
-                  </Descriptions.Item>
-                  <Descriptions.Item label="ยืนราคา">{quotation.validDays} วัน</Descriptions.Item>
-                  <Descriptions.Item label="กำหนดส่งมอบ">{quotation.deliveryDays} วัน</Descriptions.Item>
-                  <Descriptions.Item label="เครดิต">{quotation.creditTermDays} วัน</Descriptions.Item>
-                </Descriptions>
-              </Col>
-              <Col xs={24} md={12}>
-                <div style={{ fontSize: 16 }}>
-                  <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 8 }}>
-                    <span>รวมสินค้า:</span>
-                    <span>฿{Number(quotation.subtotal || 0).toLocaleString()}</span>
-                  </div>
-                  {Number(quotation.discountAmount || 0) > 0 && (
-                    <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 8, color: '#f5222d' }}>
-                      <span>ส่วนลด:</span>
-                      <span>-฿{Number(quotation.discountAmount).toLocaleString()}</span>
-                    </div>
-                  )}
-                  <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 8 }}>
-                    <span>VAT {quotation.taxRate}%:</span>
-                    <span>฿{Number(quotation.taxAmount || 0).toLocaleString()}</span>
-                  </div>
-                  <Divider style={{ margin: '8px 0' }} />
-                  <div style={{ display: 'flex', justifyContent: 'space-between', fontWeight: 'bold', fontSize: 18 }}>
-                    <span>ยอดสุทธิ:</span>
-                    <span>฿{Number(quotation.grandTotal || 0).toLocaleString()}</span>
-                  </div>
-                </div>
-              </Col>
-            </Row>
-          </Card>
+          {renderStepDetail()}
         </Col>
 
         <Col xs={24} lg={8}>
@@ -536,7 +662,7 @@ const QuotationDetail: React.FC = () => {
               <strong>📦 ใบสั่งซื้อ (PO):</strong>
               {relatedDocs.purchaseOrders.length > 0 ? (
                 relatedDocs.purchaseOrders.map(po => (
-                  <Button key={po.id} type="link" size="small">
+                  <Button key={po.id} type="link" size="small" onClick={() => setSelectedStep('PO')}>
                     {po.docFullNo}
                   </Button>
                 ))
@@ -548,7 +674,7 @@ const QuotationDetail: React.FC = () => {
               <strong>📥 ใบรับสินค้า (GR):</strong>
               {relatedDocs.goodsReceipts.length > 0 ? (
                 relatedDocs.goodsReceipts.map(gr => (
-                  <Button key={gr.id} type="link" size="small">
+                  <Button key={gr.id} type="link" size="small" onClick={() => setSelectedStep('GR')}>
                     {gr.docFullNo}
                   </Button>
                 ))
@@ -560,7 +686,7 @@ const QuotationDetail: React.FC = () => {
               <strong>🧾 ใบแจ้งหนี้ (INV):</strong>
               {relatedDocs.invoices.length > 0 ? (
                 relatedDocs.invoices.map(inv => (
-                  <Button key={inv.id} type="link" size="small">
+                  <Button key={inv.id} type="link" size="small" onClick={() => setSelectedStep('INV')}>
                     {inv.docFullNo}
                   </Button>
                 ))
