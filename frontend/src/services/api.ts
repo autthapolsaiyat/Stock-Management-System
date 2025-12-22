@@ -125,7 +125,7 @@ export const purchaseOrdersApi = {
   submit: (id: number) => api.post(`/api/purchase-orders/${id}/submit`),
   approve: (id: number) => api.post(`/api/purchase-orders/${id}/approve`),
   cancel: (id: number) => api.post(`/api/purchase-orders/${id}/cancel`),
-  createFromQuotation: (quotationId: number) => api.post(`/api/purchase-orders/from-quotation/${quotationId}`),
+  createFromQuotation: (quotationId: number, supplierId?: number) => api.post(`/api/purchase-orders/from-quotation/${quotationId}`, { supplierId }),
   getByQuotation: (quotationId: number) => api.get(`/api/purchase-orders/quotation/${quotationId}`),
 };
 

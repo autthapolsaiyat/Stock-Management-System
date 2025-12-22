@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import {
   Card, Modal, Button, Tag, Space, Descriptions, Table, Divider,
-  message, Popconfirm, Row, Col, Progress
+  message, Popconfirm, Row, Col, Progress, Select, Form
 } from 'antd';
 import {
   EditOutlined, SendOutlined, CheckCircleOutlined,
@@ -12,7 +12,7 @@ import {
 import QuotationFlowProgress from '../../components/quotation/QuotationFlowProgress';
 import QuotationPrintPreview from '../../components/quotation/QuotationPrintPreview';
 import { PurchaseOrderPrintPreview, GoodsReceiptPrintPreview, TaxInvoicePrintPreview, ReceiptPrintPreview } from '../../components/print';
-import { quotationsApi, purchaseOrdersApi, salesInvoicesApi, goodsReceiptsApi } from '../../services/api';
+import { quotationsApi, purchaseOrdersApi, salesInvoicesApi, goodsReceiptsApi, suppliersApi } from '../../services/api';
 import type { Quotation, QuotationItem, QuotationType, QuotationStatus } from '../../types/quotation';
 import { useActiveQuotation } from '../../contexts/ActiveQuotationContext';
 
@@ -60,12 +60,34 @@ const QuotationDetail: React.FC = () => {
     goodsReceipts: any[];
     invoices: any[];
   }>({ purchaseOrders: [], goodsReceipts: [], invoices: [] });
+  
+  // Supplier selection modal
+  const [supplierModalOpen, setSupplierModalOpen] = useState(false);
+  const [suppliers, setSuppliers] = useState<any[]>([]);
+  const [selectedSupplierId, setSelectedSupplierId] = useState<number | null>(null);
+  const [creatingPO, setCreatingPO] = useState(false);
 
   useEffect(() => {
     if (id) {
       loadQuotation(parseInt(id));
     }
   }, [id]);
+  
+  useEffect(() => {
+    // Load suppliers when modal opens
+    if (supplierModalOpen) {
+      loadSuppliers();
+    }
+  }, [supplierModalOpen]);
+  
+  const loadSuppliers = async () => {
+    try {
+      const res = await suppliersApi.getAll();
+      setSuppliers(res.data || []);
+    } catch (error) {
+      console.error('Failed to load suppliers:', error);
+    }
+  };
 
   const loadQuotation = async (quotationId: number) => {
     setLoading(true);
@@ -163,14 +185,29 @@ const QuotationDetail: React.FC = () => {
     }
   };
 
-  const handleCreatePO = async () => {
+  const handleCreatePO = () => {
+    // Open modal to select supplier
+    setSelectedSupplierId(null);
+    setSupplierModalOpen(true);
+  };
+  
+  const handleConfirmCreatePO = async () => {
+    if (!selectedSupplierId) {
+      message.warning('กรุณาเลือกผู้จำหน่าย');
+      return;
+    }
+    
+    setCreatingPO(true);
     try {
-      await purchaseOrdersApi.createFromQuotation(parseInt(id!));
+      await purchaseOrdersApi.createFromQuotation(parseInt(id!), selectedSupplierId);
       message.success('สร้างใบสั่งซื้อสำเร็จ');
+      setSupplierModalOpen(false);
       // Reload quotation to update timeline
       await loadQuotation(parseInt(id!));
     } catch (error: any) {
       message.error(error.response?.data?.message || 'ไม่สามารถสร้างใบสั่งซื้อได้');
+    } finally {
+      setCreatingPO(false);
     }
   };
 
@@ -768,6 +805,55 @@ const QuotationDetail: React.FC = () => {
         onClose={() => setReceiptPrintOpen(false)}
         invoice={relatedDocs.invoices.find(i => i.status === 'PAID') || relatedDocs.invoices[0]}
       />
+
+      {/* Supplier Selection Modal for PO */}
+      <Modal
+        title="🏭 เลือกผู้จำหน่าย"
+        open={supplierModalOpen}
+        onCancel={() => setSupplierModalOpen(false)}
+        onOk={handleConfirmCreatePO}
+        okText="สร้างใบสั่งซื้อ"
+        cancelText="ยกเลิก"
+        confirmLoading={creatingPO}
+        okButtonProps={{ disabled: !selectedSupplierId }}
+      >
+        <div style={{ marginBottom: 16 }}>
+          <p>เลือกผู้จำหน่ายสำหรับใบสั่งซื้อนี้:</p>
+        </div>
+        <Select
+          style={{ width: '100%' }}
+          placeholder="-- เลือกผู้จำหน่าย --"
+          value={selectedSupplierId}
+          onChange={(value) => setSelectedSupplierId(value)}
+          showSearch
+          optionFilterProp="children"
+          filterOption={(input, option) =>
+            (option?.children as unknown as string)?.toLowerCase().includes(input.toLowerCase())
+          }
+        >
+          {suppliers.map((supplier: any) => (
+            <Select.Option key={supplier.id} value={supplier.id}>
+              {supplier.name}
+            </Select.Option>
+          ))}
+        </Select>
+        {selectedSupplierId && (
+          <div style={{ marginTop: 16, padding: 12, background: '#f5f5f5', borderRadius: 8 }}>
+            {(() => {
+              const selected = suppliers.find(s => s.id === selectedSupplierId);
+              if (!selected) return null;
+              return (
+                <>
+                  <div><strong>{selected.name}</strong></div>
+                  {selected.address && <div style={{ fontSize: 12, color: '#666', marginTop: 4 }}>{selected.address}</div>}
+                  {selected.contactPerson && <div style={{ fontSize: 12, marginTop: 4 }}>ติดต่อ: {selected.contactPerson}</div>}
+                  {selected.phone && <div style={{ fontSize: 12 }}>โทร: {selected.phone}</div>}
+                </>
+              );
+            })()}
+          </div>
+        )}
+      </Modal>
     </div>
   );
 };
