@@ -378,7 +378,7 @@ const QuotationDetail: React.FC = () => {
             status: best.status,
           } : undefined; })(),
         }}
-    	        onNavigate={(type, docId) => {
+    	        onNavigate={(type, _docId) => {
           if (type === "po") navigate(`/purchase-orders`);
           if (type === "gr") navigate(`/goods-receipts`);
           if (type === "inv") navigate(`/sales-invoices`);
