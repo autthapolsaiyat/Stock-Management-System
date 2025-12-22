@@ -1,11 +1,11 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Button, Avatar, Modal, Switch, message, Spin } from 'antd';
+import { Button, Avatar, Modal, Switch, message, Spin, Dropdown } from 'antd';
 import { 
   UserOutlined, SafetyOutlined, EnvironmentOutlined, FileTextOutlined,
   ShareAltOutlined, CopyOutlined, EditOutlined, SettingOutlined,
-  AppstoreOutlined, TeamOutlined, BarChartOutlined, ToolOutlined,
-  InboxOutlined, ShoppingCartOutlined, DollarOutlined, AuditOutlined
+  LogoutOutlined, ShoppingCartOutlined, InboxOutlined, ToolOutlined,
+  DollarOutlined, FileSearchOutlined, BarChartOutlined
 } from '@ant-design/icons';
 import { QRCode } from 'antd';
 import { useAuth } from '../contexts/AuthContext';
@@ -13,11 +13,12 @@ import api from '../services/api';
 
 const IntroPage = () => {
   const navigate = useNavigate();
-  const { user } = useAuth();
+  const { user, logout } = useAuth();
   const [darkMode, setDarkMode] = useState(() => localStorage.getItem('darkMode') === 'true');
   const [profileModalOpen, setProfileModalOpen] = useState(false);
   const [cardFlipped, setCardFlipped] = useState(false);
   const [loading, setLoading] = useState(true);
+  const [isMobile, setIsMobile] = useState(window.innerWidth < 768);
   
   const [quotationStats, setQuotationStats] = useState({ total: 0, ordered: 0, totalAmount: 0 });
   const [adminStats, setAdminStats] = useState({ users: 0, roles: 0, logs: 0 });
@@ -27,16 +28,24 @@ const IntroPage = () => {
   const [profile, setProfile] = useState<any>({});
   
   const checkInStats = { present: 18, leave: 2, month: 'ธ.ค. 2568' };
-  const repairStats = { pending: 5, inProgress: 3, completed: 12 };
-  const salesStats = { thisMonth: 2500000, growth: 12.5, target: 75 };
-  const contractStats = { expiring: 20, totalValue: 10000000, nearestDate: '15 ม.ค. 68' };
+  const repairStats = { waiting: 5, inProgress: 3, completed: 12 };
+  const salesStats = { monthly: 2500000, compared: 12.5, target: 75 };
+  const contractStats = { expiring30: 20, totalValue: 10000000, nextExpiry: '15 ม.ค. 68' };
 
   const isSuperAdmin = user?.roles?.includes('SUPER_ADMIN');
   const isAdmin = isSuperAdmin || user?.roles?.includes('ADMIN');
   const isManager = isSuperAdmin || user?.roles?.some((r: string) => ['ADMIN', 'MANAGER'].includes(r));
-  const isSales = isSuperAdmin || user?.roles?.some((r: string) => ['ADMIN', 'SALES', 'SALES_STANDARD', 'SALES_FORENSIC', 'SALES_TOOLLAB', 'SALES_MAINTENANCE'].includes(r));
-  const isStock = isSuperAdmin || user?.roles?.some((r: string) => ['ADMIN', 'STOCK', 'WAREHOUSE'].includes(r));
+  const isSales = isSuperAdmin || user?.roles?.some((r: string) => 
+    ['ADMIN', 'SALES', 'SALES_STANDARD', 'SALES_FORENSIC', 'SALES_TOOLLAB', 'SALES_MAINTENANCE', 'MANAGER'].includes(r)
+  );
+  const isStock = isSuperAdmin || user?.roles?.some((r: string) => ['ADMIN', 'STOCK', 'WAREHOUSE', 'MANAGER'].includes(r));
   const isPurchase = isSuperAdmin || user?.roles?.some((r: string) => ['ADMIN', 'PURCHASE', 'MANAGER'].includes(r));
+
+  useEffect(() => {
+    const handleResize = () => setIsMobile(window.innerWidth < 768);
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
+  }, []);
 
   useEffect(() => { localStorage.setItem('darkMode', String(darkMode)); }, [darkMode]);
   useEffect(() => { fetchStats(); }, []);
@@ -44,235 +53,249 @@ const IntroPage = () => {
   const fetchStats = async () => {
     setLoading(true);
     try {
-      try { const profileRes = await api.get('/api/user-settings/profile'); setProfile(profileRes.data || {}); } catch (e) {}
-      if (isSales) { try { const qtRes = await api.get('/quotations'); const quotations = qtRes.data || []; const ordered = quotations.filter((q: any) => q.status === 'ORDERED' || q.status === 'CONFIRMED'); setQuotationStats({ total: quotations.length, ordered: ordered.length, totalAmount: quotations.reduce((sum: number, q: any) => sum + (q.totalAmount || 0), 0) }); } catch (e) {} }
-      if (isAdmin) { try { const [usersRes, rolesRes] = await Promise.all([api.get('/users'), api.get('/roles')]); setAdminStats({ users: usersRes.data?.length || 0, roles: rolesRes.data?.length || 0, logs: 156 }); } catch (e) {} }
-      if (isManager || isStock) { try { const [productsRes, stockRes] = await Promise.all([api.get('/api/products'), api.get('/api/stock/balance')]); const products = productsRes.data || []; const stockBalances = stockRes.data || []; const totalValue = stockBalances.reduce((sum: number, sb: any) => sum + (parseFloat(sb.qtyOnHand || sb.qty_on_hand || 0) * parseFloat(sb.avgCost || sb.avg_cost || 0)), 0); const categories = new Set(products.map((p: any) => p.category?.name).filter(Boolean)); let low = 0, warning = 0; stockBalances.forEach((sb: any) => { const qty = parseFloat(sb.qtyOnHand || sb.qty_on_hand || 0); if (qty <= 0) low++; else if (qty < 5) warning++; }); setDashboardStats({ stockValue: totalValue, products: products.length, categories: categories.size }); setStockStats({ total: products.length, low, warning }); } catch (e) {} }
-      if (isPurchase) { try { const poRes = await api.get('/api/purchase-orders'); const pos = poRes.data || []; setPoStats({ total: pos.length, pending: pos.filter((po: any) => po.status === 'PENDING' || po.status === 'APPROVED').length, totalAmount: pos.reduce((sum: number, po: any) => sum + (po.totalAmount || 0), 0) }); } catch (e) {} }
-    } catch (error) { console.error('Error:', error); }
+      try { const r = await api.get('/api/user-settings/profile'); setProfile(r.data || {}); } catch {}
+      if (isSales) { try { const r = await api.get('/quotations'); const q = r.data || []; setQuotationStats({ total: q.length, ordered: q.filter((x: any) => x.status === 'ORDERED' || x.status === 'CONFIRMED').length, totalAmount: q.reduce((s: number, x: any) => s + (x.totalAmount || 0), 0) }); } catch {} }
+      if (isAdmin) { try { const [u, ro] = await Promise.all([api.get('/users'), api.get('/roles')]); setAdminStats({ users: u.data?.length || 0, roles: ro.data?.length || 0, logs: 0 }); } catch {} }
+      if (isManager) { try { const [p, s] = await Promise.all([api.get('/api/products'), api.get('/api/stock/balance')]); setDashboardStats({ stockValue: (s.data || []).reduce((sum: number, x: any) => sum + ((x.quantity || 0) * (x.avgCost || 0)), 0), products: p.data?.length || 0, categories: new Set(p.data?.map((x: any) => x.category?.id)).size }); } catch {} }
+      if (isStock) { try { const r = await api.get('/api/stock/balance'); const s = r.data || []; setStockStats({ total: s.length, low: s.filter((x: any) => x.quantity <= 0).length, warning: s.filter((x: any) => x.quantity > 0 && x.quantity <= 10).length }); } catch {} }
+      if (isPurchase) { try { const r = await api.get('/api/purchase-orders'); const p = r.data || []; setPoStats({ total: p.length, pending: p.filter((x: any) => x.status === 'PENDING' || x.status === 'DRAFT').length, totalAmount: p.reduce((s: number, x: any) => s + (x.totalAmount || 0), 0) }); } catch {} }
+    } catch {}
     setLoading(false);
   };
 
   const firstName = user?.fullName?.split(' ').pop() || user?.fullName?.split(' ')[0] || 'User';
-  const calculateExperience = (startDate: string) => { if (!startDate) return ''; try { const parts = startDate.split(' '); const thaiMonths: Record<string, number> = { 'ม.ค.': 0, 'ก.พ.': 1, 'มี.ค.': 2, 'เม.ย.': 3, 'พ.ค.': 4, 'มิ.ย.': 5, 'ก.ค.': 6, 'ส.ค.': 7, 'ก.ย.': 8, 'ต.ค.': 9, 'พ.ย.': 10, 'ธ.ค.': 11 }; const start = new Date(parseInt(parts[2]) - 543, thaiMonths[parts[1]] || 0, parseInt(parts[0])); return Math.floor((new Date().getTime() - start.getTime()) / (365.25 * 24 * 60 * 60 * 1000)) + ' ปี'; } catch { return ''; } };
+  const calculateExperience = (d: string) => { if (!d) return ''; try { const p = d.split(' '); const m: Record<string, number> = { 'ม.ค.': 0, 'ก.พ.': 1, 'มี.ค.': 2, 'เม.ย.': 3, 'พ.ค.': 4, 'มิ.ย.': 5, 'ก.ค.': 6, 'ส.ค.': 7, 'ก.ย.': 8, 'ต.ค.': 9, 'พ.ย.': 10, 'ธ.ค.': 11 }; const s = new Date(parseInt(p[2]) - 543, m[p[1]] || 0, parseInt(p[0])); return Math.floor((Date.now() - s.getTime()) / (365.25 * 24 * 60 * 60 * 1000)) + ' ปี'; } catch { return ''; } };
+
   const businessCard = { name: user?.fullName || 'ไม่ระบุชื่อ', position: profile?.position || '', department: profile?.department || '', phone: profile?.phone || '', email: user?.email || '', company: 'บริษัท แสงวิทย์ ซายน์ จำกัด', startDate: profile?.startDate || '', experience: profile?.startDate ? calculateExperience(profile.startDate) : '', skills: profile?.skills ? profile.skills.split(',').map((s: string) => s.trim()).filter(Boolean) : [] };
   const vCardData = `BEGIN:VCARD\nVERSION:3.0\nFN:${businessCard.name}\nORG:${businessCard.company}\nTITLE:${businessCard.position}\nTEL:${businessCard.phone}\nEMAIL:${businessCard.email}\nEND:VCARD`;
-  const shareCard = async () => { if (navigator.share) { await navigator.share({ title: businessCard.name, text: `${businessCard.name} - ${businessCard.position}\n${businessCard.phone}\n${businessCard.email}` }); } else { copyToClipboard(); } };
-  const copyToClipboard = () => { navigator.clipboard.writeText(`${businessCard.name}\n${businessCard.position}\n${businessCard.phone}\n${businessCard.email}`); message.success('คัดลอกข้อมูลแล้ว'); };
-  const formatCurrency = (amount: number) => { if (amount >= 1000000) return `฿${(amount / 1000000).toFixed(1)}M`; if (amount >= 1000) return `฿${(amount / 1000).toFixed(0)}K`; return `฿${amount.toFixed(0)}`; };
+  const shareCard = async () => { if (navigator.share) { await navigator.share({ title: businessCard.name, text: `${businessCard.name} - ${businessCard.position}\n${businessCard.phone}` }); } else { copyToClipboard(); } };
+  const copyToClipboard = () => { navigator.clipboard.writeText(`${businessCard.name}\n${businessCard.position}\n${businessCard.phone}`); message.success('คัดลอกข้อมูลแล้ว'); };
+  const formatCurrency = (a: number) => a >= 1000000 ? `฿${(a / 1000000).toFixed(1)}M` : a >= 1000 ? `฿${(a / 1000).toFixed(0)}K` : `฿${a.toFixed(0)}`;
+  const handleLogout = () => { logout(); navigate('/login'); };
 
-  const cardStyle = { width: 280, padding: 24, borderRadius: 20, background: darkMode ? 'rgba(255,255,255,0.05)' : 'rgba(255,255,255,0.95)', backdropFilter: 'blur(20px)', border: darkMode ? '1px solid rgba(255,255,255,0.1)' : '1px solid rgba(0,0,0,0.08)', cursor: 'pointer', transition: 'all 0.3s ease', position: 'relative' as const };
-  const statBoxStyle = { background: darkMode ? 'rgba(255,255,255,0.05)' : '#f8fafc', borderRadius: 12, padding: 12, marginBottom: 12 };
-  const statRowStyle = { display: 'flex', justifyContent: 'space-between', marginBottom: 8 };
-  const labelStyle = { fontSize: 12, color: darkMode ? 'rgba(255,255,255,0.6)' : '#6b7280' };
-  const valueStyle = (color: string) => ({ fontSize: 14, fontWeight: 600, color });
-  const titleStyle = { fontSize: 18, fontWeight: 600, color: darkMode ? '#fff' : '#1f2937', marginBottom: 4, textAlign: 'center' as const };
-  const descStyle = { fontSize: 12, color: darkMode ? 'rgba(255,255,255,0.5)' : '#9ca3af', marginBottom: 16, textAlign: 'center' as const };
-  const badgeStyle = (gradient: string) => ({ position: 'absolute' as const, top: 12, right: 12, padding: '4px 10px', borderRadius: 10, background: gradient, color: '#fff', fontSize: 10, fontWeight: 600 });
-  const iconCircleStyle = (gradient: string) => ({ width: 64, height: 64, borderRadius: '50%', background: gradient, display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 16px', fontSize: 28, color: '#fff' });
-  const handleCardHover = (e: React.MouseEvent<HTMLDivElement>, shadowColor: string, isEnter: boolean) => { if (isEnter) { e.currentTarget.style.transform = 'translateY(-8px)'; e.currentTarget.style.boxShadow = `0 20px 40px ${shadowColor}`; } else { e.currentTarget.style.transform = 'translateY(0)'; e.currentTarget.style.boxShadow = 'none'; } };
+  const userMenuItems = [
+    { key: 'profile', icon: <UserOutlined />, label: 'โปรไฟล์', onClick: () => navigate('/profile') },
+    { key: 'settings', icon: <SettingOutlined />, label: 'ตั้งค่า', onClick: () => navigate('/settings') },
+    { type: 'divider' as const },
+    { key: 'logout', icon: <LogoutOutlined />, label: 'ออกจากระบบ', onClick: handleLogout, danger: true },
+  ];
+
+  const cardStyle = { width: isMobile ? '100%' : 280, maxWidth: 320, padding: isMobile ? 20 : 24, borderRadius: 20, background: darkMode ? 'rgba(255,255,255,0.05)' : 'rgba(255,255,255,0.95)', backdropFilter: 'blur(20px)', border: darkMode ? '1px solid rgba(255,255,255,0.1)' : '1px solid rgba(0,0,0,0.08)', cursor: 'pointer', transition: 'all 0.3s ease', position: 'relative' as const };
+
+  const CardIcon = ({ gradient, icon }: { gradient: string; icon: React.ReactNode }) => (
+    <div style={{ width: 64, height: 64, borderRadius: '50%', background: gradient, display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 16px', fontSize: 28, color: '#fff' }}>{icon}</div>
+  );
+
+  const Badge = ({ text, gradient }: { text: string; gradient: string }) => (
+    <div style={{ position: 'absolute', top: 12, right: 12, padding: '4px 10px', borderRadius: 10, background: gradient, color: '#fff', fontSize: 10, fontWeight: 600 }}>{text}</div>
+  );
+
+  const StatRow = ({ icon, label, value, color }: { icon: string; label: string; value: string | number; color: string }) => (
+    <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 8 }}>
+      <span style={{ fontSize: 12, color: darkMode ? 'rgba(255,255,255,0.6)' : '#6b7280' }}>{icon} {label}</span>
+      <span style={{ fontSize: 14, fontWeight: 600, color }}>{value}</span>
+    </div>
+  );
+
+  const StatsBox = ({ children }: { children: React.ReactNode }) => (
+    <div style={{ background: darkMode ? 'rgba(255,255,255,0.05)' : '#f8fafc', borderRadius: 12, padding: 12, marginBottom: 12 }}>
+      {loading ? <div style={{ textAlign: 'center', padding: 10 }}><Spin size="small" /></div> : children}
+    </div>
+  );
 
   return (
-    <div style={{ minHeight: '100vh', background: darkMode ? 'linear-gradient(135deg, #0a0a0f 0%, #1a1a2e 50%, #16213e 100%)' : 'linear-gradient(135deg, #f0f4f8 0%, #e2e8f0 50%, #cbd5e1 100%)', padding: '40px 20px' }}>
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', maxWidth: 1400, margin: '0 auto 40px' }}>
-        <h1 style={{ fontSize: 28, fontWeight: 700, color: '#22c55e', margin: 0 }}>SVS Business Suite</h1>
-        <div style={{ display: 'flex', alignItems: 'center', gap: 16 }}>
-          <Switch checked={darkMode} onChange={setDarkMode} checkedChildren="🌙" unCheckedChildren="☀️" />
-          <div style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '8px 16px', borderRadius: 12, background: darkMode ? 'rgba(255,255,255,0.05)' : 'rgba(0,0,0,0.03)' }}>
-            <Avatar icon={<UserOutlined />} style={{ background: '#3b82f6' }} />
+    <div style={{ minHeight: '100vh', background: darkMode ? 'linear-gradient(135deg, #0a0a0f 0%, #1a1a2e 50%, #16213e 100%)' : 'linear-gradient(135deg, #f0f4f8 0%, #e2e8f0 50%, #cbd5e1 100%)', paddingBottom: 40 }}>
+      {/* HEADER */}
+      <header style={{ background: darkMode ? 'rgba(10, 10, 15, 0.9)' : 'rgba(255, 255, 255, 0.95)', backdropFilter: 'blur(20px)', borderBottom: darkMode ? '1px solid rgba(255,255,255,0.1)' : '1px solid rgba(0,0,0,0.08)', position: 'sticky', top: 0, zIndex: 100, padding: isMobile ? '12px 16px' : '16px 24px' }}>
+        <div style={{ maxWidth: 1400, margin: '0 auto', display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 16 }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: isMobile ? 10 : 14 }}>
+            <div style={{ width: isMobile ? 40 : 48, height: isMobile ? 40 : 48, borderRadius: 12, overflow: 'hidden', background: '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center', boxShadow: '0 2px 8px rgba(0,0,0,0.1)' }}>
+              <img src="/icons/icon-96x96.png" alt="SVS" style={{ width: '100%', height: '100%', objectFit: 'contain' }} onError={(e) => { e.currentTarget.style.display = 'none'; e.currentTarget.parentElement!.innerHTML = '<span style="color:#22c55e;font-weight:700;font-size:16px">SVS</span>'; }} />
+            </div>
             <div>
-              <div style={{ fontWeight: 600, color: darkMode ? '#fff' : '#1f2937', fontSize: 14 }}>{user?.fullName}</div>
-              <div style={{ fontSize: 11, color: darkMode ? 'rgba(255,255,255,0.6)' : '#6b7280' }}>{user?.roles?.join(', ')}</div>
+              <h1 style={{ fontSize: isMobile ? 18 : 22, fontWeight: 700, color: '#22c55e', margin: 0, lineHeight: 1.2 }}>{isMobile ? 'SVS' : 'SVS Business Suite'}</h1>
+              {!isMobile && <p style={{ fontSize: 11, color: darkMode ? 'rgba(255,255,255,0.5)' : '#6b7280', margin: 0 }}>ระบบจัดการธุรกิจ แสงวิทย์ ซายน์</p>}
             </div>
           </div>
+          <div style={{ display: 'flex', alignItems: 'center', gap: isMobile ? 10 : 16 }}>
+            <Switch checked={darkMode} onChange={setDarkMode} checkedChildren="🌙" unCheckedChildren="☀️" />
+            <Dropdown menu={{ items: userMenuItems }} trigger={['click']} placement="bottomRight">
+              <div style={{ display: 'flex', alignItems: 'center', gap: isMobile ? 8 : 12, padding: isMobile ? '6px 10px' : '8px 16px', borderRadius: 12, background: darkMode ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.04)', cursor: 'pointer' }}>
+                <Avatar icon={<UserOutlined />} size={isMobile ? 32 : 38} style={{ background: 'linear-gradient(135deg, #3b82f6, #1d4ed8)' }} />
+                <div style={{ minWidth: 0 }}>
+                  <div style={{ fontWeight: 600, color: darkMode ? '#fff' : '#1f2937', fontSize: isMobile ? 12 : 14, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', maxWidth: isMobile ? 70 : 150 }}>{isMobile ? firstName : user?.fullName}</div>
+                  <div style={{ fontSize: isMobile ? 10 : 11, color: darkMode ? 'rgba(255,255,255,0.6)' : '#6b7280' }}>{user?.roles?.[0] || 'USER'}</div>
+                </div>
+              </div>
+            </Dropdown>
+          </div>
         </div>
+      </header>
+
+      <div style={{ padding: isMobile ? '24px 16px' : '40px 24px' }}>
+        <div style={{ textAlign: 'center', marginBottom: isMobile ? 24 : 40 }}>
+          <h2 style={{ fontSize: isMobile ? 26 : 32, color: darkMode ? '#fbbf24' : '#d97706', marginBottom: 8 }}>สวัสดี, {firstName}! 👋</h2>
+          <p style={{ color: darkMode ? 'rgba(255,255,255,0.6)' : '#6b7280' }}>เลือกสิ่งที่ต้องการทำวันนี้</p>
+        </div>
+
+        <div style={{ display: 'flex', justifyContent: 'center', flexWrap: 'wrap', gap: isMobile ? 16 : 24, maxWidth: 1200, margin: '0 auto 40px' }}>
+          {/* Card 1: นามบัตร */}
+          <div onClick={() => setProfileModalOpen(true)} style={cardStyle}>
+            <CardIcon gradient="linear-gradient(135deg, #3b82f6, #8b5cf6)" icon={<UserOutlined />} />
+            <h3 style={{ fontSize: 18, fontWeight: 600, color: darkMode ? '#fff' : '#1f2937', marginBottom: 4, textAlign: 'center' }}>นามบัตร</h3>
+            <p style={{ fontSize: 12, color: darkMode ? 'rgba(255,255,255,0.5)' : '#9ca3af', marginBottom: 16, textAlign: 'center' }}>ดูและแชร์ข้อมูลติดต่อ</p>
+            <StatsBox>
+              <div style={{ fontSize: 13, fontWeight: 600, color: darkMode ? '#fff' : '#1f2937' }}>{businessCard.name}</div>
+              <div style={{ fontSize: 11, color: darkMode ? 'rgba(255,255,255,0.6)' : '#6b7280' }}>{businessCard.position}</div>
+              <div style={{ fontSize: 11, color: '#3b82f6', marginTop: 4 }}>📱 {businessCard.phone}</div>
+            </StatsBox>
+            <Button type="primary" block style={{ borderRadius: 10, background: 'linear-gradient(135deg, #3b82f6, #8b5cf6)', border: 'none' }} icon={<ShareAltOutlined />} onClick={(e) => { e.stopPropagation(); shareCard(); }}>แชร์นามบัตร</Button>
+          </div>
+
+          {/* Card 2: เช็คอิน */}
+          <div onClick={() => message.info('🚧 ฟีเจอร์เช็คอินกำลังพัฒนา เร็วๆ นี้!')} style={cardStyle}>
+            <Badge text="เร็วๆ นี้" gradient="linear-gradient(135deg, #f59e0b, #d97706)" />
+            <CardIcon gradient="linear-gradient(135deg, #10b981, #059669)" icon={<EnvironmentOutlined />} />
+            <h3 style={{ fontSize: 18, fontWeight: 600, color: darkMode ? '#fff' : '#1f2937', marginBottom: 4, textAlign: 'center' }}>เช็คอิน</h3>
+            <p style={{ fontSize: 12, color: darkMode ? 'rgba(255,255,255,0.5)' : '#9ca3af', marginBottom: 16, textAlign: 'center' }}>บันทึกเวลาเข้า-ออกงาน</p>
+            <StatsBox>
+              <StatRow icon="✅" label="เข้างาน" value={`${checkInStats.present} วัน`} color="#10b981" />
+              <StatRow icon="❌" label="ลา" value={`${checkInStats.leave} วัน`} color="#ef4444" />
+              <div style={{ fontSize: 11, color: darkMode ? 'rgba(255,255,255,0.4)' : '#9ca3af', textAlign: 'center' }}>📅 {checkInStats.month}</div>
+            </StatsBox>
+            <Button block style={{ borderRadius: 10, background: darkMode ? 'rgba(255,255,255,0.1)' : '#f0fdf4', border: 'none', color: '#10b981' }}>⏰ เช็คอิน</Button>
+          </div>
+
+          {/* Card 3: ใบเสนอราคา */}
+          {isSales && (
+            <div onClick={() => navigate('/quotations')} style={cardStyle}>
+              <CardIcon gradient="linear-gradient(135deg, #f59e0b, #d97706)" icon={<FileTextOutlined />} />
+              <h3 style={{ fontSize: 18, fontWeight: 600, color: darkMode ? '#fff' : '#1f2937', marginBottom: 4, textAlign: 'center' }}>ใบเสนอราคา</h3>
+              <p style={{ fontSize: 12, color: darkMode ? 'rgba(255,255,255,0.5)' : '#9ca3af', marginBottom: 16, textAlign: 'center' }}>สร้างและจัดการใบเสนอราคา</p>
+              <StatsBox>
+                <StatRow icon="📄" label="สร้างแล้ว" value={`${quotationStats.total} ใบ`} color={darkMode ? '#fff' : '#1f2937'} />
+                <StatRow icon="✅" label="สั่งซื้อแล้ว" value={`${quotationStats.ordered} ใบ`} color="#10b981" />
+                <StatRow icon="💰" label="ยอดรวม" value={formatCurrency(quotationStats.totalAmount)} color="#f59e0b" />
+              </StatsBox>
+              <Button type="primary" block style={{ borderRadius: 10, background: 'linear-gradient(135deg, #f59e0b, #d97706)', border: 'none' }} onClick={(e) => { e.stopPropagation(); navigate('/quotations/new'); }}>+ สร้างใบเสนอราคา</Button>
+            </div>
+          )}
+
+          {/* Card 4: Super Admin */}
+          {isAdmin && (
+            <div onClick={() => navigate('/admin/users')} style={cardStyle}>
+              <Badge text="Admin" gradient="linear-gradient(135deg, #ef4444, #dc2626)" />
+              <CardIcon gradient="linear-gradient(135deg, #ef4444, #dc2626)" icon={<SafetyOutlined />} />
+              <h3 style={{ fontSize: 18, fontWeight: 600, color: darkMode ? '#fff' : '#1f2937', marginBottom: 4, textAlign: 'center' }}>Super Admin</h3>
+              <p style={{ fontSize: 12, color: darkMode ? 'rgba(255,255,255,0.5)' : '#9ca3af', marginBottom: 16, textAlign: 'center' }}>จัดการผู้ใช้และสิทธิ์</p>
+              <StatsBox>
+                <StatRow icon="👥" label="ผู้ใช้" value={`${adminStats.users} คน`} color={darkMode ? '#fff' : '#1f2937'} />
+                <StatRow icon="🔑" label="สิทธิ์" value={`${adminStats.roles} ประเภท`} color="#8b5cf6" />
+                <StatRow icon="📋" label="Logs" value={`${adminStats.logs} รายการ`} color="#ef4444" />
+              </StatsBox>
+              <div style={{ display: 'flex', gap: 8 }}>
+                <Button block style={{ borderRadius: 10, background: darkMode ? 'rgba(255,255,255,0.1)' : '#fef2f2', border: 'none', color: '#ef4444', flex: 1 }} onClick={(e) => { e.stopPropagation(); navigate('/admin/users'); }}>👥</Button>
+                <Button block style={{ borderRadius: 10, background: darkMode ? 'rgba(255,255,255,0.1)' : '#fef2f2', border: 'none', color: '#ef4444', flex: 1 }} onClick={(e) => { e.stopPropagation(); navigate('/admin/activity-logs'); }}>📋</Button>
+                <Button block style={{ borderRadius: 10, background: darkMode ? 'rgba(255,255,255,0.1)' : '#fef2f2', border: 'none', color: '#ef4444', flex: 1 }} onClick={(e) => { e.stopPropagation(); navigate('/settings'); }}>⚙️</Button>
+              </div>
+            </div>
+          )}
+
+          {/* Card 5: Dashboard */}
+          {isManager && (
+            <div onClick={() => navigate('/dashboard-detail')} style={cardStyle}>
+              <Badge text="ผู้บริหาร" gradient="linear-gradient(135deg, #6366f1, #4f46e5)" />
+              <CardIcon gradient="linear-gradient(135deg, #6366f1, #4f46e5)" icon={<BarChartOutlined />} />
+              <h3 style={{ fontSize: 18, fontWeight: 600, color: darkMode ? '#fff' : '#1f2937', marginBottom: 4, textAlign: 'center' }}>Dashboard</h3>
+              <p style={{ fontSize: 12, color: darkMode ? 'rgba(255,255,255,0.5)' : '#9ca3af', marginBottom: 16, textAlign: 'center' }}>ภาพรวมธุรกิจ & รายงาน</p>
+              <StatsBox>
+                <StatRow icon="💰" label="มูลค่าสต๊อก" value={formatCurrency(dashboardStats.stockValue)} color="#22c55e" />
+                <StatRow icon="📦" label="สินค้า" value={`${dashboardStats.products.toLocaleString()} รายการ`} color={darkMode ? '#fff' : '#1f2937'} />
+                <StatRow icon="🗂️" label="หมวดหมู่" value={`${dashboardStats.categories} กลุ่ม`} color="#6366f1" />
+              </StatsBox>
+              <Button type="primary" block style={{ borderRadius: 10, background: 'linear-gradient(135deg, #6366f1, #4f46e5)', border: 'none' }}>ดูรายละเอียด →</Button>
+            </div>
+          )}
+
+          {/* Card 6: ติดตามงานซ่อม */}
+          <div onClick={() => message.info('🚧 ฟีเจอร์ติดตามงานซ่อมกำลังพัฒนา เร็วๆ นี้!')} style={cardStyle}>
+            <Badge text="เร็วๆ นี้" gradient="linear-gradient(135deg, #f59e0b, #d97706)" />
+            <CardIcon gradient="linear-gradient(135deg, #ec4899, #db2777)" icon={<ToolOutlined />} />
+            <h3 style={{ fontSize: 18, fontWeight: 600, color: darkMode ? '#fff' : '#1f2937', marginBottom: 4, textAlign: 'center' }}>ติดตามงานซ่อม</h3>
+            <p style={{ fontSize: 12, color: darkMode ? 'rgba(255,255,255,0.5)' : '#9ca3af', marginBottom: 16, textAlign: 'center' }}>จัดการงานซ่อมบำรุง</p>
+            <StatsBox>
+              <StatRow icon="🔴" label="รอดำเนินการ" value={`${repairStats.waiting} งาน`} color="#ef4444" />
+              <StatRow icon="🟡" label="กำลังซ่อม" value={`${repairStats.inProgress} งาน`} color="#f59e0b" />
+              <StatRow icon="🟢" label="เสร็จแล้ว" value={`${repairStats.completed} งาน`} color="#22c55e" />
+            </StatsBox>
+            <Button block style={{ borderRadius: 10, background: darkMode ? 'rgba(255,255,255,0.1)' : '#fdf2f8', border: 'none', color: '#ec4899' }}>ดูงานซ่อม</Button>
+          </div>
+
+          {/* Card 7: คลังสินค้า */}
+          {isStock && (
+            <div onClick={() => navigate('/stock-balance')} style={cardStyle}>
+              <CardIcon gradient="linear-gradient(135deg, #0ea5e9, #0284c7)" icon={<InboxOutlined />} />
+              <h3 style={{ fontSize: 18, fontWeight: 600, color: darkMode ? '#fff' : '#1f2937', marginBottom: 4, textAlign: 'center' }}>คลังสินค้า</h3>
+              <p style={{ fontSize: 12, color: darkMode ? 'rgba(255,255,255,0.5)' : '#9ca3af', marginBottom: 16, textAlign: 'center' }}>ดูยอดสต๊อกคงเหลือ</p>
+              <StatsBox>
+                <StatRow icon="📦" label="สินค้าทั้งหมด" value={`${stockStats.total.toLocaleString()} รายการ`} color={darkMode ? '#fff' : '#1f2937'} />
+                <StatRow icon="🔴" label="สต๊อกต่ำ" value={`${stockStats.low} รายการ`} color="#ef4444" />
+                <StatRow icon="🟡" label="ใกล้หมด" value={`${stockStats.warning} รายการ`} color="#f59e0b" />
+              </StatsBox>
+              <Button type="primary" block style={{ borderRadius: 10, background: 'linear-gradient(135deg, #0ea5e9, #0284c7)', border: 'none' }}>ดูคลังสินค้า</Button>
+            </div>
+          )}
+
+          {/* Card 8: ใบสั่งซื้อ */}
+          {isPurchase && (
+            <div onClick={() => navigate('/purchase-orders')} style={cardStyle}>
+              <CardIcon gradient="linear-gradient(135deg, #a855f7, #9333ea)" icon={<ShoppingCartOutlined />} />
+              <h3 style={{ fontSize: 18, fontWeight: 600, color: darkMode ? '#fff' : '#1f2937', marginBottom: 4, textAlign: 'center' }}>ใบสั่งซื้อ</h3>
+              <p style={{ fontSize: 12, color: darkMode ? 'rgba(255,255,255,0.5)' : '#9ca3af', marginBottom: 16, textAlign: 'center' }}>จัดการใบสั่งซื้อสินค้า</p>
+              <StatsBox>
+                <StatRow icon="📋" label="PO ทั้งหมด" value={`${poStats.total} ใบ`} color={darkMode ? '#fff' : '#1f2937'} />
+                <StatRow icon="🟡" label="รอรับสินค้า" value={`${poStats.pending} ใบ`} color="#f59e0b" />
+                <StatRow icon="💰" label="มูลค่ารวม" value={formatCurrency(poStats.totalAmount)} color="#a855f7" />
+              </StatsBox>
+              <Button type="primary" block style={{ borderRadius: 10, background: 'linear-gradient(135deg, #a855f7, #9333ea)', border: 'none' }} onClick={(e) => { e.stopPropagation(); navigate('/purchase-orders/new'); }}>+ สร้างใบสั่งซื้อ</Button>
+            </div>
+          )}
+
+          {/* Card 9: รายงานขาย */}
+          {isManager && (
+            <div onClick={() => message.info('🚧 ฟีเจอร์รายงานขายกำลังพัฒนา เร็วๆ นี้!')} style={cardStyle}>
+              <Badge text="ผู้บริหาร" gradient="linear-gradient(135deg, #6366f1, #4f46e5)" />
+              <CardIcon gradient="linear-gradient(135deg, #22c55e, #16a34a)" icon={<DollarOutlined />} />
+              <h3 style={{ fontSize: 18, fontWeight: 600, color: darkMode ? '#fff' : '#1f2937', marginBottom: 4, textAlign: 'center' }}>รายงานขาย</h3>
+              <p style={{ fontSize: 12, color: darkMode ? 'rgba(255,255,255,0.5)' : '#9ca3af', marginBottom: 16, textAlign: 'center' }}>ดูยอดขายและเป้าหมาย</p>
+              <StatsBox>
+                <StatRow icon="💰" label="ยอดขายเดือนนี้" value={formatCurrency(salesStats.monthly)} color="#22c55e" />
+                <StatRow icon="📈" label="เทียบเดือนก่อน" value={`+${salesStats.compared}%`} color="#22c55e" />
+                <StatRow icon="🎯" label="เป้าหมาย" value={`${salesStats.target}%`} color="#f59e0b" />
+              </StatsBox>
+              <Button block style={{ borderRadius: 10, background: darkMode ? 'rgba(255,255,255,0.1)' : '#f0fdf4', border: 'none', color: '#22c55e' }}>ดูรายงาน</Button>
+            </div>
+          )}
+
+          {/* Card 10: ติดตามคู่สัญญา */}
+          {isManager && (
+            <div onClick={() => message.info('🚧 ฟีเจอร์ติดตามคู่สัญญากำลังพัฒนา เร็วๆ นี้!')} style={cardStyle}>
+              <Badge text="เร็วๆ นี้" gradient="linear-gradient(135deg, #f59e0b, #d97706)" />
+              <CardIcon gradient="linear-gradient(135deg, #f43f5e, #e11d48)" icon={<FileSearchOutlined />} />
+              <h3 style={{ fontSize: 18, fontWeight: 600, color: darkMode ? '#fff' : '#1f2937', marginBottom: 4, textAlign: 'center' }}>ติดตามคู่สัญญา</h3>
+              <p style={{ fontSize: 12, color: darkMode ? 'rgba(255,255,255,0.5)' : '#9ca3af', marginBottom: 16, textAlign: 'center' }}>จัดการสัญญาและวันครบกำหนด</p>
+              <StatsBox>
+                <StatRow icon="⚠️" label="ใกล้ครบ 30 วัน" value={`${contractStats.expiring30} คู่สัญญา`} color="#f59e0b" />
+                <StatRow icon="💰" label="ยอดทั้งหมด" value={formatCurrency(contractStats.totalValue)} color={darkMode ? '#fff' : '#1f2937'} />
+                <StatRow icon="📅" label="ครบกำหนดเร็วสุด" value={contractStats.nextExpiry} color="#ef4444" />
+              </StatsBox>
+              <Button block style={{ borderRadius: 10, background: darkMode ? 'rgba(255,255,255,0.1)' : '#fff1f2', border: 'none', color: '#f43f5e' }}>ดูคู่สัญญา</Button>
+            </div>
+          )}
+        </div>
+
+        <div style={{ textAlign: 'center', marginTop: 60, color: darkMode ? 'rgba(255,255,255,0.3)' : '#9ca3af', fontSize: 12 }}>Developed by Boy © Autthapol Saiyat</div>
       </div>
-
-      <div style={{ textAlign: 'center', marginBottom: 40 }}>
-        <h2 style={{ fontSize: 32, color: darkMode ? '#fbbf24' : '#d97706', marginBottom: 8 }}>สวัสดี, {firstName}! 👋</h2>
-        <p style={{ color: darkMode ? 'rgba(255,255,255,0.6)' : '#6b7280' }}>เลือกสิ่งที่ต้องการทำวันนี้</p>
-      </div>
-
-      <div style={{ display: 'flex', justifyContent: 'center', flexWrap: 'wrap', gap: 24, maxWidth: 1400, margin: '0 auto 40px' }}>
-        
-        {/* Card 1: นามบัตร */}
-        <div onClick={() => setProfileModalOpen(true)} style={cardStyle} onMouseEnter={(e) => handleCardHover(e, 'rgba(59,130,246,0.2)', true)} onMouseLeave={(e) => handleCardHover(e, '', false)}>
-          <div style={iconCircleStyle('linear-gradient(135deg, #3b82f6, #8b5cf6)')}><UserOutlined /></div>
-          <h3 style={titleStyle}>นามบัตร</h3>
-          <p style={descStyle}>ดูและแชร์ข้อมูลติดต่อ</p>
-          <div style={statBoxStyle}>
-            <div style={{ fontSize: 13, fontWeight: 600, color: darkMode ? '#fff' : '#1f2937' }}>{businessCard.name}</div>
-            <div style={{ fontSize: 11, color: darkMode ? 'rgba(255,255,255,0.6)' : '#6b7280' }}>{businessCard.position}</div>
-            <div style={{ fontSize: 11, color: '#3b82f6', marginTop: 4 }}>📱 {businessCard.phone}</div>
-          </div>
-          <Button type="primary" block style={{ borderRadius: 10, background: 'linear-gradient(135deg, #3b82f6, #8b5cf6)', border: 'none' }} icon={<ShareAltOutlined />} onClick={(e) => { e.stopPropagation(); shareCard(); }}>แชร์นามบัตร</Button>
-        </div>
-
-        {/* Card 2: เช็คอิน */}
-        <div onClick={() => message.info('🚧 ฟีเจอร์เช็คอินกำลังพัฒนา เร็วๆ นี้!')} style={cardStyle} onMouseEnter={(e) => handleCardHover(e, 'rgba(16,185,129,0.2)', true)} onMouseLeave={(e) => handleCardHover(e, '', false)}>
-          <div style={badgeStyle('linear-gradient(135deg, #f59e0b, #d97706)')}>เร็วๆ นี้</div>
-          <div style={iconCircleStyle('linear-gradient(135deg, #10b981, #059669)')}><EnvironmentOutlined /></div>
-          <h3 style={titleStyle}>เช็คอิน</h3>
-          <p style={descStyle}>บันทึกเวลาเข้า-ออกงาน</p>
-          <div style={statBoxStyle}>
-            <div style={statRowStyle}><span style={labelStyle}>✅ เข้างาน</span><span style={valueStyle('#10b981')}>{checkInStats.present} วัน</span></div>
-            <div style={statRowStyle}><span style={labelStyle}>❌ ลา</span><span style={valueStyle('#ef4444')}>{checkInStats.leave} วัน</span></div>
-            <div style={{ fontSize: 11, color: darkMode ? 'rgba(255,255,255,0.4)' : '#9ca3af', textAlign: 'center' }}>📅 {checkInStats.month}</div>
-          </div>
-          <Button block style={{ borderRadius: 10, background: darkMode ? 'rgba(255,255,255,0.1)' : '#f0fdf4', border: 'none', color: '#10b981' }}>⏰ เช็คอิน</Button>
-        </div>
-
-        {/* Card 3: ใบเสนอราคา */}
-        {isSales && (
-          <div onClick={() => navigate('/quotations')} style={cardStyle} onMouseEnter={(e) => handleCardHover(e, 'rgba(245,158,11,0.2)', true)} onMouseLeave={(e) => handleCardHover(e, '', false)}>
-            <div style={iconCircleStyle('linear-gradient(135deg, #f59e0b, #d97706)')}><FileTextOutlined /></div>
-            <h3 style={titleStyle}>ใบเสนอราคา</h3>
-            <p style={descStyle}>สร้างและจัดการใบเสนอราคา</p>
-            <div style={statBoxStyle}>
-              {loading ? <div style={{ textAlign: 'center', padding: 10 }}><Spin size="small" /></div> : <>
-                <div style={statRowStyle}><span style={labelStyle}>📋 สร้างแล้ว</span><span style={valueStyle(darkMode ? '#fff' : '#1f2937')}>{quotationStats.total} ใบ</span></div>
-                <div style={statRowStyle}><span style={labelStyle}>✅ สั่งซื้อแล้ว</span><span style={valueStyle('#10b981')}>{quotationStats.ordered} ใบ</span></div>
-                <div style={statRowStyle}><span style={labelStyle}>💰 ยอดรวม</span><span style={valueStyle('#f59e0b')}>{formatCurrency(quotationStats.totalAmount)}</span></div>
-              </>}
-            </div>
-            <Button type="primary" block style={{ borderRadius: 10, background: 'linear-gradient(135deg, #f59e0b, #d97706)', border: 'none' }} onClick={(e) => { e.stopPropagation(); navigate('/quotations/new'); }}>+ สร้างใบเสนอราคา</Button>
-          </div>
-        )}
-
-        {/* Card 4: Super Admin */}
-        {isAdmin && (
-          <div onClick={() => navigate('/admin/users')} style={cardStyle} onMouseEnter={(e) => handleCardHover(e, 'rgba(239,68,68,0.2)', true)} onMouseLeave={(e) => handleCardHover(e, '', false)}>
-            <div style={badgeStyle('linear-gradient(135deg, #ef4444, #dc2626)')}>Admin</div>
-            <div style={iconCircleStyle('linear-gradient(135deg, #ef4444, #dc2626)')}><SafetyOutlined /></div>
-            <h3 style={titleStyle}>Super Admin</h3>
-            <p style={descStyle}>จัดการผู้ใช้และสิทธิ์</p>
-            <div style={statBoxStyle}>
-              {loading ? <div style={{ textAlign: 'center', padding: 10 }}><Spin size="small" /></div> : <>
-                <div style={statRowStyle}><span style={labelStyle}>👥 ผู้ใช้</span><span style={valueStyle(darkMode ? '#fff' : '#1f2937')}>{adminStats.users} คน</span></div>
-                <div style={statRowStyle}><span style={labelStyle}>🔑 สิทธิ์</span><span style={valueStyle('#8b5cf6')}>{adminStats.roles} ประเภท</span></div>
-                <div style={statRowStyle}><span style={labelStyle}>📋 Logs</span><span style={valueStyle('#ef4444')}>{adminStats.logs} รายการ</span></div>
-              </>}
-            </div>
-            <div style={{ display: 'flex', gap: 8 }}>
-              <Button block style={{ borderRadius: 10, background: darkMode ? 'rgba(255,255,255,0.1)' : '#fef2f2', border: 'none', color: '#ef4444', flex: 1 }} onClick={(e) => { e.stopPropagation(); navigate('/admin/users'); }}>👥</Button>
-              <Button block style={{ borderRadius: 10, background: darkMode ? 'rgba(255,255,255,0.1)' : '#fef2f2', border: 'none', color: '#ef4444', flex: 1 }} onClick={(e) => { e.stopPropagation(); navigate('/admin/activity-logs'); }}>📋</Button>
-              <Button block style={{ borderRadius: 10, background: darkMode ? 'rgba(255,255,255,0.1)' : '#fef2f2', border: 'none', color: '#ef4444', flex: 1 }} onClick={(e) => { e.stopPropagation(); navigate('/settings'); }}>⚙️</Button>
-            </div>
-          </div>
-        )}
-
-        {/* Card 5: Dashboard */}
-        {isManager && (
-          <div onClick={() => navigate('/dashboard-detail')} style={cardStyle} onMouseEnter={(e) => handleCardHover(e, 'rgba(102,126,234,0.3)', true)} onMouseLeave={(e) => handleCardHover(e, '', false)}>
-            <div style={badgeStyle('linear-gradient(135deg, #667eea, #764ba2)')}>ผู้บริหาร</div>
-            <div style={iconCircleStyle('linear-gradient(135deg, #667eea, #764ba2)')}><BarChartOutlined /></div>
-            <h3 style={titleStyle}>Dashboard</h3>
-            <p style={descStyle}>ภาพรวมธุรกิจ & รายงาน</p>
-            <div style={statBoxStyle}>
-              {loading ? <div style={{ textAlign: 'center', padding: 10 }}><Spin size="small" /></div> : <>
-                <div style={statRowStyle}><span style={labelStyle}>💰 มูลค่าสต็อก</span><span style={valueStyle('#667eea')}>{formatCurrency(dashboardStats.stockValue)}</span></div>
-                <div style={statRowStyle}><span style={labelStyle}>📦 สินค้า</span><span style={valueStyle(darkMode ? '#fff' : '#1f2937')}>{dashboardStats.products.toLocaleString()} รายการ</span></div>
-                <div style={statRowStyle}><span style={labelStyle}>📊 หมวดหมู่</span><span style={valueStyle('#8b5cf6')}>{dashboardStats.categories} กลุ่ม</span></div>
-              </>}
-            </div>
-            <Button type="primary" block style={{ borderRadius: 10, background: 'linear-gradient(135deg, #667eea, #764ba2)', border: 'none' }} onClick={(e) => { e.stopPropagation(); navigate('/dashboard-detail'); }}>ดูรายละเอียด →</Button>
-          </div>
-        )}
-
-        {/* Card 6: ติดตามงานซ่อม */}
-        <div onClick={() => message.info('🚧 ฟีเจอร์ติดตามงานซ่อมกำลังพัฒนา!')} style={cardStyle} onMouseEnter={(e) => handleCardHover(e, 'rgba(168,85,247,0.2)', true)} onMouseLeave={(e) => handleCardHover(e, '', false)}>
-          <div style={badgeStyle('linear-gradient(135deg, #a855f7, #7c3aed)')}>เร็วๆ นี้</div>
-          <div style={iconCircleStyle('linear-gradient(135deg, #a855f7, #7c3aed)')}><ToolOutlined /></div>
-          <h3 style={titleStyle}>ติดตามงานซ่อม</h3>
-          <p style={descStyle}>จัดการงานซ่อมบำรุง</p>
-          <div style={statBoxStyle}>
-            <div style={statRowStyle}><span style={labelStyle}>🔴 รอดำเนินการ</span><span style={valueStyle('#ef4444')}>{repairStats.pending} งาน</span></div>
-            <div style={statRowStyle}><span style={labelStyle}>🟡 กำลังซ่อม</span><span style={valueStyle('#f59e0b')}>{repairStats.inProgress} งาน</span></div>
-            <div style={statRowStyle}><span style={labelStyle}>🟢 เสร็จแล้ว</span><span style={valueStyle('#10b981')}>{repairStats.completed} งาน</span></div>
-          </div>
-          <Button block style={{ borderRadius: 10, background: darkMode ? 'rgba(255,255,255,0.1)' : '#faf5ff', border: 'none', color: '#a855f7' }}>ดูงานซ่อม</Button>
-        </div>
-
-        {/* Card 7: คลังสินค้า */}
-        {(isStock || isManager) && (
-          <div onClick={() => navigate('/stock-balance')} style={cardStyle} onMouseEnter={(e) => handleCardHover(e, 'rgba(6,182,212,0.2)', true)} onMouseLeave={(e) => handleCardHover(e, '', false)}>
-            <div style={iconCircleStyle('linear-gradient(135deg, #06b6d4, #0891b2)')}><InboxOutlined /></div>
-            <h3 style={titleStyle}>คลังสินค้า</h3>
-            <p style={descStyle}>ดูยอดสต็อกคงเหลือ</p>
-            <div style={statBoxStyle}>
-              {loading ? <div style={{ textAlign: 'center', padding: 10 }}><Spin size="small" /></div> : <>
-                <div style={statRowStyle}><span style={labelStyle}>📦 สินค้าทั้งหมด</span><span style={valueStyle(darkMode ? '#fff' : '#1f2937')}>{stockStats.total.toLocaleString()} รายการ</span></div>
-                <div style={statRowStyle}><span style={labelStyle}>🔴 สต็อกต่ำ</span><span style={valueStyle('#ef4444')}>{stockStats.low} รายการ</span></div>
-                <div style={statRowStyle}><span style={labelStyle}>🟡 ใกล้หมด</span><span style={valueStyle('#f59e0b')}>{stockStats.warning} รายการ</span></div>
-              </>}
-            </div>
-            <Button type="primary" block style={{ borderRadius: 10, background: 'linear-gradient(135deg, #06b6d4, #0891b2)', border: 'none' }} onClick={(e) => { e.stopPropagation(); navigate('/stock-balance'); }}>ดูคลังสินค้า</Button>
-          </div>
-        )}
-
-        {/* Card 8: ใบสั่งซื้อ */}
-        {isPurchase && (
-          <div onClick={() => navigate('/purchase-orders')} style={cardStyle} onMouseEnter={(e) => handleCardHover(e, 'rgba(236,72,153,0.2)', true)} onMouseLeave={(e) => handleCardHover(e, '', false)}>
-            <div style={iconCircleStyle('linear-gradient(135deg, #ec4899, #db2777)')}><ShoppingCartOutlined /></div>
-            <h3 style={titleStyle}>ใบสั่งซื้อ</h3>
-            <p style={descStyle}>จัดการใบสั่งซื้อสินค้า</p>
-            <div style={statBoxStyle}>
-              {loading ? <div style={{ textAlign: 'center', padding: 10 }}><Spin size="small" /></div> : <>
-                <div style={statRowStyle}><span style={labelStyle}>📋 PO ทั้งหมด</span><span style={valueStyle(darkMode ? '#fff' : '#1f2937')}>{poStats.total} ใบ</span></div>
-                <div style={statRowStyle}><span style={labelStyle}>🕐 รอรับสินค้า</span><span style={valueStyle('#f59e0b')}>{poStats.pending} ใบ</span></div>
-                <div style={statRowStyle}><span style={labelStyle}>💰 มูลค่ารวม</span><span style={valueStyle('#ec4899')}>{formatCurrency(poStats.totalAmount)}</span></div>
-              </>}
-            </div>
-            <Button type="primary" block style={{ borderRadius: 10, background: 'linear-gradient(135deg, #ec4899, #db2777)', border: 'none' }} onClick={(e) => { e.stopPropagation(); navigate('/purchase-orders'); }}>+ สร้างใบสั่งซื้อ</Button>
-          </div>
-        )}
-
-        {/* Card 9: รายงานขาย */}
-        {isManager && (
-          <div onClick={() => message.info('🚧 ฟีเจอร์รายงานขายกำลังพัฒนา!')} style={cardStyle} onMouseEnter={(e) => handleCardHover(e, 'rgba(34,197,94,0.2)', true)} onMouseLeave={(e) => handleCardHover(e, '', false)}>
-            <div style={badgeStyle('linear-gradient(135deg, #22c55e, #16a34a)')}>ผู้บริหาร</div>
-            <div style={iconCircleStyle('linear-gradient(135deg, #22c55e, #16a34a)')}><DollarOutlined /></div>
-            <h3 style={titleStyle}>รายงานขาย</h3>
-            <p style={descStyle}>ดูยอดขายและเป้าหมาย</p>
-            <div style={statBoxStyle}>
-              <div style={statRowStyle}><span style={labelStyle}>📈 ยอดขายเดือนนี้</span><span style={valueStyle('#22c55e')}>{formatCurrency(salesStats.thisMonth)}</span></div>
-              <div style={statRowStyle}><span style={labelStyle}>📊 เทียบเดือนก่อน</span><span style={valueStyle('#10b981')}>+{salesStats.growth}%</span></div>
-              <div style={statRowStyle}><span style={labelStyle}>🎯 เป้าหมาย</span><span style={valueStyle('#f59e0b')}>{salesStats.target}%</span></div>
-            </div>
-            <Button block style={{ borderRadius: 10, background: darkMode ? 'rgba(255,255,255,0.1)' : '#f0fdf4', border: 'none', color: '#22c55e' }}>ดูรายงาน</Button>
-          </div>
-        )}
-
-        {/* Card 10: ติดตามคู่สัญญา */}
-        {isManager && (
-          <div onClick={() => message.info('🚧 ฟีเจอร์ติดตามคู่สัญญากำลังพัฒนา!')} style={cardStyle} onMouseEnter={(e) => handleCardHover(e, 'rgba(251,146,60,0.2)', true)} onMouseLeave={(e) => handleCardHover(e, '', false)}>
-            <div style={badgeStyle('linear-gradient(135deg, #fb923c, #ea580c)')}>เร็วๆ นี้</div>
-            <div style={iconCircleStyle('linear-gradient(135deg, #fb923c, #ea580c)')}><AuditOutlined /></div>
-            <h3 style={titleStyle}>ติดตามคู่สัญญา</h3>
-            <p style={descStyle}>จัดการสัญญาและวันครบกำหนด</p>
-            <div style={statBoxStyle}>
-              <div style={statRowStyle}><span style={labelStyle}>⏰ ใกล้ครบ 30 วัน</span><span style={valueStyle('#fb923c')}>{contractStats.expiring} คู่สัญญา</span></div>
-              <div style={statRowStyle}><span style={labelStyle}>💰 ยอดทั้งหมด</span><span style={valueStyle(darkMode ? '#fff' : '#1f2937')}>{formatCurrency(contractStats.totalValue)}</span></div>
-              <div style={statRowStyle}><span style={labelStyle}>📅 ครบกำหนดเร็วสุด</span><span style={valueStyle('#ef4444')}>{contractStats.nearestDate}</span></div>
-            </div>
-            <Button block style={{ borderRadius: 10, background: darkMode ? 'rgba(255,255,255,0.1)' : '#fff7ed', border: 'none', color: '#fb923c' }}>ดูคู่สัญญา</Button>
-          </div>
-        )}
-      </div>
-
-      {/* Shortcuts */}
-      <div style={{ maxWidth: 1000, margin: '0 auto', textAlign: 'center' }}>
-        <h3 style={{ fontSize: 14, color: darkMode ? 'rgba(255,255,255,0.5)' : '#9ca3af', marginBottom: 16 }}>ทางลัด</h3>
-        <div style={{ display: 'flex', justifyContent: 'center', flexWrap: 'wrap', gap: 12 }}>
-          <Button onClick={() => navigate('/products')} style={{ borderRadius: 10, background: darkMode ? 'rgba(255,255,255,0.05)' : '#fff', color: darkMode ? '#fff' : '#1f2937' }} icon={<AppstoreOutlined />}>สินค้า</Button>
-          <Button onClick={() => navigate('/customers')} style={{ borderRadius: 10, background: darkMode ? 'rgba(255,255,255,0.05)' : '#fff', color: darkMode ? '#fff' : '#1f2937' }} icon={<TeamOutlined />}>ลูกค้า</Button>
-          <Button onClick={() => navigate('/quotations')} style={{ borderRadius: 10, background: darkMode ? 'rgba(255,255,255,0.05)' : '#fff', color: darkMode ? '#fff' : '#1f2937' }} icon={<FileTextOutlined />}>ใบเสนอราคา</Button>
-          <Button onClick={() => navigate('/dashboard')} style={{ borderRadius: 10, background: darkMode ? 'rgba(255,255,255,0.05)' : '#fff', color: darkMode ? '#fff' : '#1f2937' }} icon={<BarChartOutlined />}>Dashboard</Button>
-          <Button onClick={() => navigate('/settings')} style={{ borderRadius: 10, background: darkMode ? 'rgba(255,255,255,0.05)' : '#fff', color: darkMode ? '#fff' : '#1f2937' }} icon={<SettingOutlined />}>ตั้งค่า</Button>
-        </div>
-      </div>
-
-      <div style={{ textAlign: 'center', marginTop: 60, color: darkMode ? 'rgba(255,255,255,0.3)' : '#9ca3af', fontSize: 12 }}>Developed by Boy © Autthapol Saiyat</div>
 
       {/* Profile Modal */}
       <Modal title={null} open={profileModalOpen} onCancel={() => { setProfileModalOpen(false); setCardFlipped(false); }} footer={null} width={400} centered styles={{ content: { background: 'transparent', boxShadow: 'none', padding: 0 }, body: { padding: 0 } }}>
@@ -301,7 +324,7 @@ const IntroPage = () => {
               <div style={{ padding: '20px 24px', borderBottom: '1px solid rgba(255,255,255,0.1)' }}><div style={{ color: '#fff', fontSize: 16, fontWeight: 700 }}>📋 ข้อมูลเพิ่มเติม</div></div>
               <div style={{ padding: '20px 24px', color: '#fff' }}>
                 <div style={{ marginBottom: 20 }}><div style={{ fontSize: 11, color: 'rgba(255,255,255,0.5)', marginBottom: 6 }}>🗓️ ประสบการณ์ทำงาน</div><div style={{ fontSize: 22, fontWeight: 700, color: '#22d3ee' }}>{businessCard.experience}</div><div style={{ fontSize: 11, color: 'rgba(255,255,255,0.5)' }}>เริ่มงาน: {businessCard.startDate}</div></div>
-                <div style={{ marginBottom: 20 }}><div style={{ fontSize: 11, color: 'rgba(255,255,255,0.5)', marginBottom: 6 }}>💡 ความเชี่ยวชาญ</div><div style={{ display: 'flex', flexWrap: 'wrap', gap: 6 }}>{businessCard.skills.map((skill: string, idx: number) => <span key={idx} style={{ padding: '4px 10px', background: 'rgba(255,255,255,0.1)', borderRadius: 12, fontSize: 11 }}>{skill}</span>)}</div></div>
+                <div style={{ marginBottom: 20 }}><div style={{ fontSize: 11, color: 'rgba(255,255,255,0.5)', marginBottom: 6 }}>💡 ความเชี่ยวชาญ</div><div style={{ display: 'flex', flexWrap: 'wrap', gap: 6 }}>{businessCard.skills.map((s: string, i: number) => <span key={i} style={{ padding: '4px 10px', background: 'rgba(255,255,255,0.1)', borderRadius: 12, fontSize: 11 }}>{s}</span>)}</div></div>
               </div>
               <div style={{ textAlign: 'center', padding: '8px 0', color: 'rgba(255,255,255,0.4)', fontSize: 10 }}>👆 แตะสองครั้งเพื่อกลับด้านหน้า</div>
             </div>
@@ -310,7 +333,7 @@ const IntroPage = () => {
         <div style={{ display: 'flex', justifyContent: 'center', gap: 10, marginTop: 16 }}>
           <Button type="primary" icon={<ShareAltOutlined />} onClick={shareCard} style={{ borderRadius: 8 }}>แชร์</Button>
           <Button icon={<CopyOutlined />} onClick={copyToClipboard} style={{ borderRadius: 8 }}>คัดลอก</Button>
-          <Button icon={<EditOutlined />} onClick={() => navigate('/settings')} style={{ borderRadius: 8 }}>แก้ไข</Button>
+          <Button icon={<EditOutlined />} onClick={() => navigate('/profile')} style={{ borderRadius: 8 }}>แก้ไข</Button>
         </div>
       </Modal>
     </div>
