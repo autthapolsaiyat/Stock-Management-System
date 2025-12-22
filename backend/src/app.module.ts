@@ -21,6 +21,7 @@ import { SalesInvoiceModule } from './modules/sales-invoice/sales-invoice.module
 import { UploadModule } from './upload/upload.module';
 import { UserSettingsModule } from './modules/user-settings/user-settings.module';
 import { VCardModule } from './modules/vcard/vcard.module';
+import { CategoryModule } from './modules/category/category.module';
 
 @Module({
   imports: [
@@ -60,6 +61,7 @@ import { VCardModule } from './modules/vcard/vcard.module';
     UploadModule,
     UserSettingsModule,
     VCardModule,
+    CategoryModule,
   ],
 })
 export class AppModule {}
