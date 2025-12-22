@@ -79,7 +79,7 @@ const PWAUpdatePopup: React.FC = () => {
       onOfflineReady() {
         console.log('App ready for offline use');
       },
-      onRegisteredSW(swUrl, registration) {
+      onRegisteredSW(_swUrl, registration) {
         if (registration) {
           setInterval(() => {
             registration.update();
