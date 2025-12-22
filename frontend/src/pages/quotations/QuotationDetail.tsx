@@ -194,6 +194,71 @@ const QuotationDetail: React.FC = () => {
     }
   };
 
+  // NEW: Approve PO from QT Detail
+  const handleApprovePO = async () => {
+    const po = relatedDocs.purchaseOrders.find(p => p.status === 'DRAFT' || p.status === 'PENDING_APPROVAL');
+    if (!po) {
+      message.error("ไม่พบใบสั่งซื้อที่รออนุมัติ");
+      return;
+    }
+    try {
+      await purchaseOrdersApi.approve(po.id);
+      message.success("อนุมัติใบสั่งซื้อสำเร็จ");
+      await loadQuotation(parseInt(id!));
+    } catch (error: any) {
+      message.error(error.response?.data?.message || "ไม่สามารถอนุมัติได้");
+    }
+  };
+
+  // NEW: Create GR from approved PO
+  const handleCreateGR = async () => {
+    const po = relatedDocs.purchaseOrders.find(p => p.status === 'APPROVED' || p.status === 'SENT');
+    if (!po) {
+      message.error("ไม่พบใบสั่งซื้อที่อนุมัติแล้ว");
+      return;
+    }
+    try {
+      // Use default warehouse ID = 1 (can be improved later)
+      await goodsReceiptsApi.createFromPO(po.id);
+      message.success("สร้างใบรับสินค้าสำเร็จ");
+      await loadQuotation(parseInt(id!));
+    } catch (error: any) {
+      message.error(error.response?.data?.message || "ไม่สามารถสร้างใบรับสินค้าได้");
+    }
+  };
+
+  // NEW: Post GR
+  const handlePostGR = async () => {
+    const gr = relatedDocs.goodsReceipts.find(g => g.status === 'DRAFT');
+    if (!gr) {
+      message.error("ไม่พบใบรับสินค้าที่รอบันทึก");
+      return;
+    }
+    try {
+      await goodsReceiptsApi.post(gr.id);
+      message.success("บันทึกรับสินค้าสำเร็จ");
+      await loadQuotation(parseInt(id!));
+    } catch (error: any) {
+      message.error(error.response?.data?.message || "ไม่สามารถบันทึกได้");
+    }
+  };
+
+  // NEW: Post Invoice
+  const handlePostInvoice = async () => {
+    const inv = relatedDocs.invoices.find(i => i.status === 'DRAFT');
+    if (!inv) {
+      message.error("ไม่พบใบแจ้งหนี้ที่รอบันทึก");
+      return;
+    }
+    try {
+      await salesInvoicesApi.post(inv.id);
+      message.success("บันทึกใบแจ้งหนี้สำเร็จ");
+      await loadQuotation(parseInt(id!));
+    } catch (error: any) {
+      message.error(error.response?.data?.message || "ไม่สามารถบันทึกได้");
+    }
+  };
+
   if (loading || !quotation) {
     return <div style={{ padding: 24, textAlign: 'center' }}>กำลังโหลด...</div>;
   }
@@ -384,16 +449,11 @@ const QuotationDetail: React.FC = () => {
           if (type === "inv") navigate(`/sales-invoices`);
         }}
         onCreatePO={handleCreatePO}
-        onCreateGR={() => {
-          // Navigate to GR page with PO info
-          const po = relatedDocs.purchaseOrders.find(p => p.status === 'APPROVED');
-          if (po) {
-            navigate(`/goods-receipts?poId=${po.id}`);
-          } else {
-            navigate("/goods-receipts");
-          }
-        }}
+        onApprovePO={handleApprovePO}
+        onCreateGR={handleCreateGR}
+        onPostGR={handlePostGR}
         onCreateInvoice={handleCreateInvoice}
+        onPostInvoice={handlePostInvoice}
         onMarkPaid={handleMarkPaid}
       />
       <Row gutter={24}>

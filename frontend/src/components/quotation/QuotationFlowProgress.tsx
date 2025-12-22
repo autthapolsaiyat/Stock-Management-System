@@ -40,8 +40,11 @@ interface QuotationFlowProgressProps {
   };
   onNavigate?: (type: string, id: number) => void;
   onCreatePO?: () => void;
+  onApprovePO?: () => void;
   onCreateGR?: () => void;
+  onPostGR?: () => void;
   onCreateInvoice?: () => void;
+  onPostInvoice?: () => void;
   onMarkPaid?: () => void;
 }
 
@@ -50,8 +53,11 @@ const QuotationFlowProgress: React.FC<QuotationFlowProgressProps> = ({
   relatedDocs,
   onNavigate,
   onCreatePO,
+  onApprovePO,
   onCreateGR,
+  onPostGR,
   onCreateInvoice,
+  onPostInvoice,
   onMarkPaid
 }) => {
   // Calculate progress percentage
@@ -109,30 +115,37 @@ const QuotationFlowProgress: React.FC<QuotationFlowProgressProps> = ({
   const getStepAction = (step: string): { label: string; action: () => void } | null => {
     switch (step) {
       case 'PO':
+        // ยังไม่มี PO → สร้าง PO
         if (!relatedDocs.po && ['CONFIRMED', 'PARTIALLY_CLOSED'].includes(quotation.status)) {
           return { label: 'สร้าง PO', action: onCreatePO || (() => {}) };
         }
-        if (relatedDocs.po?.status === 'DRAFT') {
-          return { label: 'ดู PO', action: () => onNavigate?.('po', relatedDocs.po!.id) };
+        // มี PO แต่ยังไม่อนุมัติ → อนุมัติ PO
+        if (relatedDocs.po?.status === 'DRAFT' || relatedDocs.po?.status === 'PENDING_APPROVAL') {
+          return { label: 'อนุมัติ PO', action: onApprovePO || (() => {}) };
         }
         break;
       case 'GR':
-        if (!relatedDocs.gr && relatedDocs.po?.status === 'APPROVED') {
+        // มี PO อนุมัติแล้ว แต่ยังไม่มี GR → สร้าง GR
+        if (!relatedDocs.gr && (relatedDocs.po?.status === 'APPROVED' || relatedDocs.po?.status === 'SENT')) {
           return { label: 'รับสินค้า', action: onCreateGR || (() => {}) };
         }
+        // มี GR แต่ยังไม่ Post → Post GR
         if (relatedDocs.gr?.status === 'DRAFT') {
-          return { label: 'ดู GR', action: () => onNavigate?.('gr', relatedDocs.gr!.id) };
+          return { label: 'บันทึก GR', action: onPostGR || (() => {}) };
         }
         break;
       case 'INV':
+        // มี GR Posted แต่ยังไม่มี INV → สร้าง INV
         if (!relatedDocs.inv && relatedDocs.gr?.status === 'POSTED') {
           return { label: 'สร้างใบแจ้งหนี้', action: onCreateInvoice || (() => {}) };
         }
+        // มี INV แต่ยังไม่ Post → Post INV
         if (relatedDocs.inv?.status === 'DRAFT') {
-          return { label: 'ดู INV', action: () => onNavigate?.('inv', relatedDocs.inv!.id) };
+          return { label: 'บันทึก INV', action: onPostInvoice || (() => {}) };
         }
         break;
       case 'PAID':
+        // มี INV Posted → บันทึกชำระ
         if (relatedDocs.inv?.status === 'POSTED') {
           return { label: 'บันทึกชำระ', action: onMarkPaid || (() => {}) };
         }
