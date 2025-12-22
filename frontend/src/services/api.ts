@@ -73,7 +73,6 @@ export const unitsApi = {
   create: (data: any) => api.post('/api/products/units', data),
 };
 
-};
 
 // Suppliers API
 export const suppliersApi = {
