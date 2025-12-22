@@ -6,25 +6,14 @@ export default defineConfig({
   plugins: [
     react(),
     VitePWA({
-      // ✅ Auto Update - reload ทันทีเมื่อมี version ใหม่
       registerType: 'autoUpdate',
-      
-      // ✅ Workbox Options
       workbox: {
-        // ลบ cache เก่าอัตโนมัติ
         cleanupOutdatedCaches: true,
-        // ติดตั้ง SW ใหม่ทันที ไม่ต้องรอ
         skipWaiting: true,
-        // ให้ SW ควบคุม client ทันที
         clientsClaim: true,
-        // Cache รูปแบบไฟล์เหล่านี้
         globPatterns: ['**/*.{js,css,html,ico,png,svg,woff,woff2}'],
       },
-      
-      // ✅ Include assets
-      includeAssets: ['favicon.ico', 'apple-touch-icon.png', 'mask-icon.svg'],
-      
-      // ✅ Manifest
+      includeAssets: ['favicon.ico', 'icons/*.png'],
       manifest: {
         name: 'SVS Business Suite',
         short_name: 'SVS',
@@ -34,34 +23,56 @@ export default defineConfig({
         display: 'standalone',
         orientation: 'portrait',
         scope: '/',
-        start_url: '/',
+        start_url: '/intro',
         icons: [
           {
-            src: 'pwa-192x192.png',
+            src: 'icons/icon-72x72.png',
+            sizes: '72x72',
+            type: 'image/png'
+          },
+          {
+            src: 'icons/icon-96x96.png',
+            sizes: '96x96',
+            type: 'image/png'
+          },
+          {
+            src: 'icons/icon-128x128.png',
+            sizes: '128x128',
+            type: 'image/png'
+          },
+          {
+            src: 'icons/icon-144x144.png',
+            sizes: '144x144',
+            type: 'image/png'
+          },
+          {
+            src: 'icons/icon-152x152.png',
+            sizes: '152x152',
+            type: 'image/png'
+          },
+          {
+            src: 'icons/icon-192x192.png',
             sizes: '192x192',
             type: 'image/png'
           },
           {
-            src: 'pwa-512x512.png',
-            sizes: '512x512',
+            src: 'icons/icon-384x384.png',
+            sizes: '384x384',
             type: 'image/png'
           },
           {
-            src: 'pwa-512x512.png',
+            src: 'icons/icon-512x512.png',
             sizes: '512x512',
             type: 'image/png',
             purpose: 'any maskable'
           }
         ]
       },
-      
-      // ✅ Dev options (เปิดใช้ SW ใน dev mode ด้วยถ้าต้องการทดสอบ)
       devOptions: {
-        enabled: false, // เปลี่ยนเป็น true ถ้าต้องการทดสอบ PWA ใน dev
+        enabled: false,
       }
     })
   ],
-  
   server: {
     port: 5173,
     proxy: {
@@ -92,7 +103,6 @@ export default defineConfig({
       },
     },
   },
-  
   build: {
     outDir: 'dist',
     sourcemap: false,

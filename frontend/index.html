@@ -5,90 +5,27 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
     
     <!-- PWA Meta Tags -->
-    <meta name="theme-color" content="#7c3aed" />
-    <meta name="description" content="ระบบจัดการสต็อกสินค้า SVS - Stock Management System" />
+    <meta name="theme-color" content="#22c55e" />
+    <meta name="background-color" content="#0a0a0f" />
+    <meta name="description" content="SVS Business Suite - ระบบจัดการธุรกิจ แสงวิทย์ ซายน์" />
+    
+    <!-- iOS Meta Tags -->
     <meta name="apple-mobile-web-app-capable" content="yes" />
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
-    <meta name="apple-mobile-web-app-title" content="SVS Stock" />
-    <meta name="mobile-web-app-capable" content="yes" />
-    <meta name="application-name" content="SVS Stock" />
-    <meta name="msapplication-TileColor" content="#7c3aed" />
-    <meta name="msapplication-TileImage" content="/icons/icon-144x144.png" />
+    <meta name="apple-mobile-web-app-title" content="SVS" />
     
     <!-- Favicon -->
     <link rel="icon" type="image/png" sizes="32x32" href="/icons/icon-96x96.png" />
     <link rel="icon" type="image/png" sizes="16x16" href="/icons/icon-72x72.png" />
     
-    <!-- Apple Touch Icons -->
-    <link rel="apple-touch-icon" href="/icons/icon-192x192.png" />
-    <link rel="apple-touch-icon" sizes="152x152" href="/icons/icon-152x152.png" />
+    <!-- Apple Touch Icon -->
+    <link rel="apple-touch-icon" href="/icons/icon-152x152.png" />
     <link rel="apple-touch-icon" sizes="180x180" href="/icons/icon-192x192.png" />
-    <link rel="apple-touch-icon" sizes="167x167" href="/icons/icon-192x192.png" />
     
-    <!-- Manifest -->
-    <link rel="manifest" href="/manifest.webmanifest" />
-    
-    <!-- Splash Screen for iOS -->
-    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
-    
-    <!-- Fonts -->
-    <link rel="preconnect" href="https://fonts.googleapis.com" />
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-    <link href="https://fonts.googleapis.com/css2?family=Prompt:wght@300;400;500;600;700&display=swap" rel="stylesheet" />
-    
-    <title>SVS Stock Management System</title>
-    
-    <style>
-      /* Loading spinner while app loads */
-      .app-loading {
-        position: fixed;
-        inset: 0;
-        display: flex;
-        flex-direction: column;
-        align-items: center;
-        justify-content: center;
-        background: linear-gradient(135deg, #020617 0%, #0f172a 100%);
-        z-index: 9999;
-      }
-      .app-loading-logo {
-        width: 120px;
-        height: 120px;
-        animation: pulse 2s ease-in-out infinite;
-      }
-      .app-loading-text {
-        margin-top: 20px;
-        color: #7c3aed;
-        font-family: 'Prompt', sans-serif;
-        font-size: 18px;
-        font-weight: 500;
-      }
-      .app-loading-spinner {
-        margin-top: 20px;
-        width: 40px;
-        height: 40px;
-        border: 3px solid rgba(124, 58, 237, 0.3);
-        border-top-color: #7c3aed;
-        border-radius: 50%;
-        animation: spin 1s linear infinite;
-      }
-      @keyframes spin {
-        to { transform: rotate(360deg); }
-      }
-      @keyframes pulse {
-        0%, 100% { transform: scale(1); opacity: 1; }
-        50% { transform: scale(1.05); opacity: 0.8; }
-      }
-    </style>
+    <title>SVS Business Suite</title>
   </head>
   <body>
-    <div id="root">
-      <!-- Loading screen while React loads -->
-      <div class="app-loading">
-        <img src="/icons/icon-192x192.png" alt="SVS Stock" class="app-loading-logo" />
-        <div class="app-loading-text">SVS Stock</div>
-        <div class="app-loading-spinner"></div>
-      </div>
-    </div>
+    <div id="root"></div>
     <script type="module" src="/src/main.tsx"></script>
   </body>
 </html>
