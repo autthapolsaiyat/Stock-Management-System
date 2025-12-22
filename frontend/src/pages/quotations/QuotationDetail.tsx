@@ -7,10 +7,11 @@ import {
 import {
   EditOutlined, SendOutlined, CheckCircleOutlined,
   CloseCircleOutlined, FileTextOutlined, ShoppingCartOutlined,
-  ArrowLeftOutlined, FilePdfOutlined
+  ArrowLeftOutlined, FilePdfOutlined, PrinterOutlined
 } from '@ant-design/icons';
 import QuotationFlowProgress from '../../components/quotation/QuotationFlowProgress';
 import QuotationPrintPreview from '../../components/quotation/QuotationPrintPreview';
+import { PurchaseOrderPrintPreview, GoodsReceiptPrintPreview, TaxInvoicePrintPreview, ReceiptPrintPreview } from '../../components/print';
 import { quotationsApi, purchaseOrdersApi, salesInvoicesApi, goodsReceiptsApi } from '../../services/api';
 import type { Quotation, QuotationItem, QuotationType, QuotationStatus } from '../../types/quotation';
 import { useActiveQuotation } from '../../contexts/ActiveQuotationContext';
@@ -49,6 +50,10 @@ const QuotationDetail: React.FC = () => {
   const [quotation, setQuotation] = useState<Quotation | null>(null);
   const [loading, setLoading] = useState(true);
   const [printPreviewOpen, setPrintPreviewOpen] = useState(false);
+  const [poPrintOpen, setPoPrintOpen] = useState(false);
+  const [grPrintOpen, setGrPrintOpen] = useState(false);
+  const [invPrintOpen, setInvPrintOpen] = useState(false);
+  const [receiptPrintOpen, setReceiptPrintOpen] = useState(false);
   const [selectedStep, setSelectedStep] = useState<'QT' | 'PO' | 'GR' | 'INV' | 'PAID'>('QT');
   const [relatedDocs, setRelatedDocs] = useState<{
     purchaseOrders: any[];
@@ -354,7 +359,7 @@ const QuotationDetail: React.FC = () => {
       case 'PO':
         if (!po) return <Card><div style={{ textAlign: 'center', color: '#666', padding: 40 }}>ยังไม่มีใบสั่งซื้อ</div></Card>;
         return (
-          <Card title={<span>🛒 ใบสั่งซื้อ: {po.docFullNo}</span>}>
+          <Card title={<span>🛒 ใบสั่งซื้อ: {po.docFullNo}</span>} extra={<Button icon={<PrinterOutlined />} onClick={() => setPoPrintOpen(true)}>พิมพ์</Button>}>
             <Descriptions column={{ xs: 1, sm: 2 }} size="small">
               <Descriptions.Item label="เลขที่">{po.docFullNo}</Descriptions.Item>
               <Descriptions.Item label="สถานะ"><Tag color={statusColors[po.status]}>{po.status}</Tag></Descriptions.Item>
@@ -383,7 +388,7 @@ const QuotationDetail: React.FC = () => {
       case 'GR':
         if (!gr) return <Card><div style={{ textAlign: 'center', color: '#666', padding: 40 }}>ยังไม่มีใบรับสินค้า</div></Card>;
         return (
-          <Card title={<span>📦 ใบรับสินค้า: {gr.docFullNo}</span>}>
+          <Card title={<span>📦 ใบรับสินค้า: {gr.docFullNo}</span>} extra={<Button icon={<PrinterOutlined />} onClick={() => setGrPrintOpen(true)}>พิมพ์</Button>}>
             <Descriptions column={{ xs: 1, sm: 2 }} size="small">
               <Descriptions.Item label="เลขที่">{gr.docFullNo}</Descriptions.Item>
               <Descriptions.Item label="สถานะ"><Tag color={statusColors[gr.status]}>{gr.status}</Tag></Descriptions.Item>
@@ -412,7 +417,7 @@ const QuotationDetail: React.FC = () => {
       case 'INV':
         if (!inv) return <Card><div style={{ textAlign: 'center', color: '#666', padding: 40 }}>ยังไม่มีใบแจ้งหนี้</div></Card>;
         return (
-          <Card title={<span>📄 ใบแจ้งหนี้: {inv.docFullNo}</span>}>
+          <Card title={<span>📄 ใบแจ้งหนี้: {inv.docFullNo}</span>} extra={<Button icon={<PrinterOutlined />} onClick={() => setInvPrintOpen(true)}>พิมพ์ใบกำกับภาษี</Button>}>
             <Descriptions column={{ xs: 1, sm: 2 }} size="small">
               <Descriptions.Item label="เลขที่">{inv.docFullNo}</Descriptions.Item>
               <Descriptions.Item label="สถานะ"><Tag color={statusColors[inv.status]}>{inv.status}</Tag></Descriptions.Item>
@@ -441,7 +446,7 @@ const QuotationDetail: React.FC = () => {
       case 'PAID':
         if (!inv || inv.status !== 'PAID') return <Card><div style={{ textAlign: 'center', color: '#666', padding: 40 }}>ยังไม่ได้ชำระเงิน</div></Card>;
         return (
-          <Card title={<span>💰 การชำระเงิน</span>}>
+          <Card title={<span>💰 การชำระเงิน</span>} extra={<Button icon={<PrinterOutlined />} onClick={() => setReceiptPrintOpen(true)}>พิมพ์ใบเสร็จ</Button>}>
             <Descriptions column={{ xs: 1, sm: 2 }} size="small">
               <Descriptions.Item label="ใบแจ้งหนี้">{inv.docFullNo}</Descriptions.Item>
               <Descriptions.Item label="สถานะ"><Tag color="green">ชำระแล้ว</Tag></Descriptions.Item>
@@ -720,6 +725,34 @@ const QuotationDetail: React.FC = () => {
           customer={{ name: quotation.customerName, address: quotation.customerAddress }}
         />
       )}
+
+      {/* PO Print */}
+      <PurchaseOrderPrintPreview
+        open={poPrintOpen}
+        onClose={() => setPoPrintOpen(false)}
+        purchaseOrder={relatedDocs.purchaseOrders[0]}
+      />
+
+      {/* GR Print */}
+      <GoodsReceiptPrintPreview
+        open={grPrintOpen}
+        onClose={() => setGrPrintOpen(false)}
+        goodsReceipt={relatedDocs.goodsReceipts[0]}
+      />
+
+      {/* Invoice Print */}
+      <TaxInvoicePrintPreview
+        open={invPrintOpen}
+        onClose={() => setInvPrintOpen(false)}
+        invoice={relatedDocs.invoices.find(i => i.status === 'PAID') || relatedDocs.invoices.find(i => i.status === 'POSTED') || relatedDocs.invoices[0]}
+      />
+
+      {/* Receipt Print */}
+      <ReceiptPrintPreview
+        open={receiptPrintOpen}
+        onClose={() => setReceiptPrintOpen(false)}
+        invoice={relatedDocs.invoices.find(i => i.status === 'PAID') || relatedDocs.invoices[0]}
+      />
     </div>
   );
 };
