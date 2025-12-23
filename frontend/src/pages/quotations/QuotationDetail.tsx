@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import {
   Card, Modal, Button, Tag, Space, Descriptions, Table, Divider,
-  message, Popconfirm, Row, Col, Progress, Select, Input, Radio
+  message, Popconfirm, Row, Col, Progress, Input, Radio
 } from 'antd';
 import {
   EditOutlined, SendOutlined, CheckCircleOutlined,
