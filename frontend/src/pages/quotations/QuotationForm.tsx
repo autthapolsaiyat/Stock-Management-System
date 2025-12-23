@@ -7,7 +7,7 @@ import {
 import {
   SaveOutlined, SendOutlined, PlusOutlined, DeleteOutlined,
   SettingOutlined, CalculatorOutlined, EyeOutlined, FilterOutlined,
-  CheckCircleOutlined, HistoryOutlined
+  CheckCircleOutlined, HistoryOutlined, SearchOutlined, EditOutlined, WarningOutlined
 } from '@ant-design/icons';
 import dayjs from 'dayjs';
 import { quotationsApi, customersApi, productsApi, systemSettingsApi } from '../../services/api';
@@ -43,6 +43,14 @@ const QuotationForm: React.FC = () => {
   const [priceHistory, setPriceHistory] = useState<Record<number, any>>({});
   const [settings, setSettings] = useState<any>({});
   const [selectedCustomer, setSelectedCustomer] = useState<any>(null);
+
+  // Customer Modal States
+  const [customerModalOpen, setCustomerModalOpen] = useState(false);
+  const [customerSearchText, setCustomerSearchText] = useState('');
+  const [selectedCustomerId, setSelectedCustomerId] = useState<number | null>(null);
+  const [customerEditMode, setCustomerEditMode] = useState(false);
+  const [editingCustomer, setEditingCustomer] = useState<any>(null);
+  const [savingCustomer, setSavingCustomer] = useState(false);
 
   // Product Modal States
   const [productModalOpen, setProductModalOpen] = useState(false);
@@ -206,6 +214,98 @@ const QuotationForm: React.FC = () => {
       });
     }
   };
+
+  // Customer Modal Functions
+  const openCustomerModal = () => {
+    setCustomerSearchText('');
+    setSelectedCustomerId(selectedCustomer?.id || null);
+    setCustomerEditMode(false);
+    setEditingCustomer(null);
+    setCustomerModalOpen(true);
+  };
+
+  const handleSelectCustomer = () => {
+    if (!selectedCustomerId) {
+      message.warning('กรุณาเลือกลูกค้า');
+      return;
+    }
+    const customer = customers.find(c => c.id === selectedCustomerId);
+    if (customer) {
+      setSelectedCustomer(customer);
+      form.setFieldsValue({
+        customerId: customer.id,
+        customerName: customer.name,
+        customerAddress: customer.address,
+        contactPerson: customer.contactPerson || '',
+        contactPhone: customer.contactPhone || customer.phone || '',
+        contactEmail: customer.contactEmail || customer.email || '',
+        creditTermDays: customer.creditTermDays || 30,
+      });
+      setCustomerModalOpen(false);
+      setCustomerSearchText('');
+    }
+  };
+
+  const openCustomerEdit = (customer: any) => {
+    setEditingCustomer({
+      id: customer.id,
+      phone: customer.phone || '',
+      email: customer.email || '',
+      address: customer.address || '',
+      contactPerson: customer.contactPerson || '',
+      contactPhone: customer.contactPhone || '',
+      contactEmail: customer.contactEmail || '',
+    });
+    setCustomerEditMode(true);
+  };
+
+  const handleSaveCustomerEdit = async () => {
+    if (!editingCustomer) return;
+    
+    setSavingCustomer(true);
+    try {
+      await customersApi.update(editingCustomer.id, {
+        phone: editingCustomer.phone,
+        email: editingCustomer.email,
+        address: editingCustomer.address,
+        contactPerson: editingCustomer.contactPerson,
+        contactPhone: editingCustomer.contactPhone,
+        contactEmail: editingCustomer.contactEmail,
+      });
+      
+      // Update local customers list
+      const updatedCustomers = customers.map(c => 
+        c.id === editingCustomer.id 
+          ? { ...c, ...editingCustomer }
+          : c
+      );
+      setCustomers(updatedCustomers);
+      
+      // Update selected customer if same
+      if (selectedCustomer?.id === editingCustomer.id) {
+        setSelectedCustomer({ ...selectedCustomer, ...editingCustomer });
+      }
+      
+      message.success('บันทึกข้อมูลลูกค้าสำเร็จ');
+      setCustomerEditMode(false);
+      setEditingCustomer(null);
+    } catch (error: any) {
+      message.error(error.response?.data?.message || 'ไม่สามารถบันทึกได้');
+    } finally {
+      setSavingCustomer(false);
+    }
+  };
+
+  const isCustomerInfoIncomplete = (customer: any) => {
+    return !customer.phone && !customer.email && !customer.address;
+  };
+
+  const filteredCustomers = customers.filter(c =>
+    c.name?.toLowerCase().includes(customerSearchText.toLowerCase()) ||
+    c.phone?.toLowerCase().includes(customerSearchText.toLowerCase()) ||
+    c.email?.toLowerCase().includes(customerSearchText.toLowerCase()) ||
+    c.code?.toLowerCase().includes(customerSearchText.toLowerCase())
+  );
 
   // Add single product
   const handleAddProduct = (product: any) => {
@@ -608,11 +708,20 @@ const QuotationForm: React.FC = () => {
                 )}
                 {salesOnly && <Form.Item name="quotationType" hidden><Input /></Form.Item>}
                 <Col xs={24} md={12}>
-                  <Form.Item label="ลูกค้า" name="customerId" rules={[{ required: true, message: 'กรุณาเลือกลูกค้า' }]}>
-                    <Select showSearch placeholder="เลือกลูกค้า" optionFilterProp="children" onChange={handleCustomerChange}
-                      filterOption={(input, option) => (option?.children as unknown as string)?.toLowerCase().includes(input.toLowerCase())}>
-                      {customers.map(c => <Option key={c.id} value={c.id}>{c.name}</Option>)}
-                    </Select>
+                  <Form.Item label="ลูกค้า" required>
+                    <Input.Group compact style={{ display: 'flex' }}>
+                      <Input 
+                        style={{ flex: 1 }} 
+                        value={selectedCustomer?.name || ''} 
+                        placeholder="คลิกเพื่อเลือกลูกค้า" 
+                        readOnly 
+                        onClick={openCustomerModal}
+                      />
+                      <Button icon={<SearchOutlined />} onClick={openCustomerModal}>เลือก</Button>
+                    </Input.Group>
+                    <Form.Item name="customerId" hidden rules={[{ required: true, message: 'กรุณาเลือกลูกค้า' }]}>
+                      <Input />
+                    </Form.Item>
                   </Form.Item>
                 </Col>
                 <Col xs={24} md={12}><Form.Item label="ผู้ติดต่อ" name="contactPerson"><Input placeholder="ชื่อผู้ติดต่อ" /></Form.Item></Col>
@@ -878,6 +987,208 @@ const QuotationForm: React.FC = () => {
         items={items}
         customer={selectedCustomer}
       />
+
+      {/* Customer Selection Modal */}
+      <Modal
+        title="👤 เลือกลูกค้า"
+        open={customerModalOpen}
+        onCancel={() => {
+          if (customerEditMode) {
+            setCustomerEditMode(false);
+            setEditingCustomer(null);
+          } else {
+            setCustomerModalOpen(false);
+            setCustomerSearchText('');
+          }
+        }}
+        onOk={customerEditMode ? handleSaveCustomerEdit : handleSelectCustomer}
+        okText={customerEditMode ? "💾 บันทึก" : "✓ เลือกลูกค้า"}
+        cancelText={customerEditMode ? "← กลับ" : "ยกเลิก"}
+        confirmLoading={savingCustomer}
+        okButtonProps={{ disabled: !customerEditMode && !selectedCustomerId }}
+        width={650}
+      >
+        {customerEditMode && editingCustomer ? (
+          // Edit Mode
+          <div>
+            <div style={{ marginBottom: 16, fontWeight: 500, fontSize: 16 }}>
+              ✏️ แก้ไขข้อมูล: {customers.find(c => c.id === editingCustomer.id)?.name}
+            </div>
+            <Row gutter={[16, 12]}>
+              <Col span={12}>
+                <div style={{ marginBottom: 4, opacity: 0.7 }}>📞 เบอร์โทร</div>
+                <Input 
+                  value={editingCustomer.phone} 
+                  onChange={e => setEditingCustomer({...editingCustomer, phone: e.target.value})}
+                  placeholder="02-xxx-xxxx"
+                />
+              </Col>
+              <Col span={12}>
+                <div style={{ marginBottom: 4, opacity: 0.7 }}>📧 อีเมล</div>
+                <Input 
+                  value={editingCustomer.email} 
+                  onChange={e => setEditingCustomer({...editingCustomer, email: e.target.value})}
+                  placeholder="email@company.com"
+                />
+              </Col>
+              <Col span={24}>
+                <div style={{ marginBottom: 4, opacity: 0.7 }}>📍 ที่อยู่</div>
+                <Input.TextArea 
+                  rows={2}
+                  value={editingCustomer.address} 
+                  onChange={e => setEditingCustomer({...editingCustomer, address: e.target.value})}
+                  placeholder="ที่อยู่บริษัท"
+                />
+              </Col>
+              <Col span={24}>
+                <Divider style={{ margin: '8px 0' }}>ผู้ติดต่อ</Divider>
+              </Col>
+              <Col span={8}>
+                <div style={{ marginBottom: 4, opacity: 0.7 }}>👤 ชื่อผู้ติดต่อ</div>
+                <Input 
+                  value={editingCustomer.contactPerson} 
+                  onChange={e => setEditingCustomer({...editingCustomer, contactPerson: e.target.value})}
+                  placeholder="คุณ..."
+                />
+              </Col>
+              <Col span={8}>
+                <div style={{ marginBottom: 4, opacity: 0.7 }}>📞 เบอร์ผู้ติดต่อ</div>
+                <Input 
+                  value={editingCustomer.contactPhone} 
+                  onChange={e => setEditingCustomer({...editingCustomer, contactPhone: e.target.value})}
+                  placeholder="08x-xxx-xxxx"
+                />
+              </Col>
+              <Col span={8}>
+                <div style={{ marginBottom: 4, opacity: 0.7 }}>📧 อีเมลผู้ติดต่อ</div>
+                <Input 
+                  value={editingCustomer.contactEmail} 
+                  onChange={e => setEditingCustomer({...editingCustomer, contactEmail: e.target.value})}
+                  placeholder="contact@email.com"
+                />
+              </Col>
+            </Row>
+          </div>
+        ) : (
+          // Selection Mode
+          <div>
+            <div style={{ marginBottom: 12 }}>
+              <p style={{ margin: 0, opacity: 0.7 }}>เลือกลูกค้าสำหรับใบเสนอราคานี้:</p>
+            </div>
+            
+            {/* Search Box */}
+            <Input
+              placeholder="🔍 ค้นหาลูกค้า..."
+              prefix={<SearchOutlined style={{ opacity: 0.5 }} />}
+              value={customerSearchText}
+              onChange={(e) => setCustomerSearchText(e.target.value)}
+              allowClear
+              style={{ marginBottom: 12 }}
+            />
+            
+            {/* Customer Radio List */}
+            <div style={{ 
+              maxHeight: 350, 
+              overflowY: 'auto', 
+              border: '1px solid var(--border-color, #d9d9d9)', 
+              borderRadius: 8,
+              background: 'var(--bg-card, #fafafa)'
+            }}>
+              <Radio.Group 
+                value={selectedCustomerId} 
+                onChange={(e) => setSelectedCustomerId(e.target.value)}
+                style={{ width: '100%' }}
+              >
+                {filteredCustomers.map((customer, index, arr) => (
+                  <div 
+                    key={customer.id}
+                    style={{ 
+                      padding: '12px 16px',
+                      borderBottom: index < arr.length - 1 ? '1px solid var(--border-color, #e8e8e8)' : 'none',
+                      background: selectedCustomerId === customer.id ? 'rgba(124, 58, 237, 0.15)' : 'transparent',
+                      cursor: 'pointer',
+                      transition: 'background 0.2s'
+                    }}
+                    onClick={() => setSelectedCustomerId(customer.id)}
+                  >
+                    <Radio value={customer.id} style={{ width: '100%' }}>
+                      <div style={{ marginLeft: 8, display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+                        <div style={{ flex: 1 }}>
+                          <div style={{ fontWeight: 500, fontSize: 14 }}>
+                            {customer.name}
+                            {selectedCustomerId === customer.id && (
+                              <Tag color="purple" style={{ marginLeft: 8 }}>เลือกแล้ว</Tag>
+                            )}
+                            {isCustomerInfoIncomplete(customer) && (
+                              <Tag color="warning" icon={<WarningOutlined />} style={{ marginLeft: 4 }}>ข้อมูลไม่ครบ</Tag>
+                            )}
+                          </div>
+                          <div style={{ fontSize: 12, opacity: 0.65, marginTop: 4 }}>
+                            {customer.phone && <span style={{ marginRight: 12 }}>📞 {customer.phone}</span>}
+                            {customer.email && <span style={{ marginRight: 12 }}>📧 {customer.email}</span>}
+                            {!customer.phone && !customer.email && <span style={{ color: '#faad14' }}>ยังไม่มีข้อมูลติดต่อ</span>}
+                          </div>
+                          {customer.address && (
+                            <div style={{ fontSize: 12, opacity: 0.65, marginTop: 2 }}>
+                              📍 {customer.address.length > 50 ? customer.address.substring(0, 50) + '...' : customer.address}
+                            </div>
+                          )}
+                          {customer.creditTermDays > 0 && (
+                            <div style={{ fontSize: 12, opacity: 0.65, marginTop: 2 }}>
+                              💳 เครดิต {customer.creditTermDays} วัน
+                            </div>
+                          )}
+                        </div>
+                        <Button 
+                          type="text" 
+                          size="small" 
+                          icon={<EditOutlined />}
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            openCustomerEdit(customer);
+                          }}
+                          style={{ opacity: 0.6 }}
+                        >
+                          แก้ไข
+                        </Button>
+                      </div>
+                    </Radio>
+                  </div>
+                ))}
+                {filteredCustomers.length === 0 && (
+                  <div style={{ padding: 24, textAlign: 'center', opacity: 0.5 }}>
+                    ไม่พบลูกค้า
+                  </div>
+                )}
+              </Radio.Group>
+            </div>
+
+            {/* Selected Customer Contact Info */}
+            {selectedCustomerId && (() => {
+              const customer = customers.find(c => c.id === selectedCustomerId);
+              if (!customer) return null;
+              return (
+                <div style={{ marginTop: 16 }}>
+                  <div style={{ fontWeight: 500, marginBottom: 8 }}>📋 ข้อมูลผู้ติดต่อ:</div>
+                  <div style={{ 
+                    background: 'var(--bg-card, #f5f5f5)', 
+                    border: '1px solid var(--border-color, #e8e8e8)',
+                    borderRadius: 8, 
+                    padding: 12
+                  }}>
+                    <div style={{ fontSize: 13 }}>
+                      <span style={{ opacity: 0.7 }}>👤 </span>
+                      <strong>{customer.contactPerson || '-'}</strong>
+                      {customer.contactPhone && <span style={{ marginLeft: 16, opacity: 0.7 }}>📞 {customer.contactPhone}</span>}
+                      {customer.contactEmail && <span style={{ marginLeft: 16, opacity: 0.7 }}>📧 {customer.contactEmail}</span>}
+                    </div>
+                  </div>
+                </div>
+              );
+            })()}
+          </div>
+        )}
+      </Modal>
     </div>
   );
 };
