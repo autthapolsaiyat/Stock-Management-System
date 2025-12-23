@@ -234,6 +234,7 @@ const QuotationForm: React.FC = () => {
   const openCustomerEdit = (customer: any) => {
     setEditingCustomer({
       id: customer.id,
+      taxId: customer.taxId || '',
       phone: customer.phone || '',
       email: customer.email || '',
       address: customer.address || '',
@@ -250,6 +251,7 @@ const QuotationForm: React.FC = () => {
     setSavingCustomer(true);
     try {
       await customersApi.update(editingCustomer.id, {
+        taxId: editingCustomer.taxId,
         phone: editingCustomer.phone,
         email: editingCustomer.email,
         address: editingCustomer.address,
@@ -1000,6 +1002,15 @@ const QuotationForm: React.FC = () => {
               ✏️ แก้ไขข้อมูล: {customers.find(c => c.id === editingCustomer.id)?.name}
             </div>
             <Row gutter={[16, 12]}>
+              <Col span={24}>
+                <div style={{ marginBottom: 4, opacity: 0.7 }}>🏢 เลขผู้เสียภาษี</div>
+                <Input 
+                  value={editingCustomer.taxId} 
+                  onChange={e => setEditingCustomer({...editingCustomer, taxId: e.target.value})}
+                  placeholder="0105XXXXXXXXX"
+                  maxLength={13}
+                />
+              </Col>
               <Col span={12}>
                 <div style={{ marginBottom: 4, opacity: 0.7 }}>📞 เบอร์โทร</div>
                 <Input 

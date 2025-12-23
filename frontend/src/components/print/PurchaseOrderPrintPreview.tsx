@@ -194,10 +194,10 @@ const PurchaseOrderPrintPreview: React.FC<PurchaseOrderPrintPreviewProps> = ({
                   <div style={{ fontSize: 16, fontWeight: 'bold', marginTop: 5, color: '#000' }}>{purchaseOrder?.supplierName || '-'}</div>
                   <div style={{ marginTop: 5, color: '#000' }}>{purchaseOrder?.supplierAddress || '-'}</div>
                   <div style={{ marginTop: 5, color: '#000' }}>
-                    <strong>ติดต่อ:</strong> {purchaseOrder?.supplierContact || purchaseOrder?.contactPerson || '-'}
+                    <strong>เลขผู้เสียภาษี:</strong> {purchaseOrder?.supplierTaxId || '-'}
                   </div>
                   <div style={{ color: '#000' }}>
-                    <strong>โทร:</strong> {purchaseOrder?.supplierPhone || '-'}
+                    <strong>ติดต่อ:</strong> {purchaseOrder?.supplierContact || purchaseOrder?.contactPerson || '-'} | <strong>โทร:</strong> {purchaseOrder?.supplierPhone || '-'}
                   </div>
                 </td>
                 <td style={{ width: '40%', verticalAlign: 'top', border: '1px solid #000', padding: 8 }}>

@@ -352,6 +352,7 @@ const QuotationDetail: React.FC = () => {
   const openSupplierEdit = (supplier: any) => {
     setEditingSupplier({
       id: supplier.id,
+      taxId: supplier.taxId || '',
       phone: supplier.phone || '',
       email: supplier.email || '',
       address: supplier.address || '',
@@ -366,6 +367,7 @@ const QuotationDetail: React.FC = () => {
     setSavingSupplier(true);
     try {
       await suppliersApi.update(editingSupplier.id, {
+        taxId: editingSupplier.taxId,
         phone: editingSupplier.phone,
         email: editingSupplier.email,
         address: editingSupplier.address,
@@ -569,6 +571,7 @@ const QuotationDetail: React.FC = () => {
                 <Card type="inner" title="🏭 ข้อมูลผู้จำหน่าย" size="small" style={{ marginBottom: 16 }}>
                   <Descriptions column={1} size="small">
                     <Descriptions.Item label="ชื่อ"><strong>{po.supplierName || '-'}</strong></Descriptions.Item>
+                    <Descriptions.Item label="เลขผู้เสียภาษี">{po.supplierTaxId || '-'}</Descriptions.Item>
                     <Descriptions.Item label="ที่อยู่">{po.supplierAddress || '-'}</Descriptions.Item>
                     <Descriptions.Item label="ติดต่อ">{po.supplierContact || po.contactPerson || '-'}</Descriptions.Item>
                     <Descriptions.Item label="โทร">{po.supplierPhone || '-'}</Descriptions.Item>
@@ -630,8 +633,9 @@ const QuotationDetail: React.FC = () => {
               <Descriptions.Item label="เลขที่">{inv.docFullNo}</Descriptions.Item>
               <Descriptions.Item label="สถานะ"><Tag color={statusColors[inv.status]}>{inv.status}</Tag></Descriptions.Item>
               <Descriptions.Item label="ลูกค้า">{inv.customerName || quotation.customerName}</Descriptions.Item>
+              <Descriptions.Item label="เลขผู้เสียภาษี">{inv.customerTaxId || '-'}</Descriptions.Item>
               <Descriptions.Item label="วันที่">{inv.docDate ? new Date(inv.docDate).toLocaleDateString('th-TH') : '-'}</Descriptions.Item>
-              <Descriptions.Item label="ยอดรวม">฿{Number(inv.grandTotal || 0).toLocaleString()}</Descriptions.Item>
+              <Descriptions.Item label="ยอดรวม"><strong style={{ color: '#52c41a' }}>฿{Number(inv.grandTotal || 0).toLocaleString()}</strong></Descriptions.Item>
               <Descriptions.Item label="จำนวนรายการ">{inv.items?.length || inv.totalItems || 0} รายการ</Descriptions.Item>
             </Descriptions>
             {inv.items && inv.items.length > 0 && (
@@ -990,6 +994,15 @@ const QuotationDetail: React.FC = () => {
               ✏️ แก้ไขข้อมูล: {suppliers.find(s => s.id === editingSupplier.id)?.name}
             </div>
             <Row gutter={[16, 12]}>
+              <Col span={24}>
+                <div style={{ marginBottom: 4, opacity: 0.7 }}>🏢 เลขผู้เสียภาษี</div>
+                <Input 
+                  value={editingSupplier.taxId} 
+                  onChange={e => setEditingSupplier({...editingSupplier, taxId: e.target.value})}
+                  placeholder="0105XXXXXXXXX"
+                  maxLength={13}
+                />
+              </Col>
               <Col span={12}>
                 <div style={{ marginBottom: 4, opacity: 0.7 }}>📞 เบอร์โทร</div>
                 <Input 

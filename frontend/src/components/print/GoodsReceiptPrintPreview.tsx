@@ -150,6 +150,7 @@ const GoodsReceiptPrintPreview: React.FC<GoodsReceiptPrintPreviewProps> = ({
                 </td>
                 <td style={{ width: '50%', verticalAlign: 'top', border: '1px solid #000', padding: 8 }}>
                   <div style={{ color: '#000' }}><strong>ผู้จำหน่าย/Supplier:</strong> {goodsReceipt?.supplierName || '-'}</div>
+                  <div style={{ color: '#000' }}><strong>เลขผู้เสียภาษี:</strong> {goodsReceipt?.supplierTaxId || '-'}</div>
                   <div style={{ color: '#000' }}><strong>คลังสินค้า/Warehouse:</strong> {goodsReceipt?.warehouseName || '-'}</div>
                   <div style={{ color: '#000' }}><strong>เลขที่ใบส่งของ:</strong> {goodsReceipt?.supplierInvoiceNo || '-'}</div>
                   <div style={{ color: '#000' }}><strong>วันที่ใบส่งของ:</strong> {formatDate(goodsReceipt?.supplierInvoiceDate)}</div>
