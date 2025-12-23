@@ -9,7 +9,10 @@ export declare class PurchaseOrderEntity {
     quotationDocNo: string;
     supplierId: number;
     supplierName: string;
+    supplierTaxId: string;
     supplierAddress: string;
+    supplierPhone: string;
+    supplierEmail: string;
     contactPerson: string;
     docDate: Date;
     deliveryDate: Date;

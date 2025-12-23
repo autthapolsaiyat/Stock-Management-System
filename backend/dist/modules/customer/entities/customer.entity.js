@@ -11,6 +11,7 @@ var __metadata = (this && this.__metadata) || function (k, v) {
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.CustomerEntity = void 0;
 const typeorm_1 = require("typeorm");
+const customer_group_entity_1 = require("../../customer-group/entities/customer-group.entity");
 let CustomerEntity = class CustomerEntity {
 };
 exports.CustomerEntity = CustomerEntity;
@@ -62,6 +63,15 @@ __decorate([
     (0, typeorm_1.Column)({ name: 'credit_term_days', default: 30 }),
     __metadata("design:type", Number)
 ], CustomerEntity.prototype, "creditTermDays", void 0);
+__decorate([
+    (0, typeorm_1.Column)({ name: 'group_id', nullable: true }),
+    __metadata("design:type", Number)
+], CustomerEntity.prototype, "groupId", void 0);
+__decorate([
+    (0, typeorm_1.ManyToOne)(() => customer_group_entity_1.CustomerGroupEntity),
+    (0, typeorm_1.JoinColumn)({ name: 'group_id' }),
+    __metadata("design:type", customer_group_entity_1.CustomerGroupEntity)
+], CustomerEntity.prototype, "group", void 0);
 __decorate([
     (0, typeorm_1.Column)({ name: 'is_active', default: true }),
     __metadata("design:type", Boolean)

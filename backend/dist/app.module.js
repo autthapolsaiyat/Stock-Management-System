@@ -30,6 +30,10 @@ const sales_invoice_module_1 = require("./modules/sales-invoice/sales-invoice.mo
 const upload_module_1 = require("./upload/upload.module");
 const user_settings_module_1 = require("./modules/user-settings/user-settings.module");
 const vcard_module_1 = require("./modules/vcard/vcard.module");
+const category_module_1 = require("./modules/category/category.module");
+const customer_group_module_1 = require("./modules/customer-group/customer-group.module");
+const stock_adjustment_module_1 = require("./modules/stock-adjustment/stock-adjustment.module");
+const stock_count_module_1 = require("./modules/stock-count/stock-count.module");
 let AppModule = class AppModule {
 };
 exports.AppModule = AppModule;
@@ -72,6 +76,10 @@ exports.AppModule = AppModule = __decorate([
             upload_module_1.UploadModule,
             user_settings_module_1.UserSettingsModule,
             vcard_module_1.VCardModule,
+            category_module_1.CategoryModule,
+            customer_group_module_1.CustomerGroupModule,
+            stock_adjustment_module_1.StockAdjustmentModule,
+            stock_count_module_1.StockCountModule,
         ],
     })
 ], AppModule);

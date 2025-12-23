@@ -9,6 +9,7 @@ export declare class SalesInvoiceEntity {
     quotationDocNo: string;
     customerId: number;
     customerName: string;
+    customerTaxId: string;
     customerAddress: string;
     contactPerson: string;
     warehouseId: number;

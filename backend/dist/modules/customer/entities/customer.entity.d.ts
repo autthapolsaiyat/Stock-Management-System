@@ -1,3 +1,4 @@
+import { CustomerGroupEntity } from '../../customer-group/entities/customer-group.entity';
 export declare class CustomerEntity {
     id: number;
     code: string;
@@ -11,6 +12,8 @@ export declare class CustomerEntity {
     contactEmail: string;
     creditLimit: number;
     creditTermDays: number;
+    groupId: number;
+    group: CustomerGroupEntity;
     isActive: boolean;
     createdAt: Date;
     updatedAt: Date;

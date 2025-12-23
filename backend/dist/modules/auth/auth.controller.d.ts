@@ -10,11 +10,14 @@ export declare class AuthController {
             fullName: string;
             email: string;
             quotationType: string;
+            customerGroupId: number;
+            customerGroup: import("../customer-group/entities/customer-group.entity").CustomerGroupEntity;
         };
         accessToken: string;
         roles: string[];
         permissions: string[];
         quotationType: string;
+        customerGroupId: number;
     }>;
     changePassword(req: any, body: {
         currentPassword: string;

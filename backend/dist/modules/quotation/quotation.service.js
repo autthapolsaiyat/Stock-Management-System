@@ -515,6 +515,10 @@ let QuotationService = class QuotationService {
                     marginPercent: item.marginPercent,
                     marginAmount: item.marginAmount,
                     itemStatus: 'PENDING',
+                    qtyOrdered: 0,
+                    qtyReceived: 0,
+                    qtySold: 0,
+                    qtyRemaining: item.qty,
                 });
                 await queryRunner.manager.save(newItem);
             }

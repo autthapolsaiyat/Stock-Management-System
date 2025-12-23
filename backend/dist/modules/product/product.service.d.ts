@@ -1,4 +1,4 @@
-import { Repository } from 'typeorm';
+import { Repository, DataSource } from 'typeorm';
 import { ProductEntity } from './entities/product.entity';
 import { ProductCategoryEntity } from './entities/product-category.entity';
 import { UnitEntity } from './entities/unit.entity';
@@ -7,7 +7,8 @@ export declare class ProductService {
     private productRepository;
     private categoryRepository;
     private unitRepository;
-    constructor(productRepository: Repository<ProductEntity>, categoryRepository: Repository<ProductCategoryEntity>, unitRepository: Repository<UnitEntity>);
+    private dataSource;
+    constructor(productRepository: Repository<ProductEntity>, categoryRepository: Repository<ProductCategoryEntity>, unitRepository: Repository<UnitEntity>, dataSource: DataSource);
     findAll(categoryId?: number, quotationType?: string): Promise<ProductEntity[]>;
     findOne(id: number): Promise<ProductEntity>;
     create(dto: CreateProductDto): Promise<ProductEntity>;
@@ -17,4 +18,13 @@ export declare class ProductService {
     createCategory(dto: CreateCategoryDto): Promise<ProductCategoryEntity>;
     findAllUnits(): Promise<UnitEntity[]>;
     createUnit(dto: CreateUnitDto): Promise<UnitEntity>;
+    getPriceHistory(): Promise<Record<number, any>>;
+    getProductPriceHistory(productId: number): Promise<{
+        salesCount: any;
+        minPrice: number;
+        maxPrice: number;
+        avgPrice: number;
+        lastPrice: number;
+        history: any;
+    }>;
 }

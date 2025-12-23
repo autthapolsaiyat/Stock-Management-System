@@ -21,17 +21,23 @@ let CustomerController = class CustomerController {
     constructor(customerService) {
         this.customerService = customerService;
     }
-    findAll() { return this.customerService.findAll(); }
+    findAll(groupId) {
+        return this.customerService.findAll(groupId ? parseInt(groupId) : undefined);
+    }
     findOne(id) { return this.customerService.findOne(id); }
     create(dto) { return this.customerService.create(dto); }
     update(id, dto) { return this.customerService.update(id, dto); }
-    delete(id) { return this.customerService.delete(id); }
+    updateGroup(id, groupId) {
+        return this.customerService.updateGroup(id, groupId);
+    }
 };
 exports.CustomerController = CustomerController;
 __decorate([
     (0, common_1.Get)(),
+    (0, swagger_1.ApiQuery)({ name: 'groupId', required: false, type: Number }),
+    __param(0, (0, common_1.Query)('groupId')),
     __metadata("design:type", Function),
-    __metadata("design:paramtypes", []),
+    __metadata("design:paramtypes", [String]),
     __metadata("design:returntype", void 0)
 ], CustomerController.prototype, "findAll", null);
 __decorate([
@@ -57,12 +63,13 @@ __decorate([
     __metadata("design:returntype", void 0)
 ], CustomerController.prototype, "update", null);
 __decorate([
-    (0, common_1.Delete)(':id'),
+    (0, common_1.Put)(':id/group'),
     __param(0, (0, common_1.Param)('id', common_1.ParseIntPipe)),
+    __param(1, (0, common_1.Body)('groupId', common_1.ParseIntPipe)),
     __metadata("design:type", Function),
-    __metadata("design:paramtypes", [Number]),
+    __metadata("design:paramtypes", [Number, Number]),
     __metadata("design:returntype", void 0)
-], CustomerController.prototype, "delete", null);
+], CustomerController.prototype, "updateGroup", null);
 exports.CustomerController = CustomerController = __decorate([
     (0, swagger_1.ApiTags)('Customers'),
     (0, swagger_1.ApiBearerAuth)(),

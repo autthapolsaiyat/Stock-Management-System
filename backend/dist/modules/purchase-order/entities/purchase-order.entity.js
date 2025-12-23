@@ -52,9 +52,21 @@ __decorate([
     __metadata("design:type", String)
 ], PurchaseOrderEntity.prototype, "supplierName", void 0);
 __decorate([
+    (0, typeorm_1.Column)({ name: 'supplier_tax_id', type: 'varchar', length: 20, nullable: true }),
+    __metadata("design:type", String)
+], PurchaseOrderEntity.prototype, "supplierTaxId", void 0);
+__decorate([
     (0, typeorm_1.Column)({ name: 'supplier_address', type: 'text', nullable: true }),
     __metadata("design:type", String)
 ], PurchaseOrderEntity.prototype, "supplierAddress", void 0);
+__decorate([
+    (0, typeorm_1.Column)({ name: 'supplier_phone', type: 'varchar', length: 50, nullable: true }),
+    __metadata("design:type", String)
+], PurchaseOrderEntity.prototype, "supplierPhone", void 0);
+__decorate([
+    (0, typeorm_1.Column)({ name: 'supplier_email', type: 'varchar', length: 200, nullable: true }),
+    __metadata("design:type", String)
+], PurchaseOrderEntity.prototype, "supplierEmail", void 0);
 __decorate([
     (0, typeorm_1.Column)({ name: 'contact_person', type: 'varchar', length: 100, nullable: true }),
     __metadata("design:type", String)

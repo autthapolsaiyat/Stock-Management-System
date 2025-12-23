@@ -11,6 +11,7 @@ export declare class GoodsReceiptEntity {
     quotationDocNo: string;
     supplierId: number;
     supplierName: string;
+    supplierTaxId: string;
     warehouseId: number;
     warehouseName: string;
     docDate: Date;

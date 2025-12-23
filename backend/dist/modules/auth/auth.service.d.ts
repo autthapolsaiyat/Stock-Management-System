@@ -13,11 +13,14 @@ export declare class AuthService {
             fullName: string;
             email: string;
             quotationType: string;
+            customerGroupId: number;
+            customerGroup: import("../customer-group/entities/customer-group.entity").CustomerGroupEntity;
         };
         accessToken: string;
         roles: string[];
         permissions: string[];
         quotationType: string;
+        customerGroupId: number;
     }>;
     changePassword(userId: number, currentPassword: string, newPassword: string): Promise<{
         message: string;

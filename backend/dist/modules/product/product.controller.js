@@ -37,6 +37,12 @@ let ProductController = class ProductController {
     createUnit(dto) {
         return this.productService.createUnit(dto);
     }
+    getPriceHistory() {
+        return this.productService.getPriceHistory();
+    }
+    getProductPriceHistory(id) {
+        return this.productService.getProductPriceHistory(id);
+    }
     findOne(id) {
         return this.productService.findOne(id);
     }
@@ -92,6 +98,21 @@ __decorate([
     __metadata("design:paramtypes", [product_dto_1.CreateUnitDto]),
     __metadata("design:returntype", void 0)
 ], ProductController.prototype, "createUnit", null);
+__decorate([
+    (0, common_1.Get)('price-history'),
+    (0, swagger_1.ApiOperation)({ summary: 'Get price history for all products from approved quotations' }),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", []),
+    __metadata("design:returntype", void 0)
+], ProductController.prototype, "getPriceHistory", null);
+__decorate([
+    (0, common_1.Get)(':id/price-history'),
+    (0, swagger_1.ApiOperation)({ summary: 'Get price history for a specific product' }),
+    __param(0, (0, common_1.Param)('id', common_1.ParseIntPipe)),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [Number]),
+    __metadata("design:returntype", void 0)
+], ProductController.prototype, "getProductPriceHistory", null);
 __decorate([
     (0, common_1.Get)(':id'),
     (0, swagger_1.ApiOperation)({ summary: 'Get product by ID' }),

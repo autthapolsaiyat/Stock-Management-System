@@ -20,10 +20,11 @@ const product_entity_1 = require("./entities/product.entity");
 const product_category_entity_1 = require("./entities/product-category.entity");
 const unit_entity_1 = require("./entities/unit.entity");
 let ProductService = class ProductService {
-    constructor(productRepository, categoryRepository, unitRepository) {
+    constructor(productRepository, categoryRepository, unitRepository, dataSource) {
         this.productRepository = productRepository;
         this.categoryRepository = categoryRepository;
         this.unitRepository = unitRepository;
+        this.dataSource = dataSource;
     }
     async findAll(categoryId, quotationType) {
         const where = { isActive: true };
@@ -75,6 +76,101 @@ let ProductService = class ProductService {
         const unit = this.unitRepository.create({ ...dto, isActive: true });
         return this.unitRepository.save(unit);
     }
+    async getPriceHistory() {
+        const query = `
+      SELECT 
+        qi.product_id as "productId",
+        COUNT(DISTINCT q.id) as "salesCount",
+        MIN(qi.unit_price) as "minPrice",
+        MAX(qi.unit_price) as "maxPrice",
+        AVG(qi.unit_price) as "avgPrice",
+        EXTRACT(YEAR FROM q.doc_date) as "year"
+      FROM quotation_items qi
+      JOIN quotations q ON qi.quotation_id = q.id
+      WHERE q.status IN ('APPROVED', 'COMPLETED', 'INVOICED', 'PAID')
+        AND qi.product_id IS NOT NULL
+        AND qi.source_type = 'MASTER'
+      GROUP BY qi.product_id, EXTRACT(YEAR FROM q.doc_date)
+      ORDER BY qi.product_id, "year" DESC
+    `;
+        const results = await this.dataSource.query(query);
+        const priceHistory = {};
+        for (const row of results) {
+            const productId = row.productId;
+            if (!priceHistory[productId]) {
+                priceHistory[productId] = {
+                    salesCount: 0,
+                    minPrice: null,
+                    maxPrice: null,
+                    avgPrice: null,
+                    yearlyData: [],
+                };
+            }
+            priceHistory[productId].salesCount += parseInt(row.salesCount);
+            const minPrice = parseFloat(row.minPrice);
+            const maxPrice = parseFloat(row.maxPrice);
+            if (priceHistory[productId].minPrice === null || minPrice < priceHistory[productId].minPrice) {
+                priceHistory[productId].minPrice = minPrice;
+            }
+            if (priceHistory[productId].maxPrice === null || maxPrice > priceHistory[productId].maxPrice) {
+                priceHistory[productId].maxPrice = maxPrice;
+            }
+            priceHistory[productId].yearlyData.push({
+                year: parseInt(row.year),
+                salesCount: parseInt(row.salesCount),
+                minPrice: minPrice,
+                maxPrice: maxPrice,
+                avgPrice: parseFloat(row.avgPrice),
+            });
+        }
+        for (const productId in priceHistory) {
+            const data = priceHistory[productId];
+            if (data.yearlyData.length > 0) {
+                const totalAvg = data.yearlyData.reduce((sum, y) => sum + y.avgPrice * y.salesCount, 0);
+                data.avgPrice = totalAvg / data.salesCount;
+            }
+        }
+        return priceHistory;
+    }
+    async getProductPriceHistory(productId) {
+        const query = `
+      SELECT 
+        qi.unit_price as "unitPrice",
+        qi.qty,
+        qi.line_total as "lineTotal",
+        q.doc_full_no as "docNo",
+        q.doc_date as "docDate",
+        q.status,
+        c.name as "customerName"
+      FROM quotation_items qi
+      JOIN quotations q ON qi.quotation_id = q.id
+      LEFT JOIN customers c ON q.customer_id = c.id
+      WHERE q.status IN ('APPROVED', 'COMPLETED', 'INVOICED', 'PAID')
+        AND qi.product_id = $1
+        AND qi.source_type = 'MASTER'
+      ORDER BY q.doc_date DESC
+      LIMIT 20
+    `;
+        const results = await this.dataSource.query(query, [productId]);
+        const summary = {
+            salesCount: results.length,
+            minPrice: results.length > 0 ? Math.min(...results.map((r) => parseFloat(r.unitPrice))) : 0,
+            maxPrice: results.length > 0 ? Math.max(...results.map((r) => parseFloat(r.unitPrice))) : 0,
+            avgPrice: results.length > 0
+                ? results.reduce((sum, r) => sum + parseFloat(r.unitPrice), 0) / results.length
+                : 0,
+            lastPrice: results.length > 0 ? parseFloat(results[0].unitPrice) : 0,
+            history: results.map((r) => ({
+                unitPrice: parseFloat(r.unitPrice),
+                qty: parseFloat(r.qty),
+                lineTotal: parseFloat(r.lineTotal),
+                docNo: r.docNo,
+                docDate: r.docDate,
+                customerName: r.customerName,
+            })),
+        };
+        return summary;
+    }
 };
 exports.ProductService = ProductService;
 exports.ProductService = ProductService = __decorate([
@@ -84,6 +180,7 @@ exports.ProductService = ProductService = __decorate([
     __param(2, (0, typeorm_1.InjectRepository)(unit_entity_1.UnitEntity)),
     __metadata("design:paramtypes", [typeorm_2.Repository,
         typeorm_2.Repository,
-        typeorm_2.Repository])
+        typeorm_2.Repository,
+        typeorm_2.DataSource])
 ], ProductService);
 //# sourceMappingURL=product.service.js.map

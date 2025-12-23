@@ -12,6 +12,7 @@ Object.defineProperty(exports, "__esModule", { value: true });
 exports.UserEntity = void 0;
 const typeorm_1 = require("typeorm");
 const user_role_entity_1 = require("./user-role.entity");
+const customer_group_entity_1 = require("../../customer-group/entities/customer-group.entity");
 let UserEntity = class UserEntity {
 };
 exports.UserEntity = UserEntity;
@@ -43,6 +44,15 @@ __decorate([
     (0, typeorm_1.Column)({ name: 'quotation_type', nullable: true }),
     __metadata("design:type", String)
 ], UserEntity.prototype, "quotationType", void 0);
+__decorate([
+    (0, typeorm_1.Column)({ name: 'customer_group_id', nullable: true }),
+    __metadata("design:type", Number)
+], UserEntity.prototype, "customerGroupId", void 0);
+__decorate([
+    (0, typeorm_1.ManyToOne)(() => customer_group_entity_1.CustomerGroupEntity),
+    (0, typeorm_1.JoinColumn)({ name: 'customer_group_id' }),
+    __metadata("design:type", customer_group_entity_1.CustomerGroupEntity)
+], UserEntity.prototype, "customerGroup", void 0);
 __decorate([
     (0, typeorm_1.Column)({ name: 'last_login_at', nullable: true }),
     __metadata("design:type", Date)

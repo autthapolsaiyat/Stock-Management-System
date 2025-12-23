@@ -60,6 +60,10 @@ __decorate([
     __metadata("design:type", String)
 ], GoodsReceiptEntity.prototype, "supplierName", void 0);
 __decorate([
+    (0, typeorm_1.Column)({ name: 'supplier_tax_id', type: 'varchar', length: 20, nullable: true }),
+    __metadata("design:type", String)
+], GoodsReceiptEntity.prototype, "supplierTaxId", void 0);
+__decorate([
     (0, typeorm_1.Column)({ name: 'warehouse_id' }),
     __metadata("design:type", Number)
 ], GoodsReceiptEntity.prototype, "warehouseId", void 0);

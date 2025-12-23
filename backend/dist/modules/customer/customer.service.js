@@ -21,15 +21,23 @@ let CustomerService = class CustomerService {
     constructor(customerRepository) {
         this.customerRepository = customerRepository;
     }
-    async findAll() {
-        return this.customerRepository.find({
-            where: { isActive: true },
-            order: { code: 'ASC' }
-        });
+    async findAll(groupId) {
+        const query = this.customerRepository.createQueryBuilder('customer')
+            .leftJoinAndSelect('customer.group', 'group')
+            .where('customer.isActive = :isActive', { isActive: true });
+        if (groupId) {
+            query.andWhere('(customer.groupId = :groupId OR group.code = :genCode)', {
+                groupId,
+                genCode: 'GEN'
+            });
+        }
+        query.orderBy('customer.code', 'ASC');
+        return query.getMany();
     }
     async findOne(id) {
         const customer = await this.customerRepository.findOne({
-            where: { id }
+            where: { id },
+            relations: ['group']
         });
         if (!customer)
             throw new common_1.NotFoundException('Customer not found');
@@ -44,10 +52,16 @@ let CustomerService = class CustomerService {
         Object.assign(customer, dto);
         return this.customerRepository.save(customer);
     }
-    async delete(id) {
-        const customer = await this.findOne(id);
-        customer.isActive = false;
-        return this.customerRepository.save(customer);
+    async updateGroup(id, groupId) {
+        await this.customerRepository.update(id, { groupId });
+        return this.findOne(id);
+    }
+    async findByGroup(groupId) {
+        return this.customerRepository.find({
+            where: { groupId, isActive: true },
+            relations: ['group'],
+            order: { code: 'ASC' }
+        });
     }
 };
 exports.CustomerService = CustomerService;

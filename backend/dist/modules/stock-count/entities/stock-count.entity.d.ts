@@ -1,0 +1,30 @@
+import { StockCountItemEntity } from './stock-count-item.entity';
+export declare class StockCountEntity {
+    id: number;
+    docBaseNo: string;
+    docRevision: number;
+    docFullNo: string;
+    isLatestRevision: boolean;
+    warehouseId: number;
+    warehouseName: string;
+    countDate: Date;
+    countType: string;
+    categoryIds: number[];
+    description: string;
+    status: string;
+    totalItems: number;
+    countedItems: number;
+    varianceItems: number;
+    totalVarianceValue: number;
+    remark: string;
+    adjustmentId: number;
+    startedAt: Date;
+    completedAt: Date;
+    approvedAt: Date;
+    approvedBy: number;
+    createdAt: Date;
+    updatedAt: Date;
+    createdBy: number;
+    updatedBy: number;
+    items: StockCountItemEntity[];
+}
