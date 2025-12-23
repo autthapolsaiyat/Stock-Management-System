@@ -6,6 +6,7 @@ import {
   LoginPage,
   DashboardPage,
   DashboardDetailPage,
+  ExecutiveDashboardPage,
   IntroPage, ProfilePage,
   UserManagementPage,
   ActivityLogPage,
@@ -72,6 +73,13 @@ const App: React.FC = () => {
       <Route path="/dashboard-detail" element={
         <ProtectedRoute>
           <DashboardDetailPage />
+        </ProtectedRoute>
+      } />
+
+      {/* Executive Dashboard - No Layout (for bank presentation) */}
+      <Route path="/executive-dashboard" element={
+        <ProtectedRoute>
+          <ExecutiveDashboardPage />
         </ProtectedRoute>
       } />
 
