@@ -82,10 +82,11 @@ const StockCountsPage: React.FC = () => {
 
   const handleStart = async (id: number) => {
     Modal.confirm({
-      title: 'เริ่มนับสต็อก',
-      content: 'ต้องการเริ่มนับสต็อกหรือไม่? ระบบจะอัพเดทยอดสต็อกในระบบให้เป็นปัจจุบัน',
+      title: <span style={{ color: '#f8fafc', fontSize: 18, fontWeight: 600 }}>🚀 เริ่มนับสต็อก</span>,
+      content: <span style={{ color: '#e2e8f0', fontSize: 14 }}>ต้องการเริ่มนับสต็อกหรือไม่?<br/>ระบบจะอัพเดทยอดสต็อกในระบบให้เป็นปัจจุบัน</span>,
       okText: 'เริ่มนับ',
       cancelText: 'ยกเลิก',
+      className: 'dark-modal',
       onOk: async () => {
         try {
           await stockCountsApi.start(id);
@@ -101,10 +102,11 @@ const StockCountsPage: React.FC = () => {
 
   const handleComplete = async (id: number) => {
     Modal.confirm({
-      title: 'เสร็จสิ้นการนับ',
-      content: 'ยืนยันว่านับสินค้าครบทุกรายการแล้ว?',
+      title: <span style={{ color: '#f8fafc', fontSize: 18, fontWeight: 600 }}>✅ เสร็จสิ้นการนับ</span>,
+      content: <span style={{ color: '#e2e8f0', fontSize: 14 }}>ยืนยันว่านับสินค้าครบทุกรายการแล้ว?</span>,
       okText: 'เสร็จสิ้น',
       cancelText: 'ยกเลิก',
+      className: 'dark-modal',
       onOk: async () => {
         try {
           await stockCountsApi.complete(id);
@@ -120,10 +122,11 @@ const StockCountsPage: React.FC = () => {
 
   const handleApprove = async (id: number) => {
     Modal.confirm({
-      title: 'อนุมัติผลการนับ',
-      content: 'ต้องการอนุมัติผลการนับสต็อกหรือไม่?',
+      title: <span style={{ color: '#f8fafc', fontSize: 18, fontWeight: 600 }}>📋 อนุมัติผลการนับ</span>,
+      content: <span style={{ color: '#e2e8f0', fontSize: 14 }}>ต้องการอนุมัติผลการนับสต็อกหรือไม่?</span>,
       okText: 'อนุมัติ',
       cancelText: 'ยกเลิก',
+      className: 'dark-modal',
       onOk: async () => {
         try {
           await stockCountsApi.approve(id);
@@ -139,10 +142,11 @@ const StockCountsPage: React.FC = () => {
 
   const handleCreateAdjustment = async (id: number) => {
     Modal.confirm({
-      title: 'สร้างใบปรับสต็อก',
-      content: 'ต้องการสร้างใบปรับสต็อกจากผลการนับหรือไม่? จะสร้างเฉพาะรายการที่มีผลต่าง',
+      title: <span style={{ color: '#f8fafc', fontSize: 18, fontWeight: 600 }}>🔄 สร้างใบปรับสต็อก</span>,
+      content: <span style={{ color: '#e2e8f0', fontSize: 14 }}>ต้องการสร้างใบปรับสต็อกจากผลการนับหรือไม่?<br/>จะสร้างเฉพาะรายการที่มีผลต่าง</span>,
       okText: 'สร้าง',
       cancelText: 'ยกเลิก',
+      className: 'dark-modal',
       onOk: async () => {
         try {
           const res = await stockCountsApi.createAdjustment(id);

@@ -100,10 +100,11 @@ const StockAdjustmentsPage: React.FC = () => {
 
   const handlePost = async (id: number) => {
     Modal.confirm({
-      title: 'ยืนยันการปรับสต็อก',
-      content: 'ต้องการยืนยันการปรับสต็อกหรือไม่? การดำเนินการนี้จะส่งผลต่อยอดสต็อกในระบบ',
+      title: <span style={{ color: '#f8fafc', fontSize: 18, fontWeight: 600 }}>✅ ยืนยันการปรับสต็อก</span>,
+      content: <span style={{ color: '#e2e8f0', fontSize: 14 }}>ต้องการยืนยันการปรับสต็อกหรือไม่?<br/>การดำเนินการนี้จะส่งผลต่อยอดสต็อกในระบบ</span>,
       okText: 'ยืนยัน',
       cancelText: 'ยกเลิก',
+      className: 'dark-modal',
       onOk: async () => {
         try {
           await stockAdjustmentsApi.post(id);
@@ -119,11 +120,12 @@ const StockAdjustmentsPage: React.FC = () => {
 
   const handleCancel = async (id: number) => {
     Modal.confirm({
-      title: 'ยกเลิกการปรับสต็อก',
-      content: 'ต้องการยกเลิกการปรับสต็อกหรือไม่? ระบบจะทำการกลับรายการสต็อก',
-      okText: 'ยกเลิก',
+      title: <span style={{ color: '#f8fafc', fontSize: 18, fontWeight: 600 }}>⚠️ ยกเลิกการปรับสต็อก</span>,
+      content: <span style={{ color: '#e2e8f0', fontSize: 14 }}>ต้องการยกเลิกการปรับสต็อกหรือไม่?<br/>ระบบจะทำการกลับรายการสต็อก</span>,
+      okText: 'ยกเลิกการปรับ',
       cancelText: 'ไม่',
       okButtonProps: { danger: true },
+      className: 'dark-modal',
       onOk: async () => {
         try {
           await stockAdjustmentsApi.cancel(id);
@@ -139,11 +141,12 @@ const StockAdjustmentsPage: React.FC = () => {
 
   const handleDelete = async (id: number) => {
     Modal.confirm({
-      title: 'ลบใบปรับสต็อก',
-      content: 'ต้องการลบใบปรับสต็อกนี้หรือไม่?',
+      title: <span style={{ color: '#f8fafc', fontSize: 18, fontWeight: 600 }}>🗑️ ลบใบปรับสต็อก</span>,
+      content: <span style={{ color: '#e2e8f0', fontSize: 14 }}>ต้องการลบใบปรับสต็อกนี้หรือไม่?</span>,
       okText: 'ลบ',
       cancelText: 'ยกเลิก',
       okButtonProps: { danger: true },
+      className: 'dark-modal',
       onOk: async () => {
         try {
           await stockAdjustmentsApi.delete(id);
