@@ -184,6 +184,30 @@ export const stockTransfersApi = {
   post: (id: number) => api.post(`/api/stock-transfers/${id}/post`),
 };
 
+// Stock Adjustments API
+export const stockAdjustmentsApi = {
+  getAll: () => api.get('/api/stock-adjustments'),
+  getById: (id: number) => api.get(`/api/stock-adjustments/${id}`),
+  getProducts: (warehouseId: number) => api.get('/api/stock-adjustments/products', { params: { warehouseId } }),
+  create: (data: any) => api.post('/api/stock-adjustments', data),
+  post: (id: number) => api.post(`/api/stock-adjustments/${id}/post`),
+  cancel: (id: number) => api.post(`/api/stock-adjustments/${id}/cancel`),
+  delete: (id: number) => api.delete(`/api/stock-adjustments/${id}`),
+};
+
+// Stock Counts API
+export const stockCountsApi = {
+  getAll: () => api.get('/api/stock-counts'),
+  getById: (id: number) => api.get(`/api/stock-counts/${id}`),
+  create: (data: any) => api.post('/api/stock-counts', data),
+  start: (id: number) => api.post(`/api/stock-counts/${id}/start`),
+  updateItem: (id: number, itemId: number, data: any) => api.post(`/api/stock-counts/${id}/items/${itemId}`, data),
+  complete: (id: number) => api.post(`/api/stock-counts/${id}/complete`),
+  approve: (id: number) => api.post(`/api/stock-counts/${id}/approve`),
+  createAdjustment: (id: number) => api.post(`/api/stock-counts/${id}/create-adjustment`),
+  delete: (id: number) => api.delete(`/api/stock-counts/${id}`),
+};
+
 // Quotations API
 export const quotationsApi = {
   getAll: (params?: any) => api.get('/api/quotations', { params }),

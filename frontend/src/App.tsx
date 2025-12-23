@@ -21,6 +21,8 @@ import {
   GoodsReceiptsPage,
   StockIssuesPage,
   StockTransfersPage,
+  StockAdjustmentsPage,
+  StockCountsPage,
   QuotationList,
   QuotationForm,
   QuotationDetail,
@@ -118,6 +120,8 @@ const App: React.FC = () => {
         <Route path="stock-balance" element={<StockBalancePage />} />
         <Route path="stock-issues" element={<StockIssuesPage />} />
         <Route path="stock-transfers" element={<StockTransfersPage />} />
+        <Route path="stock-adjustments" element={<StockAdjustmentsPage />} />
+        <Route path="stock-counts" element={<StockCountsPage />} />
         
         {/* Settings */}
         <Route path="settings" element={<UserSettingsPage />} />

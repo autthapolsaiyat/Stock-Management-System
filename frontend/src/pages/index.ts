@@ -13,6 +13,8 @@ export { default as PurchaseOrdersPage } from './PurchaseOrdersPage';
 export { default as GoodsReceiptsPage } from './GoodsReceiptsPage';
 export { default as StockIssuesPage } from './StockIssuesPage';
 export { default as StockTransfersPage } from './StockTransfersPage';
+export { default as StockAdjustmentsPage } from './StockAdjustmentsPage';
+export { default as StockCountsPage } from './StockCountsPage';
 
 // Quotations
 export { QuotationList, QuotationForm, QuotationDetail } from './quotations';
