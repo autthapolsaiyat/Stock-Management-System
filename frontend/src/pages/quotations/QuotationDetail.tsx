@@ -325,9 +325,10 @@ const QuotationDetail: React.FC = () => {
     
     setCreatingGR(true);
     try {
-      await goodsReceiptsApi.createFromPO(po.id, selectedWarehouseId);
+      await goodsReceiptsApi.createFromPO(po.id, { warehouseId: selectedWarehouseId });
       message.success("สร้างใบรับสินค้าสำเร็จ");
       setWarehouseModalOpen(false);
+      setWarehouseSearchText('');
       await loadQuotation(parseInt(id!));
     } catch (error: any) {
       message.error(error.response?.data?.message || "ไม่สามารถสร้างใบรับสินค้าได้");
