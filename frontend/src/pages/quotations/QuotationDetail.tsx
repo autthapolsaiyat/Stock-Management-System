@@ -236,6 +236,7 @@ const QuotationDetail: React.FC = () => {
       await purchaseOrdersApi.createFromQuotation(parseInt(id!), selectedSupplierId);
       message.success('สร้างใบสั่งซื้อสำเร็จ');
       setSupplierModalOpen(false);
+      setSupplierSearchText('');
       // Reload quotation to update timeline
       await loadQuotation(parseInt(id!));
     } catch (error: any) {
