@@ -581,7 +581,11 @@ export class QuotationService {
           marginPercent: item.marginPercent,
           marginAmount: item.marginAmount,
           itemStatus: 'PENDING',
-          });
+          qtyOrdered: 0,
+          qtyReceived: 0,
+          qtySold: 0,
+          qtyRemaining: item.qty, // Important: set qtyRemaining = qty for new revision
+        });
         await queryRunner.manager.save(newItem);
       }
 
