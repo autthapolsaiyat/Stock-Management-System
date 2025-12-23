@@ -16,7 +16,7 @@ export class StockCountService {
     const result = await this.dataSource.query(`
       SELECT sc.*, 
         w.name as warehouse_name_ref,
-        u.display_name as created_by_name
+        u.full_name as created_by_name
       FROM stock_counts sc
       LEFT JOIN warehouses w ON sc.warehouse_id = w.id
       LEFT JOIN users u ON sc.created_by = u.id

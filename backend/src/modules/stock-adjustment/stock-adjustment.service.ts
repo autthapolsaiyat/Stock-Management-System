@@ -16,7 +16,7 @@ export class StockAdjustmentService {
     const result = await this.dataSource.query(`
       SELECT sa.*, 
         (SELECT COUNT(*) FROM stock_adjustment_items WHERE stock_adjustment_id = sa.id) as total_items,
-        u.display_name as created_by_name
+        u.full_name as created_by_name
       FROM stock_adjustments sa
       LEFT JOIN users u ON sa.created_by = u.id
       WHERE sa.is_latest_revision = true
