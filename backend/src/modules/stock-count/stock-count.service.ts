@@ -307,7 +307,7 @@ export class StockCountService {
       SET status = 'CANCELLED', 
           counted_items = 0, 
           variance_items = 0, 
-          total_variance_qty = 0, 
+          total_variance_value = 0, 
           total_variance_value = 0,
           updated_by = $1
       WHERE id = $2
