@@ -78,7 +78,7 @@ export const unitsApi = {
 
 // Customers API
 export const customersApi = {
-  getAll: () => api.get('/api/customers'),
+  getAll: (groupId?: number) => api.get('/api/customers', { params: { groupId } }),
   getById: (id: number) => api.get(`/api/customers/${id}`),
   create: (data: any) => api.post('/api/customers', data),
   update: (id: number, data: any) => api.put(`/api/customers/${id}`, data),
@@ -151,6 +151,7 @@ export const goodsReceiptsApi = {
   cancel: (id: number) => api.post(`/api/goods-receipts/${id}/cancel`),
   getByQuotation: (quotationId: number) => api.get(`/api/goods-receipts/quotation/${quotationId}`),
   reverse: (id: number, reason: string) => api.post("/api/goods-receipts/" + id + "/reverse", { reason }),
+  createFromPO: (poId: number) => api.post(`/api/goods-receipts/from-po/${poId}`),
 };
 
 // Sales Invoices API
@@ -195,8 +196,9 @@ export const quotationsApi = {
   approveMargin: (id: number) => api.post(`/api/quotations/${id}/approve-margin`),
   send: (id: number) => api.post(`/api/quotations/${id}/send`),
   confirm: (id: number) => api.post(`/api/quotations/${id}/confirm`),
-  createRevision: (id: number, reason: string) => api.post("/api/quotations/" + id + "/revision", { reason }),
+  createRevision: (id: number, reason?: string) => api.post("/api/quotations/" + id + "/revision", { reason }),
   cancel: (id: number) => api.post(`/api/quotations/${id}/cancel`),
+  void: (id: number, reason: string) => api.post(`/api/quotations/${id}/void`, { reason }),
 };
 
 // User Settings API
