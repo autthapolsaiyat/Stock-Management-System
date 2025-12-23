@@ -120,7 +120,7 @@ export class StockCountService {
   async startCount(id: number, userId?: number) {
     const count = await this.findOne(id);
 
-    if (count.status !== 'DRAFT') {
+    if (!["DRAFT", "CANCELLED"].includes(count.status)) {
       throw new BadRequestException('Can only start DRAFT counts');
     }
 
@@ -318,8 +318,8 @@ export class StockCountService {
   async delete(id: number) {
     const count = await this.findOne(id);
 
-    if (count.status !== 'DRAFT') {
-      throw new BadRequestException('Only DRAFT counts can be deleted');
+    if (!["DRAFT", "CANCELLED"].includes(count.status)) {
+      throw new BadRequestException('Only DRAFT or CANCELLED counts can be deleted');
     }
 
     await this.dataSource.query('DELETE FROM stock_count_items WHERE stock_count_id = $1', [id]);
