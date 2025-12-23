@@ -49,6 +49,18 @@ export class ProductController {
     return this.productService.createUnit(dto);
   }
 
+  @Get('price-history')
+  @ApiOperation({ summary: 'Get price history for all products from approved quotations' })
+  getPriceHistory() {
+    return this.productService.getPriceHistory();
+  }
+
+  @Get(':id/price-history')
+  @ApiOperation({ summary: 'Get price history for a specific product' })
+  getProductPriceHistory(@Param('id', ParseIntPipe) id: number) {
+    return this.productService.getProductPriceHistory(id);
+  }
+
   @Get(':id')
   @ApiOperation({ summary: 'Get product by ID' })
   findOne(@Param('id', ParseIntPipe) id: number) {
