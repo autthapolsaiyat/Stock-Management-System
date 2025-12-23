@@ -2,12 +2,12 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import {
   Card, Form, Input, Select, DatePicker, InputNumber, Button, Space, Row, Col, Checkbox,
-  Table, Tag, message, Modal, Divider, Radio, Popconfirm, Alert
+  Table, Tag, message, Modal, Divider, Radio, Popconfirm, Alert, Tooltip
 } from 'antd';
 import {
   SaveOutlined, SendOutlined, PlusOutlined, DeleteOutlined,
   SettingOutlined, CalculatorOutlined, EyeOutlined, FilterOutlined,
-  CheckCircleOutlined
+  CheckCircleOutlined, HistoryOutlined
 } from '@ant-design/icons';
 import dayjs from 'dayjs';
 import { quotationsApi, customersApi, productsApi, systemSettingsApi } from '../../services/api';
@@ -40,6 +40,7 @@ const QuotationForm: React.FC = () => {
   const [customers, setCustomers] = useState<any[]>([]);
   const [products, setProducts] = useState<any[]>([]);
   const [categories, setCategories] = useState<any[]>([]);
+  const [priceHistory, setPriceHistory] = useState<Record<number, any>>({});
   const [settings, setSettings] = useState<any>({});
   const [selectedCustomer, setSelectedCustomer] = useState<any>(null);
 
@@ -115,6 +116,14 @@ const QuotationForm: React.FC = () => {
       setCustomers(customersRes.data || []);
       setProducts(productsRes.data || []);
       setCategories(categoriesRes.data || []);
+      
+      // Load price history (non-blocking)
+      try {
+        const priceHistoryRes = await productsApi.getPriceHistory();
+        setPriceHistory(priceHistoryRes.data || {});
+      } catch (e) {
+        console.log('Price history not available');
+      }
       
       let settingsMap: any = {};
       try {
@@ -461,14 +470,14 @@ const QuotationForm: React.FC = () => {
     },
   ];
 
-  // Product Modal Columns
+  // Product Modal Columns with Price History
   const productModalColumns = [
-    { title: 'รหัส', dataIndex: 'code', width: 120 },
-    { title: 'ชื่อสินค้า', dataIndex: 'name' },
+    { title: 'รหัส', dataIndex: 'code', width: 100 },
+    { title: 'ชื่อสินค้า', dataIndex: 'name', ellipsis: true },
     { 
       title: 'หมวดหมู่', 
       dataIndex: 'categoryId', 
-      width: 120,
+      width: 100,
       render: (categoryId: number) => {
         const cat = categories.find(c => c.id === categoryId);
         return cat ? <Tag color="blue">{cat.name}</Tag> : '-';
@@ -477,7 +486,7 @@ const QuotationForm: React.FC = () => {
     { 
       title: 'ต้นทุน', 
       dataIndex: 'standardCost', 
-      width: 100, 
+      width: 90, 
       align: 'right' as const,
       render: (v: number) => (
         <span style={{ color: v > 0 ? '#22c55e' : '#6b7280' }}>
@@ -488,13 +497,67 @@ const QuotationForm: React.FC = () => {
     { 
       title: 'ราคาขาย', 
       dataIndex: 'sellingPrice', 
-      width: 100, 
+      width: 90, 
       align: 'right' as const,
       render: (v: number) => `฿${Number(v || 0).toLocaleString()}` 
     },
     {
+      title: '📈 ประวัติ',
+      dataIndex: 'id',
+      width: 110,
+      align: 'center' as const,
+      render: (productId: number) => {
+        const history = priceHistory[productId];
+        if (!history || history.salesCount === 0) {
+          return <span style={{ color: '#6b7280', fontSize: 12 }}>ยังไม่มี</span>;
+        }
+        
+        const tooltipContent = (
+          <div style={{ minWidth: 180 }}>
+            <div style={{ fontWeight: 'bold', marginBottom: 8, borderBottom: '1px solid #444', paddingBottom: 4 }}>
+              📈 ประวัติราคาขาย
+            </div>
+            <div style={{ marginBottom: 4 }}>
+              <span style={{ color: '#888' }}>ขายแล้ว:</span> <strong>{history.salesCount} ครั้ง</strong>
+            </div>
+            <div style={{ marginBottom: 4 }}>
+              <span style={{ color: '#888' }}>ราคาต่ำสุด:</span> ฿{history.minPrice?.toLocaleString()}
+            </div>
+            <div style={{ marginBottom: 4 }}>
+              <span style={{ color: '#888' }}>ราคาสูงสุด:</span> ฿{history.maxPrice?.toLocaleString()}
+            </div>
+            <div style={{ marginBottom: 8 }}>
+              <span style={{ color: '#888' }}>ราคาเฉลี่ย:</span> <span style={{ color: '#22d3ee' }}>฿{history.avgPrice?.toLocaleString(undefined, { maximumFractionDigits: 0 })}</span>
+            </div>
+            {history.yearlyData && history.yearlyData.length > 0 && (
+              <>
+                <div style={{ fontWeight: 500, marginBottom: 4, borderTop: '1px solid #444', paddingTop: 4 }}>แยกตามปี:</div>
+                {history.yearlyData.slice(0, 3).map((y: any) => (
+                  <div key={y.year} style={{ fontSize: 11, color: '#aaa' }}>
+                    {y.year + 543}: ฿{y.minPrice?.toLocaleString()}-{y.maxPrice?.toLocaleString()} ({y.salesCount}x)
+                  </div>
+                ))}
+              </>
+            )}
+          </div>
+        );
+        
+        return (
+          <Tooltip title={tooltipContent} placement="left" color="#1f2937">
+            <Tag 
+              color="cyan" 
+              style={{ cursor: 'pointer', borderRadius: 8 }}
+              icon={<HistoryOutlined />}
+            >
+              {history.salesCount}x
+            </Tag>
+          </Tooltip>
+        );
+      }
+    },
+    {
       title: '',
-      width: 60,
+      width: 50,
       render: (_: any, record: any) => (
         <Button 
           type="primary" 
