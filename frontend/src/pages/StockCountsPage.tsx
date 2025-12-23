@@ -312,6 +312,9 @@ const StockCountsPage: React.FC = () => {
           {r.status === 'APPROVED' && !r.adjustment_id && (
             <Button type="text" icon={<SyncOutlined />} onClick={() => handleCreateAdjustment(r.id)} style={{ color: '#ec4899' }} title="สร้างใบปรับสต็อก" />
           )}
+          {r.status === 'CANCELLED' && (
+            <Button type="text" icon={<DeleteOutlined />} onClick={() => handleDelete(r.id)} style={{ color: '#ef4444' }} title="ลบ" />
+          )}
         </Space>
       ),
     },
