@@ -60,7 +60,7 @@ export class StockAdjustmentService {
     );
 
     // Generate document number
-    const docNo = await this.docNumberingService.generateNumber('ADJ');
+    const { docBaseNo, docFullNo } = await this.docNumberingService.generateDocNumber('ADJ');
 
     // Calculate totals
     let totalQtyAdjust = 0;
@@ -118,10 +118,10 @@ export class StockAdjustmentService {
         warehouse_id, warehouse_name, doc_date, adjustment_type,
         reason, status, total_qty_adjust, total_value_adjust,
         remark, created_by
-      ) VALUES ($1, 1, $1, true, $2, $3, $4, $5, $6, 'DRAFT', $7, $8, $9, $10)
+      ) VALUES ($1, 1, $2, true, $3, $4, $5, $6, $7, 'DRAFT', $8, $9, $10, $11)
       RETURNING id
     `, [
-      docNo, warehouseId, warehouse?.name, docDate,
+      docBaseNo, docFullNo, warehouseId, warehouse?.name, docDate,
       adjustmentType, reason, totalQtyAdjust, totalValueAdjust,
       remark, userId
     ]);
@@ -153,28 +153,30 @@ export class StockAdjustmentService {
     // Process each item
     for (const item of adjustment.items) {
       const qtyAdjust = Number(item.qty_adjust || item.qtyAdjust);
+      const productId = item.product_id || item.productId;
+      const warehouseId = adjustment.warehouse_id || adjustment.warehouseId;
+      const unitCost = Number(item.unit_cost || item.unitCost);
+      const docFullNo = adjustment.doc_full_no || adjustment.docFullNo;
       
       if (qtyAdjust > 0) {
         // Add stock - create FIFO layer
-        await this.fifoService.addFifoLayer({
-          productId: item.product_id || item.productId,
-          warehouseId: adjustment.warehouse_id || adjustment.warehouseId,
+        await this.fifoService.createLayer({
+          productId,
+          warehouseId,
           qty: qtyAdjust,
-          unitCost: Number(item.unit_cost || item.unitCost),
-          refDocType: 'ADJ',
-          refDocId: id,
-          refDocNo: adjustment.doc_full_no || adjustment.docFullNo,
+          unitCost,
+          referenceType: 'ADJ',
+          referenceId: id,
         });
       } else if (qtyAdjust < 0) {
         // Reduce stock - deduct from FIFO
-        await this.fifoService.deductFifo({
-          productId: item.product_id || item.productId,
-          warehouseId: adjustment.warehouse_id || adjustment.warehouseId,
-          qty: Math.abs(qtyAdjust),
-          refDocType: 'ADJ',
-          refDocId: id,
-          refDocNo: adjustment.doc_full_no || adjustment.docFullNo,
-        });
+        await this.fifoService.deductFifo(
+          productId,
+          warehouseId,
+          Math.abs(qtyAdjust),
+          'ADJ',
+          id
+        );
       }
     }
 
@@ -199,27 +201,28 @@ export class StockAdjustmentService {
       // Reverse the stock changes
       for (const item of adjustment.items) {
         const qtyAdjust = Number(item.qty_adjust || item.qtyAdjust);
+        const productId = item.product_id || item.productId;
+        const warehouseId = adjustment.warehouse_id || adjustment.warehouseId;
+        const unitCost = Number(item.unit_cost || item.unitCost);
         
         if (qtyAdjust > 0) {
           // Was added, now deduct
-          await this.fifoService.deductFifo({
-            productId: item.product_id || item.productId,
-            warehouseId: adjustment.warehouse_id || adjustment.warehouseId,
-            qty: qtyAdjust,
-            refDocType: 'ADJ_REV',
-            refDocId: id,
-            refDocNo: `${adjustment.doc_full_no || adjustment.docFullNo}-REV`,
-          });
+          await this.fifoService.deductFifo(
+            productId,
+            warehouseId,
+            qtyAdjust,
+            'ADJ_REV',
+            id
+          );
         } else if (qtyAdjust < 0) {
           // Was deducted, now add back
-          await this.fifoService.addFifoLayer({
-            productId: item.product_id || item.productId,
-            warehouseId: adjustment.warehouse_id || adjustment.warehouseId,
+          await this.fifoService.createLayer({
+            productId,
+            warehouseId,
             qty: Math.abs(qtyAdjust),
-            unitCost: Number(item.unit_cost || item.unitCost),
-            refDocType: 'ADJ_REV',
-            refDocId: id,
-            refDocNo: `${adjustment.doc_full_no || adjustment.docFullNo}-REV`,
+            unitCost,
+            referenceType: 'ADJ_REV',
+            referenceId: id,
           });
         }
       }

@@ -61,7 +61,7 @@ export class StockCountService {
     );
 
     // Generate document number
-    const docNo = await this.docNumberingService.generateNumber('CNT');
+    const { docBaseNo, docFullNo } = await this.docNumberingService.generateDocNumber('CNT');
 
     // Get products to count based on type
     let productQuery = `
@@ -92,10 +92,10 @@ export class StockCountService {
         doc_base_no, doc_revision, doc_full_no, is_latest_revision,
         warehouse_id, warehouse_name, count_date, count_type,
         category_ids, description, status, total_items, remark, created_by
-      ) VALUES ($1, 1, $1, true, $2, $3, $4, $5, $6, $7, 'DRAFT', $8, $9, $10)
+      ) VALUES ($1, 1, $2, true, $3, $4, $5, $6, $7, $8, 'DRAFT', $9, $10, $11)
       RETURNING id
     `, [
-      docNo, warehouseId, warehouse?.name, countDate,
+      docBaseNo, docFullNo, warehouseId, warehouse?.name, countDate,
       countType, categoryIds ? JSON.stringify(categoryIds) : null,
       description, products.length, remark, userId
     ]);
