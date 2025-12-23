@@ -291,10 +291,7 @@ const TaxInvoicePrintPreview: React.FC<TaxInvoicePrintPreviewProps> = ({
                 <td style={{ width: '50%', border: '1px solid #000', padding: 15, textAlign: 'center', color: '#000' }}>
                   <div style={{ marginBottom: 5 }}>ในนามของ / On behalf of</div>
                   <div style={{ fontWeight: 'bold' }}>{companySettings.COMPANY_NAME_TH || 'บริษัท แสงวิทย์ ซายน์ จำกัด'}</div>
-                  {companySettings.COMPANY_SIGNATURE_URL && (
-                    <img src={companySettings.COMPANY_SIGNATURE_URL} alt="Signature" style={{ maxHeight: 40, margin: '5px 0' }} />
-                  )}
-                  <div>(..........................................)</div>
+                  <div style={{ marginTop: 40 }}>(..........................................)</div>
                   <div>ผู้มีอำนาจลงนาม / Authorized Signature</div>
                 </td>
               </tr>
