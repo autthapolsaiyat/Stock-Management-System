@@ -23,6 +23,8 @@ import { UserSettingsModule } from './modules/user-settings/user-settings.module
 import { VCardModule } from './modules/vcard/vcard.module';
 import { CategoryModule } from './modules/category/category.module';
 import { CustomerGroupModule } from './modules/customer-group/customer-group.module';
+import { StockAdjustmentModule } from './modules/stock-adjustment/stock-adjustment.module';
+import { StockCountModule } from './modules/stock-count/stock-count.module';
 
 @Module({
   imports: [
@@ -64,6 +66,8 @@ import { CustomerGroupModule } from './modules/customer-group/customer-group.mod
     VCardModule,
     CategoryModule,
     CustomerGroupModule,
+    StockAdjustmentModule,
+    StockCountModule,
   ],
 })
 export class AppModule {}
