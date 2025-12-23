@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { Table, Button, Card, Space, Tag, message, Modal, Form, Select, Input, DatePicker, Progress, InputNumber } from 'antd';
-import { PlusOutlined, EyeOutlined, PlayCircleOutlined, CheckOutlined, FileDoneOutlined, SyncOutlined } from '@ant-design/icons';
+import { PlusOutlined, EyeOutlined, PlayCircleOutlined, CheckOutlined, FileDoneOutlined, SyncOutlined, DeleteOutlined, StopOutlined } from '@ant-design/icons';
 import { stockCountsApi, warehousesApi, categoriesApi } from '../services/api';
 import dayjs from 'dayjs';
 
@@ -160,6 +160,47 @@ const StockCountsPage: React.FC = () => {
     });
   };
 
+  const handleCancelCount = async (id: number) => {
+    Modal.confirm({
+      title: <span style={{ color: '#f8fafc', fontSize: 18, fontWeight: 600 }}>⛔ ยกเลิกการนับ</span>,
+      content: <span style={{ color: '#e2e8f0', fontSize: 14 }}>ต้องการยกเลิกการนับสต็อกนี้หรือไม่?<br/>ข้อมูลการนับทั้งหมดจะถูกล้าง</span>,
+      okText: 'ยกเลิกการนับ',
+      cancelText: 'ไม่',
+      okButtonProps: { danger: true },
+      className: 'dark-modal',
+      onOk: async () => {
+        try {
+          await stockCountsApi.cancel(id);
+          message.success('ยกเลิกการนับแล้ว');
+          loadData();
+          setDetailVisible(false);
+        } catch (error: any) {
+          message.error(error.response?.data?.message || 'เกิดข้อผิดพลาด');
+        }
+      }
+    });
+  };
+
+  const handleDelete = async (id: number) => {
+    Modal.confirm({
+      title: <span style={{ color: '#f8fafc', fontSize: 18, fontWeight: 600 }}>🗑️ ลบใบนับสต็อก</span>,
+      content: <span style={{ color: '#e2e8f0', fontSize: 14 }}>ต้องการลบใบนับสต็อกนี้หรือไม่?<br/>การดำเนินการนี้ไม่สามารถย้อนกลับได้</span>,
+      okText: 'ลบ',
+      cancelText: 'ยกเลิก',
+      okButtonProps: { danger: true },
+      className: 'dark-modal',
+      onOk: async () => {
+        try {
+          await stockCountsApi.delete(id);
+          message.success('ลบสำเร็จ');
+          loadData();
+        } catch (error: any) {
+          message.error(error.response?.data?.message || 'เกิดข้อผิดพลาด');
+        }
+      }
+    });
+  };
+
   const handleUpdateItemCount = async () => {
     try {
       const values = countForm.getFieldsValue();
@@ -204,14 +245,16 @@ const StockCountsPage: React.FC = () => {
     IN_PROGRESS: 'processing', 
     COMPLETED: 'warning',
     APPROVED: 'success', 
-    ADJUSTED: 'purple' 
+    ADJUSTED: 'purple',
+    CANCELLED: 'error'
   };
   const statusLabels: Record<string, string> = { 
     DRAFT: 'ร่าง', 
     IN_PROGRESS: 'กำลังนับ', 
     COMPLETED: 'นับเสร็จ',
     APPROVED: 'อนุมัติแล้ว', 
-    ADJUSTED: 'ปรับสต็อกแล้ว' 
+    ADJUSTED: 'ปรับสต็อกแล้ว',
+    CANCELLED: 'ยกเลิก'
   };
 
   const columns = [
@@ -244,18 +287,27 @@ const StockCountsPage: React.FC = () => {
     },
     { title: 'สถานะ', dataIndex: 'status', key: 'status', render: (s: string) => <Tag color={statusColors[s]}>{statusLabels[s] || s}</Tag> },
     {
-      title: 'จัดการ', key: 'actions', width: 160,
+      title: 'จัดการ', key: 'actions', width: 200,
       render: (_: any, r: StockCount) => (
         <Space>
-          <Button type="text" icon={<EyeOutlined />} onClick={() => handleView(r.id)} style={{ color: '#22d3ee' }} />
+          <Button type="text" icon={<EyeOutlined />} onClick={() => handleView(r.id)} style={{ color: '#22d3ee' }} title="ดูรายละเอียด" />
           {r.status === 'DRAFT' && (
-            <Button type="text" icon={<PlayCircleOutlined />} onClick={() => handleStart(r.id)} style={{ color: '#10b981' }} title="เริ่มนับ" />
+            <>
+              <Button type="text" icon={<PlayCircleOutlined />} onClick={() => handleStart(r.id)} style={{ color: '#10b981' }} title="เริ่มนับ" />
+              <Button type="text" icon={<DeleteOutlined />} onClick={() => handleDelete(r.id)} style={{ color: '#ef4444' }} title="ลบ" />
+            </>
           )}
           {r.status === 'IN_PROGRESS' && (
-            <Button type="text" icon={<CheckOutlined />} onClick={() => handleComplete(r.id)} style={{ color: '#f59e0b' }} title="เสร็จสิ้น" />
+            <>
+              <Button type="text" icon={<CheckOutlined />} onClick={() => handleComplete(r.id)} style={{ color: '#f59e0b' }} title="เสร็จสิ้น" />
+              <Button type="text" icon={<StopOutlined />} onClick={() => handleCancelCount(r.id)} style={{ color: '#ef4444' }} title="ยกเลิกการนับ" />
+            </>
           )}
           {r.status === 'COMPLETED' && (
-            <Button type="text" icon={<FileDoneOutlined />} onClick={() => handleApprove(r.id)} style={{ color: '#8b5cf6' }} title="อนุมัติ" />
+            <>
+              <Button type="text" icon={<FileDoneOutlined />} onClick={() => handleApprove(r.id)} style={{ color: '#8b5cf6' }} title="อนุมัติ" />
+              <Button type="text" icon={<StopOutlined />} onClick={() => handleCancelCount(r.id)} style={{ color: '#ef4444' }} title="ยกเลิกการนับ" />
+            </>
           )}
           {r.status === 'APPROVED' && !r.adjustment_id && (
             <Button type="text" icon={<SyncOutlined />} onClick={() => handleCreateAdjustment(r.id)} style={{ color: '#ec4899' }} title="สร้างใบปรับสต็อก" />

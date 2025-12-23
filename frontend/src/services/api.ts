@@ -205,6 +205,7 @@ export const stockCountsApi = {
   complete: (id: number) => api.post(`/api/stock-counts/${id}/complete`),
   approve: (id: number) => api.post(`/api/stock-counts/${id}/approve`),
   createAdjustment: (id: number) => api.post(`/api/stock-counts/${id}/create-adjustment`),
+  cancel: (id: number) => api.post(`/api/stock-counts/${id}/cancel`),
   delete: (id: number) => api.delete(`/api/stock-counts/${id}`),
 };
 
