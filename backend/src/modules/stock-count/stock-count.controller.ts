@@ -47,6 +47,11 @@ export class StockCountController {
     return this.stockCountService.approve(Number(id), req.user?.id);
   }
 
+  @Post(':id/cancel')
+  cancel(@Param('id') id: string, @Request() req: any) {
+    return this.stockCountService.cancel(Number(id), req.user?.id);
+  }
+
   @Post(':id/create-adjustment')
   createAdjustment(@Param('id') id: string, @Request() req: any) {
     return this.stockCountService.createAdjustment(Number(id), req.user?.id);

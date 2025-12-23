@@ -16,7 +16,7 @@ export class StockCountService {
     const result = await this.dataSource.query(`
       SELECT sc.*, 
         w.name as warehouse_name_ref,
-        u.full_name as created_by_name
+        u.display_name as created_by_name
       FROM stock_counts sc
       LEFT JOIN warehouses w ON sc.warehouse_id = w.id
       LEFT JOIN users u ON sc.created_by = u.id
@@ -284,6 +284,36 @@ export class StockCountService {
     `, [adjustment.id, userId, id]);
 
     return { count: await this.findOne(id), adjustment };
+  }
+
+  async cancel(id: number, userId: number) {
+    const count = await this.findOne(id);
+
+    if (!['IN_PROGRESS', 'COMPLETED'].includes(count.status)) {
+      throw new BadRequestException('Only IN_PROGRESS or COMPLETED counts can be cancelled');
+    }
+
+    // Reset all item counts
+    await this.dataSource.query(`
+      UPDATE stock_count_items 
+      SET qty_count1 = NULL, qty_count2 = NULL, qty_final = NULL, 
+          qty_variance = 0, count_status = 'NOT_COUNTED', remark = NULL
+      WHERE stock_count_id = $1
+    `, [id]);
+
+    // Reset count status to DRAFT
+    await this.dataSource.query(`
+      UPDATE stock_counts 
+      SET status = 'CANCELLED', 
+          counted_items = 0, 
+          variance_items = 0, 
+          total_variance_qty = 0, 
+          total_variance_value = 0,
+          updated_by = $1
+      WHERE id = $2
+    `, [userId, id]);
+
+    return this.findOne(id);
   }
 
   async delete(id: number) {
