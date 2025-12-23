@@ -4,10 +4,6 @@ import { useNavigate } from 'react-router-dom';
 import {
   DollarOutlined,
   RiseOutlined,
-  FallOutlined,
-  FileTextOutlined,
-  ShoppingCartOutlined,
-  CheckCircleOutlined,
   ClockCircleOutlined,
   BankOutlined,
   TeamOutlined,
@@ -16,6 +12,8 @@ import {
   ArrowLeftOutlined,
   SafetyCertificateOutlined,
   BarChartOutlined,
+  ShoppingCartOutlined,
+  CheckCircleOutlined,
 } from '@ant-design/icons';
 import api from '../services/api';
 
