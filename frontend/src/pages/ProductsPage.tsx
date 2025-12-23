@@ -352,7 +352,7 @@ const ProductsPage: React.FC = () => {
               {categories.map((cat) => (
                 <Select.Option key={cat.id} value={cat.id}>
                   <Space>
-                    <span>{cat.icon || '🏷️'}</span>
+                    <span>🏷️</span>
                     <span>{cat.name}</span>
                     <Tag color="blue" style={{ marginLeft: 8 }}>{getCategoryCount(cat.id)}</Tag>
                   </Space>
