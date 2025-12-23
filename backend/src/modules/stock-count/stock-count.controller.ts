@@ -2,7 +2,7 @@ import { Controller, Get, Post, Body, Param, Delete, UseGuards, Request } from '
 import { StockCountService } from './stock-count.service';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 
-@Controller('api/stock-counts')
+@Controller('stock-counts')
 @UseGuards(JwtAuthGuard)
 export class StockCountController {
   constructor(private readonly stockCountService: StockCountService) {}
