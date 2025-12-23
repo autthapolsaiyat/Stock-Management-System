@@ -73,6 +73,7 @@ const QuotationDetail: React.FC = () => {
   const [warehouses, setWarehouses] = useState<any[]>([]);
   const [selectedWarehouseId, setSelectedWarehouseId] = useState<number | null>(null);
   const [creatingGR, setCreatingGR] = useState(false);
+  const [warehouseSearchText, setWarehouseSearchText] = useState('');
   
   // Payment modal (for Mark Paid)
   const [paymentModalOpen, setPaymentModalOpen] = useState(false);
@@ -992,43 +993,118 @@ const QuotationDetail: React.FC = () => {
 
       {/* Warehouse Selection Modal for GR */}
       <Modal
-        title="📦 เลือกคลังสินค้า"
+        title="🏭 เลือกคลังสินค้า"
         open={warehouseModalOpen}
-        onCancel={() => setWarehouseModalOpen(false)}
+        onCancel={() => {
+          setWarehouseModalOpen(false);
+          setWarehouseSearchText('');
+        }}
         onOk={handleConfirmCreateGR}
-        okText="สร้างใบรับสินค้า"
+        okText="✓ สร้างใบรับสินค้า"
         cancelText="ยกเลิก"
         confirmLoading={creatingGR}
         okButtonProps={{ disabled: !selectedWarehouseId }}
+        width={550}
       >
-        <div style={{ marginBottom: 16 }}>
-          <p>เลือกคลังสินค้าสำหรับรับสินค้า:</p>
+        <div style={{ marginBottom: 12 }}>
+          <p style={{ margin: 0, opacity: 0.7 }}>เลือกคลังสินค้าสำหรับรับสินค้า:</p>
         </div>
-        <Select
-          style={{ width: '100%' }}
-          placeholder="-- เลือกคลังสินค้า --"
-          value={selectedWarehouseId}
-          onChange={(value) => setSelectedWarehouseId(value)}
-        >
-          {warehouses.map((wh: any) => (
-            <Select.Option key={wh.id} value={wh.id}>
-              {wh.name}
-            </Select.Option>
-          ))}
-        </Select>
-        {selectedWarehouseId && (
-          <div style={{ marginTop: 16, padding: 12, background: '#f5f5f5', borderRadius: 8 }}>
-            {(() => {
-              const selected = warehouses.find(w => w.id === selectedWarehouseId);
-              if (!selected) return null;
-              return (
-                <>
-                  <div><strong>{selected.name}</strong></div>
-                  {selected.location && <div style={{ fontSize: 12, color: '#666', marginTop: 4 }}>ที่ตั้ง: {selected.location}</div>}
-                  {selected.description && <div style={{ fontSize: 12, marginTop: 4 }}>{selected.description}</div>}
-                </>
-              );
-            })()}
+        
+        {/* Search Box */}
+        <Input
+          placeholder="🔍 ค้นหาคลังสินค้า..."
+          prefix={<SearchOutlined style={{ opacity: 0.5 }} />}
+          value={warehouseSearchText}
+          onChange={(e) => setWarehouseSearchText(e.target.value)}
+          allowClear
+          style={{ marginBottom: 12 }}
+        />
+        
+        {/* Warehouse Radio List */}
+        <div style={{ 
+          maxHeight: 280, 
+          overflowY: 'auto', 
+          border: '1px solid var(--border-color, #d9d9d9)', 
+          borderRadius: 8,
+          background: 'var(--bg-card, #fafafa)'
+        }}>
+          <Radio.Group 
+            value={selectedWarehouseId} 
+            onChange={(e) => setSelectedWarehouseId(e.target.value)}
+            style={{ width: '100%' }}
+          >
+            {warehouses
+              .filter(w => 
+                w.name?.toLowerCase().includes(warehouseSearchText.toLowerCase()) ||
+                w.code?.toLowerCase().includes(warehouseSearchText.toLowerCase()) ||
+                w.address?.toLowerCase().includes(warehouseSearchText.toLowerCase())
+              )
+              .map((warehouse, index, arr) => (
+                <div 
+                  key={warehouse.id}
+                  style={{ 
+                    padding: '12px 16px',
+                    borderBottom: index < arr.length - 1 ? '1px solid var(--border-color, #e8e8e8)' : 'none',
+                    background: selectedWarehouseId === warehouse.id ? 'rgba(124, 58, 237, 0.15)' : 'transparent',
+                    cursor: 'pointer',
+                    transition: 'background 0.2s'
+                  }}
+                  onClick={() => setSelectedWarehouseId(warehouse.id)}
+                >
+                  <Radio value={warehouse.id} style={{ width: '100%' }}>
+                    <div style={{ marginLeft: 8 }}>
+                      <div style={{ fontWeight: 500, fontSize: 14 }}>
+                        {warehouse.name}
+                        {warehouse.code && (
+                          <span style={{ opacity: 0.5, marginLeft: 8, fontSize: 12 }}>({warehouse.code})</span>
+                        )}
+                        {selectedWarehouseId === warehouse.id && (
+                          <Tag color="purple" style={{ marginLeft: 8 }}>เลือกแล้ว</Tag>
+                        )}
+                      </div>
+                      {warehouse.address && (
+                        <div style={{ fontSize: 12, opacity: 0.65, marginTop: 4 }}>
+                          📍 {warehouse.address.length > 50 ? warehouse.address.substring(0, 50) + '...' : warehouse.address}
+                        </div>
+                      )}
+                    </div>
+                  </Radio>
+                </div>
+              ))}
+            {warehouses.filter(w => 
+              w.name?.toLowerCase().includes(warehouseSearchText.toLowerCase()) ||
+              w.code?.toLowerCase().includes(warehouseSearchText.toLowerCase()) ||
+              w.address?.toLowerCase().includes(warehouseSearchText.toLowerCase())
+            ).length === 0 && (
+              <div style={{ padding: 24, textAlign: 'center', opacity: 0.5 }}>
+                ไม่พบคลังสินค้า
+              </div>
+            )}
+          </Radio.Group>
+        </div>
+        
+        {/* PO Info Summary */}
+        {relatedDocs.purchaseOrders.length > 0 && (
+          <div style={{ marginTop: 16 }}>
+            <div style={{ fontWeight: 500, marginBottom: 8 }}>📋 ใบสั่งซื้อที่เกี่ยวข้อง:</div>
+            <div style={{ 
+              background: 'var(--bg-card, #f5f5f5)', 
+              border: '1px solid var(--border-color, #e8e8e8)',
+              borderRadius: 8, 
+              padding: 12
+            }}>
+              <div style={{ fontSize: 13 }}>
+                <strong>{relatedDocs.purchaseOrders[0]?.docFullNo}</strong>
+                <span style={{ opacity: 0.6, marginLeft: 8 }}>
+                  ({relatedDocs.purchaseOrders[0]?.items?.length || 0} รายการ)
+                </span>
+              </div>
+              {relatedDocs.purchaseOrders[0]?.supplier?.name && (
+                <div style={{ fontSize: 12, opacity: 0.7, marginTop: 4 }}>
+                  🏭 {relatedDocs.purchaseOrders[0].supplier.name}
+                </div>
+              )}
+            </div>
           </div>
         )}
       </Modal>
