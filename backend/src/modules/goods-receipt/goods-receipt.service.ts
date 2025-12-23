@@ -196,6 +196,15 @@ export class GoodsReceiptService {
       throw new BadRequestException('No pending items to receive');
     }
 
+    // Get warehouse info
+    let warehouseName = dto.warehouseName;
+    if (!warehouseName && dto.warehouseId) {
+      const whResult = await this.dataSource.query(`
+        SELECT name FROM warehouses WHERE id = $1
+      `, [dto.warehouseId]);
+      warehouseName = whResult[0]?.name;
+    }
+
     const itemsToReceive = poData.pendingItems.filter(item =>
       !dto.itemIds || dto.itemIds.includes(item.id)
     );
@@ -208,7 +217,7 @@ export class GoodsReceiptService {
       supplierId: poData.purchaseOrder.supplierId,
       supplierName: poData.purchaseOrder.supplierName,
       warehouseId: dto.warehouseId,
-      warehouseName: dto.warehouseName,
+      warehouseName: warehouseName,
       docDate: dto.docDate || new Date(),
       receiveDate: dto.receiveDate || new Date(),
       supplierInvoiceNo: dto.supplierInvoiceNo,

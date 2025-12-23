@@ -157,6 +157,14 @@ export class PurchaseOrderService {
       throw new BadRequestException('Quotation must be approved before creating PO');
     }
 
+    // Get supplier info
+    const supplierResult = await this.dataSource.query(`
+      SELECT name, address, phone, email, payment_term_days 
+      FROM suppliers WHERE id = $1
+    `, [supplierId]);
+    
+    const supplier = supplierResult[0] || {};
+
     // Get items that need ordering
     const itemsToOrder = quotation.items.filter(item => 
       item.itemStatus !== 'CANCELLED' && 
@@ -172,13 +180,15 @@ export class PurchaseOrderService {
       quotationId: quotation.id,
       quotationDocNo: quotation.docFullNo,
       supplierId: supplierId,
-      supplierName: dto.supplierName,
-      supplierAddress: dto.supplierAddress,
+      supplierName: dto.supplierName || supplier.name,
+      supplierAddress: dto.supplierAddress || supplier.address,
+      supplierPhone: dto.supplierPhone || supplier.phone,
+      supplierEmail: dto.supplierEmail || supplier.email,
       contactPerson: dto.contactPerson,
       docDate: dto.docDate || new Date(),
       deliveryDate: dto.deliveryDate,
       expectedDeliveryDate: dto.expectedDeliveryDate || new Date(Date.now() + quotation.deliveryDays * 24 * 60 * 60 * 1000),
-      paymentTermDays: dto.paymentTermDays || quotation.creditTermDays,
+      paymentTermDays: dto.paymentTermDays || supplier.payment_term_days || quotation.creditTermDays,
       paymentTermsText: dto.paymentTermsText,
       deliveryTerms: dto.deliveryTerms,
       publicNote: dto.publicNote,
