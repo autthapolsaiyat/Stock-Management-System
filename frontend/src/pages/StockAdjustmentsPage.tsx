@@ -247,6 +247,9 @@ const StockAdjustmentsPage: React.FC = () => {
           {r.status === 'POSTED' && (
             <Button type="text" icon={<CloseOutlined />} onClick={() => handleCancel(r.id)} style={{ color: '#f59e0b' }} title="ยกเลิก" />
           )}
+          {r.status === 'CANCELLED' && (
+            <Button type="text" icon={<DeleteOutlined />} onClick={() => handleDelete(r.id)} style={{ color: '#ef4444' }} title="ลบ" />
+          )}
         </Space>
       ),
     },
