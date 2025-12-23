@@ -888,13 +888,13 @@ const QuotationDetail: React.FC = () => {
         width={600}
       >
         <div style={{ marginBottom: 12 }}>
-          <p style={{ margin: 0, color: '#666' }}>เลือกผู้จำหน่ายสำหรับใบสั่งซื้อนี้:</p>
+          <p style={{ margin: 0, opacity: 0.7 }}>เลือกผู้จำหน่ายสำหรับใบสั่งซื้อนี้:</p>
         </div>
         
         {/* Search Box */}
         <Input
           placeholder="🔍 ค้นหาผู้จำหน่าย..."
-          prefix={<SearchOutlined style={{ color: '#bfbfbf' }} />}
+          prefix={<SearchOutlined style={{ opacity: 0.5 }} />}
           value={supplierSearchText}
           onChange={(e) => setSupplierSearchText(e.target.value)}
           allowClear
@@ -905,9 +905,9 @@ const QuotationDetail: React.FC = () => {
         <div style={{ 
           maxHeight: 300, 
           overflowY: 'auto', 
-          border: '1px solid #d9d9d9', 
+          border: '1px solid var(--border-color, #d9d9d9)', 
           borderRadius: 8,
-          background: '#fafafa'
+          background: 'var(--bg-card, #fafafa)'
         }}>
           <Radio.Group 
             value={selectedSupplierId} 
@@ -925,8 +925,8 @@ const QuotationDetail: React.FC = () => {
                   key={supplier.id}
                   style={{ 
                     padding: '12px 16px',
-                    borderBottom: index < arr.length - 1 ? '1px solid #e8e8e8' : 'none',
-                    background: selectedSupplierId === supplier.id ? '#e6f7ff' : 'transparent',
+                    borderBottom: index < arr.length - 1 ? '1px solid var(--border-color, #e8e8e8)' : 'none',
+                    background: selectedSupplierId === supplier.id ? 'rgba(124, 58, 237, 0.15)' : 'transparent',
                     cursor: 'pointer',
                     transition: 'background 0.2s'
                   }}
@@ -937,14 +937,14 @@ const QuotationDetail: React.FC = () => {
                       <div style={{ fontWeight: 500, fontSize: 14 }}>
                         {supplier.name}
                         {selectedSupplierId === supplier.id && (
-                          <Tag color="blue" style={{ marginLeft: 8 }}>เลือกแล้ว</Tag>
+                          <Tag color="purple" style={{ marginLeft: 8 }}>เลือกแล้ว</Tag>
                         )}
                       </div>
-                      <div style={{ fontSize: 12, color: '#888', marginTop: 4 }}>
+                      <div style={{ fontSize: 12, opacity: 0.65, marginTop: 4 }}>
                         {supplier.phone && <span style={{ marginRight: 12 }}>📞 {supplier.phone}</span>}
                         {supplier.email && <span style={{ marginRight: 12 }}>📧 {supplier.email}</span>}
                       </div>
-                      <div style={{ fontSize: 12, color: '#888', marginTop: 2 }}>
+                      <div style={{ fontSize: 12, opacity: 0.65, marginTop: 2 }}>
                         {supplier.paymentTermDays && (
                           <span style={{ marginRight: 12 }}>💳 เครดิต {supplier.paymentTermDays} วัน</span>
                         )}
@@ -961,7 +961,7 @@ const QuotationDetail: React.FC = () => {
               s.phone?.toLowerCase().includes(supplierSearchText.toLowerCase()) ||
               s.email?.toLowerCase().includes(supplierSearchText.toLowerCase())
             ).length === 0 && (
-              <div style={{ padding: 24, textAlign: 'center', color: '#999' }}>
+              <div style={{ padding: 24, textAlign: 'center', opacity: 0.5 }}>
                 ไม่พบผู้จำหน่าย
               </div>
             )}
@@ -973,15 +973,16 @@ const QuotationDetail: React.FC = () => {
           <div style={{ marginTop: 16 }}>
             <div style={{ fontWeight: 500, marginBottom: 8 }}>📦 สินค้าในใบเสนอราคานี้:</div>
             <div style={{ 
-              background: '#f5f5f5', 
+              background: 'var(--bg-card, #f5f5f5)', 
+              border: '1px solid var(--border-color, #e8e8e8)',
               borderRadius: 8, 
               padding: 12,
               maxHeight: 100,
               overflowY: 'auto'
             }}>
               {quotation.items.map((item: any, idx: number) => (
-                <div key={idx} style={{ fontSize: 12, color: '#666', marginBottom: 4 }}>
-                  • {item.productName || item.tempProductName || 'สินค้า'} ({item.qty} {item.unitName || 'ชิ้น'})
+                <div key={idx} style={{ fontSize: 12, opacity: 0.7, marginBottom: 4 }}>
+                  • {item.itemName || item.productName || item.tempProductName || 'สินค้า'} ({Number(item.qty).toLocaleString()} {item.unit || item.unitName || 'ชิ้น'})
                 </div>
               ))}
             </div>
