@@ -7,7 +7,7 @@ import {
 import {
   EditOutlined, SendOutlined, CheckCircleOutlined,
   CloseCircleOutlined, FileTextOutlined, ShoppingCartOutlined,
-  ArrowLeftOutlined, FilePdfOutlined, PrinterOutlined, SearchOutlined
+  ArrowLeftOutlined, FilePdfOutlined, PrinterOutlined, SearchOutlined, WarningOutlined
 } from '@ant-design/icons';
 import QuotationFlowProgress from '../../components/quotation/QuotationFlowProgress';
 import QuotationPrintPreview from '../../components/quotation/QuotationPrintPreview';
@@ -67,6 +67,9 @@ const QuotationDetail: React.FC = () => {
   const [selectedSupplierId, setSelectedSupplierId] = useState<number | null>(null);
   const [creatingPO, setCreatingPO] = useState(false);
   const [supplierSearchText, setSupplierSearchText] = useState('');
+  const [supplierEditMode, setSupplierEditMode] = useState(false);
+  const [editingSupplier, setEditingSupplier] = useState<any>(null);
+  const [savingSupplier, setSavingSupplier] = useState(false);
   
   // Warehouse selection modal (for GR)
   const [warehouseModalOpen, setWarehouseModalOpen] = useState(false);
@@ -74,6 +77,9 @@ const QuotationDetail: React.FC = () => {
   const [selectedWarehouseId, setSelectedWarehouseId] = useState<number | null>(null);
   const [creatingGR, setCreatingGR] = useState(false);
   const [warehouseSearchText, setWarehouseSearchText] = useState('');
+  const [warehouseEditMode, setWarehouseEditMode] = useState(false);
+  const [editingWarehouse, setEditingWarehouse] = useState<any>(null);
+  const [savingWarehouse, setSavingWarehouse] = useState(false);
   
   // Payment modal (for Mark Paid)
   const [paymentModalOpen, setPaymentModalOpen] = useState(false);
@@ -335,6 +341,88 @@ const QuotationDetail: React.FC = () => {
       message.error(error.response?.data?.message || "ไม่สามารถสร้างใบรับสินค้าได้");
     } finally {
       setCreatingGR(false);
+    }
+  };
+
+  // Supplier Edit Functions
+  const isSupplierInfoIncomplete = (supplier: any) => {
+    return !supplier.phone && !supplier.email && !supplier.address;
+  };
+
+  const openSupplierEdit = (supplier: any) => {
+    setEditingSupplier({
+      id: supplier.id,
+      phone: supplier.phone || '',
+      email: supplier.email || '',
+      address: supplier.address || '',
+      contactPerson: supplier.contactPerson || '',
+    });
+    setSupplierEditMode(true);
+  };
+
+  const handleSaveSupplierEdit = async () => {
+    if (!editingSupplier) return;
+    
+    setSavingSupplier(true);
+    try {
+      await suppliersApi.update(editingSupplier.id, {
+        phone: editingSupplier.phone,
+        email: editingSupplier.email,
+        address: editingSupplier.address,
+        contactPerson: editingSupplier.contactPerson,
+      });
+      
+      // Update local suppliers list
+      const updatedSuppliers = suppliers.map(s => 
+        s.id === editingSupplier.id ? { ...s, ...editingSupplier } : s
+      );
+      setSuppliers(updatedSuppliers);
+      
+      message.success('บันทึกข้อมูลผู้จำหน่ายสำเร็จ');
+      setSupplierEditMode(false);
+      setEditingSupplier(null);
+    } catch (error: any) {
+      message.error(error.response?.data?.message || 'ไม่สามารถบันทึกได้');
+    } finally {
+      setSavingSupplier(false);
+    }
+  };
+
+  // Warehouse Edit Functions
+  const isWarehouseInfoIncomplete = (warehouse: any) => {
+    return !warehouse.address;
+  };
+
+  const openWarehouseEdit = (warehouse: any) => {
+    setEditingWarehouse({
+      id: warehouse.id,
+      address: warehouse.address || '',
+    });
+    setWarehouseEditMode(true);
+  };
+
+  const handleSaveWarehouseEdit = async () => {
+    if (!editingWarehouse) return;
+    
+    setSavingWarehouse(true);
+    try {
+      await warehousesApi.update(editingWarehouse.id, {
+        address: editingWarehouse.address,
+      });
+      
+      // Update local warehouses list
+      const updatedWarehouses = warehouses.map(w => 
+        w.id === editingWarehouse.id ? { ...w, ...editingWarehouse } : w
+      );
+      setWarehouses(updatedWarehouses);
+      
+      message.success('บันทึกข้อมูลคลังสินค้าสำเร็จ');
+      setWarehouseEditMode(false);
+      setEditingWarehouse(null);
+    } catch (error: any) {
+      message.error(error.response?.data?.message || 'ไม่สามารถบันทึกได้');
+    } finally {
+      setSavingWarehouse(false);
     }
   };
 
@@ -879,117 +967,187 @@ const QuotationDetail: React.FC = () => {
         title="🏭 เลือกผู้จำหน่าย"
         open={supplierModalOpen}
         onCancel={() => {
-          setSupplierModalOpen(false);
-          setSupplierSearchText('');
-          setSelectedSupplierId(null);
+          if (supplierEditMode) {
+            setSupplierEditMode(false);
+            setEditingSupplier(null);
+          } else {
+            setSupplierModalOpen(false);
+            setSupplierSearchText('');
+            setSelectedSupplierId(null);
+          }
         }}
-        onOk={handleConfirmCreatePO}
-        okText="✓ สร้างใบสั่งซื้อ"
-        cancelText="ยกเลิก"
-        confirmLoading={creatingPO}
-        okButtonProps={{ disabled: !selectedSupplierId }}
+        onOk={supplierEditMode ? handleSaveSupplierEdit : handleConfirmCreatePO}
+        okText={supplierEditMode ? "💾 บันทึก" : "✓ สร้างใบสั่งซื้อ"}
+        cancelText={supplierEditMode ? "← กลับ" : "ยกเลิก"}
+        confirmLoading={supplierEditMode ? savingSupplier : creatingPO}
+        okButtonProps={{ disabled: !supplierEditMode && !selectedSupplierId }}
         width={600}
       >
-        <div style={{ marginBottom: 12 }}>
-          <p style={{ margin: 0, opacity: 0.7 }}>เลือกผู้จำหน่ายสำหรับใบสั่งซื้อนี้:</p>
-        </div>
-        
-        {/* Search Box */}
-        <Input
-          placeholder="🔍 ค้นหาผู้จำหน่าย..."
-          prefix={<SearchOutlined style={{ opacity: 0.5 }} />}
-          value={supplierSearchText}
-          onChange={(e) => setSupplierSearchText(e.target.value)}
-          allowClear
-          style={{ marginBottom: 12 }}
-        />
-        
-        {/* Supplier Radio List */}
-        <div style={{ 
-          maxHeight: 300, 
-          overflowY: 'auto', 
-          border: '1px solid var(--border-color, #d9d9d9)', 
-          borderRadius: 8,
-          background: 'var(--bg-card, #fafafa)'
-        }}>
-          <Radio.Group 
-            value={selectedSupplierId} 
-            onChange={(e) => setSelectedSupplierId(e.target.value)}
-            style={{ width: '100%' }}
-          >
-            {suppliers
-              .filter(s => 
-                s.name?.toLowerCase().includes(supplierSearchText.toLowerCase()) ||
-                s.phone?.toLowerCase().includes(supplierSearchText.toLowerCase()) ||
-                s.email?.toLowerCase().includes(supplierSearchText.toLowerCase())
-              )
-              .map((supplier, index, arr) => (
-                <div 
-                  key={supplier.id}
-                  style={{ 
-                    padding: '12px 16px',
-                    borderBottom: index < arr.length - 1 ? '1px solid var(--border-color, #e8e8e8)' : 'none',
-                    background: selectedSupplierId === supplier.id ? 'rgba(124, 58, 237, 0.15)' : 'transparent',
-                    cursor: 'pointer',
-                    transition: 'background 0.2s'
-                  }}
-                  onClick={() => setSelectedSupplierId(supplier.id)}
-                >
-                  <Radio value={supplier.id} style={{ width: '100%' }}>
-                    <div style={{ marginLeft: 8 }}>
-                      <div style={{ fontWeight: 500, fontSize: 14 }}>
-                        {supplier.name}
-                        {selectedSupplierId === supplier.id && (
-                          <Tag color="purple" style={{ marginLeft: 8 }}>เลือกแล้ว</Tag>
-                        )}
-                      </div>
-                      <div style={{ fontSize: 12, opacity: 0.65, marginTop: 4 }}>
-                        {supplier.phone && <span style={{ marginRight: 12 }}>📞 {supplier.phone}</span>}
-                        {supplier.email && <span style={{ marginRight: 12 }}>📧 {supplier.email}</span>}
-                      </div>
-                      <div style={{ fontSize: 12, opacity: 0.65, marginTop: 2 }}>
-                        {supplier.paymentTermDays && (
-                          <span style={{ marginRight: 12 }}>💳 เครดิต {supplier.paymentTermDays} วัน</span>
-                        )}
-                        {supplier.address && (
-                          <span>📍 {supplier.address.length > 40 ? supplier.address.substring(0, 40) + '...' : supplier.address}</span>
-                        )}
-                      </div>
+        {supplierEditMode && editingSupplier ? (
+          // Edit Mode
+          <div>
+            <div style={{ marginBottom: 16, fontWeight: 500, fontSize: 16 }}>
+              ✏️ แก้ไขข้อมูล: {suppliers.find(s => s.id === editingSupplier.id)?.name}
+            </div>
+            <Row gutter={[16, 12]}>
+              <Col span={12}>
+                <div style={{ marginBottom: 4, opacity: 0.7 }}>📞 เบอร์โทร</div>
+                <Input 
+                  value={editingSupplier.phone} 
+                  onChange={e => setEditingSupplier({...editingSupplier, phone: e.target.value})}
+                  placeholder="02-xxx-xxxx"
+                />
+              </Col>
+              <Col span={12}>
+                <div style={{ marginBottom: 4, opacity: 0.7 }}>📧 อีเมล</div>
+                <Input 
+                  value={editingSupplier.email} 
+                  onChange={e => setEditingSupplier({...editingSupplier, email: e.target.value})}
+                  placeholder="email@company.com"
+                />
+              </Col>
+              <Col span={24}>
+                <div style={{ marginBottom: 4, opacity: 0.7 }}>📍 ที่อยู่</div>
+                <Input.TextArea 
+                  rows={2}
+                  value={editingSupplier.address} 
+                  onChange={e => setEditingSupplier({...editingSupplier, address: e.target.value})}
+                  placeholder="ที่อยู่บริษัท"
+                />
+              </Col>
+              <Col span={24}>
+                <div style={{ marginBottom: 4, opacity: 0.7 }}>👤 ผู้ติดต่อ</div>
+                <Input 
+                  value={editingSupplier.contactPerson} 
+                  onChange={e => setEditingSupplier({...editingSupplier, contactPerson: e.target.value})}
+                  placeholder="ชื่อผู้ติดต่อ"
+                />
+              </Col>
+            </Row>
+          </div>
+        ) : (
+          // Selection Mode
+          <>
+            <div style={{ marginBottom: 12 }}>
+              <p style={{ margin: 0, opacity: 0.7 }}>เลือกผู้จำหน่ายสำหรับใบสั่งซื้อนี้:</p>
+            </div>
+            
+            {/* Search Box */}
+            <Input
+              placeholder="🔍 ค้นหาผู้จำหน่าย..."
+              prefix={<SearchOutlined style={{ opacity: 0.5 }} />}
+              value={supplierSearchText}
+              onChange={(e) => setSupplierSearchText(e.target.value)}
+              allowClear
+              style={{ marginBottom: 12 }}
+            />
+            
+            {/* Supplier Radio List */}
+            <div style={{ 
+              maxHeight: 300, 
+              overflowY: 'auto', 
+              border: '1px solid var(--border-color, #d9d9d9)', 
+              borderRadius: 8,
+              background: 'var(--bg-card, #fafafa)'
+            }}>
+              <Radio.Group 
+                value={selectedSupplierId} 
+                onChange={(e) => setSelectedSupplierId(e.target.value)}
+                style={{ width: '100%' }}
+              >
+                {suppliers
+                  .filter(s => 
+                    s.name?.toLowerCase().includes(supplierSearchText.toLowerCase()) ||
+                    s.phone?.toLowerCase().includes(supplierSearchText.toLowerCase()) ||
+                    s.email?.toLowerCase().includes(supplierSearchText.toLowerCase())
+                  )
+                  .map((supplier, index, arr) => (
+                    <div 
+                      key={supplier.id}
+                      style={{ 
+                        padding: '12px 16px',
+                        borderBottom: index < arr.length - 1 ? '1px solid var(--border-color, #e8e8e8)' : 'none',
+                        background: selectedSupplierId === supplier.id ? 'rgba(124, 58, 237, 0.15)' : 'transparent',
+                        cursor: 'pointer',
+                        transition: 'background 0.2s'
+                      }}
+                      onClick={() => setSelectedSupplierId(supplier.id)}
+                    >
+                      <Radio value={supplier.id} style={{ width: '100%' }}>
+                        <div style={{ marginLeft: 8, display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+                          <div style={{ flex: 1 }}>
+                            <div style={{ fontWeight: 500, fontSize: 14 }}>
+                              {supplier.name}
+                              {selectedSupplierId === supplier.id && (
+                                <Tag color="purple" style={{ marginLeft: 8 }}>เลือกแล้ว</Tag>
+                              )}
+                              {isSupplierInfoIncomplete(supplier) && (
+                                <Tag color="warning" icon={<WarningOutlined />} style={{ marginLeft: 4 }}>ข้อมูลไม่ครบ</Tag>
+                              )}
+                            </div>
+                            <div style={{ fontSize: 12, opacity: 0.65, marginTop: 4 }}>
+                              {supplier.phone && <span style={{ marginRight: 12 }}>📞 {supplier.phone}</span>}
+                              {supplier.email && <span style={{ marginRight: 12 }}>📧 {supplier.email}</span>}
+                              {!supplier.phone && !supplier.email && <span style={{ color: '#faad14' }}>ยังไม่มีข้อมูลติดต่อ</span>}
+                            </div>
+                            <div style={{ fontSize: 12, opacity: 0.65, marginTop: 2 }}>
+                              {supplier.paymentTermDays && (
+                                <span style={{ marginRight: 12 }}>💳 เครดิต {supplier.paymentTermDays} วัน</span>
+                              )}
+                              {supplier.address && (
+                                <span>📍 {supplier.address.length > 40 ? supplier.address.substring(0, 40) + '...' : supplier.address}</span>
+                              )}
+                            </div>
+                          </div>
+                          <Button 
+                            type="text" 
+                            size="small" 
+                            icon={<EditOutlined />}
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              openSupplierEdit(supplier);
+                            }}
+                            style={{ opacity: 0.6 }}
+                          >
+                            แก้ไข
+                          </Button>
+                        </div>
+                      </Radio>
                     </div>
-                  </Radio>
+                  ))}
+                {suppliers.filter(s => 
+                  s.name?.toLowerCase().includes(supplierSearchText.toLowerCase()) ||
+                  s.phone?.toLowerCase().includes(supplierSearchText.toLowerCase()) ||
+                  s.email?.toLowerCase().includes(supplierSearchText.toLowerCase())
+                ).length === 0 && (
+                  <div style={{ padding: 24, textAlign: 'center', opacity: 0.5 }}>
+                    ไม่พบผู้จำหน่าย
+                  </div>
+                )}
+              </Radio.Group>
+            </div>
+            
+            {/* Product Summary */}
+            {quotation?.items && quotation.items.length > 0 && (
+              <div style={{ marginTop: 16 }}>
+                <div style={{ fontWeight: 500, marginBottom: 8 }}>📦 สินค้าในใบเสนอราคานี้:</div>
+                <div style={{ 
+                  background: 'var(--bg-card, #f5f5f5)', 
+                  border: '1px solid var(--border-color, #e8e8e8)',
+                  borderRadius: 8, 
+                  padding: 12,
+                  maxHeight: 100,
+                  overflowY: 'auto'
+                }}>
+                  {quotation.items.map((item: any, idx: number) => (
+                    <div key={idx} style={{ fontSize: 12, opacity: 0.7, marginBottom: 4 }}>
+                      • {item.itemName || item.productName || item.tempProductName || 'สินค้า'} ({Number(item.qty).toLocaleString()} {item.unit || item.unitName || 'ชิ้น'})
+                    </div>
+                  ))}
                 </div>
-              ))}
-            {suppliers.filter(s => 
-              s.name?.toLowerCase().includes(supplierSearchText.toLowerCase()) ||
-              s.phone?.toLowerCase().includes(supplierSearchText.toLowerCase()) ||
-              s.email?.toLowerCase().includes(supplierSearchText.toLowerCase())
-            ).length === 0 && (
-              <div style={{ padding: 24, textAlign: 'center', opacity: 0.5 }}>
-                ไม่พบผู้จำหน่าย
               </div>
             )}
-          </Radio.Group>
-        </div>
-        
-        {/* Product Summary */}
-        {quotation?.items && quotation.items.length > 0 && (
-          <div style={{ marginTop: 16 }}>
-            <div style={{ fontWeight: 500, marginBottom: 8 }}>📦 สินค้าในใบเสนอราคานี้:</div>
-            <div style={{ 
-              background: 'var(--bg-card, #f5f5f5)', 
-              border: '1px solid var(--border-color, #e8e8e8)',
-              borderRadius: 8, 
-              padding: 12,
-              maxHeight: 100,
-              overflowY: 'auto'
-            }}>
-              {quotation.items.map((item: any, idx: number) => (
-                <div key={idx} style={{ fontSize: 12, opacity: 0.7, marginBottom: 4 }}>
-                  • {item.itemName || item.productName || item.tempProductName || 'สินค้า'} ({Number(item.qty).toLocaleString()} {item.unit || item.unitName || 'ชิ้น'})
-                </div>
-              ))}
-            </div>
-          </div>
+          </>
         )}
       </Modal>
 
@@ -998,116 +1156,165 @@ const QuotationDetail: React.FC = () => {
         title="🏭 เลือกคลังสินค้า"
         open={warehouseModalOpen}
         onCancel={() => {
-          setWarehouseModalOpen(false);
-          setWarehouseSearchText('');
+          if (warehouseEditMode) {
+            setWarehouseEditMode(false);
+            setEditingWarehouse(null);
+          } else {
+            setWarehouseModalOpen(false);
+            setWarehouseSearchText('');
+          }
         }}
-        onOk={handleConfirmCreateGR}
-        okText="✓ สร้างใบรับสินค้า"
-        cancelText="ยกเลิก"
-        confirmLoading={creatingGR}
-        okButtonProps={{ disabled: !selectedWarehouseId }}
+        onOk={warehouseEditMode ? handleSaveWarehouseEdit : handleConfirmCreateGR}
+        okText={warehouseEditMode ? "💾 บันทึก" : "✓ สร้างใบรับสินค้า"}
+        cancelText={warehouseEditMode ? "← กลับ" : "ยกเลิก"}
+        confirmLoading={warehouseEditMode ? savingWarehouse : creatingGR}
+        okButtonProps={{ disabled: !warehouseEditMode && !selectedWarehouseId }}
         width={550}
       >
-        <div style={{ marginBottom: 12 }}>
-          <p style={{ margin: 0, opacity: 0.7 }}>เลือกคลังสินค้าสำหรับรับสินค้า:</p>
-        </div>
-        
-        {/* Search Box */}
-        <Input
-          placeholder="🔍 ค้นหาคลังสินค้า..."
-          prefix={<SearchOutlined style={{ opacity: 0.5 }} />}
-          value={warehouseSearchText}
-          onChange={(e) => setWarehouseSearchText(e.target.value)}
-          allowClear
-          style={{ marginBottom: 12 }}
-        />
-        
-        {/* Warehouse Radio List */}
-        <div style={{ 
-          maxHeight: 280, 
-          overflowY: 'auto', 
-          border: '1px solid var(--border-color, #d9d9d9)', 
-          borderRadius: 8,
-          background: 'var(--bg-card, #fafafa)'
-        }}>
-          <Radio.Group 
-            value={selectedWarehouseId} 
-            onChange={(e) => setSelectedWarehouseId(e.target.value)}
-            style={{ width: '100%' }}
-          >
-            {warehouses
-              .filter(w => 
-                w.name?.toLowerCase().includes(warehouseSearchText.toLowerCase()) ||
-                w.code?.toLowerCase().includes(warehouseSearchText.toLowerCase()) ||
-                w.address?.toLowerCase().includes(warehouseSearchText.toLowerCase())
-              )
-              .map((warehouse, index, arr) => (
-                <div 
-                  key={warehouse.id}
-                  style={{ 
-                    padding: '12px 16px',
-                    borderBottom: index < arr.length - 1 ? '1px solid var(--border-color, #e8e8e8)' : 'none',
-                    background: selectedWarehouseId === warehouse.id ? 'rgba(124, 58, 237, 0.15)' : 'transparent',
-                    cursor: 'pointer',
-                    transition: 'background 0.2s'
-                  }}
-                  onClick={() => setSelectedWarehouseId(warehouse.id)}
-                >
-                  <Radio value={warehouse.id} style={{ width: '100%' }}>
-                    <div style={{ marginLeft: 8 }}>
-                      <div style={{ fontWeight: 500, fontSize: 14 }}>
-                        {warehouse.name}
-                        {warehouse.code && (
-                          <span style={{ opacity: 0.5, marginLeft: 8, fontSize: 12 }}>({warehouse.code})</span>
-                        )}
-                        {selectedWarehouseId === warehouse.id && (
-                          <Tag color="purple" style={{ marginLeft: 8 }}>เลือกแล้ว</Tag>
-                        )}
-                      </div>
-                      {warehouse.address && (
-                        <div style={{ fontSize: 12, opacity: 0.65, marginTop: 4 }}>
-                          📍 {warehouse.address.length > 50 ? warehouse.address.substring(0, 50) + '...' : warehouse.address}
+        {warehouseEditMode && editingWarehouse ? (
+          // Edit Mode
+          <div>
+            <div style={{ marginBottom: 16, fontWeight: 500, fontSize: 16 }}>
+              ✏️ แก้ไขข้อมูล: {warehouses.find(w => w.id === editingWarehouse.id)?.name}
+            </div>
+            <Row gutter={[16, 12]}>
+              <Col span={24}>
+                <div style={{ marginBottom: 4, opacity: 0.7 }}>📍 ที่อยู่/ตำแหน่ง</div>
+                <Input.TextArea 
+                  rows={3}
+                  value={editingWarehouse.address} 
+                  onChange={e => setEditingWarehouse({...editingWarehouse, address: e.target.value})}
+                  placeholder="ระบุที่อยู่หรือตำแหน่งคลังสินค้า"
+                />
+              </Col>
+            </Row>
+          </div>
+        ) : (
+          // Selection Mode
+          <>
+            <div style={{ marginBottom: 12 }}>
+              <p style={{ margin: 0, opacity: 0.7 }}>เลือกคลังสินค้าสำหรับรับสินค้า:</p>
+            </div>
+            
+            {/* Search Box */}
+            <Input
+              placeholder="🔍 ค้นหาคลังสินค้า..."
+              prefix={<SearchOutlined style={{ opacity: 0.5 }} />}
+              value={warehouseSearchText}
+              onChange={(e) => setWarehouseSearchText(e.target.value)}
+              allowClear
+              style={{ marginBottom: 12 }}
+            />
+            
+            {/* Warehouse Radio List */}
+            <div style={{ 
+              maxHeight: 280, 
+              overflowY: 'auto', 
+              border: '1px solid var(--border-color, #d9d9d9)', 
+              borderRadius: 8,
+              background: 'var(--bg-card, #fafafa)'
+            }}>
+              <Radio.Group 
+                value={selectedWarehouseId} 
+                onChange={(e) => setSelectedWarehouseId(e.target.value)}
+                style={{ width: '100%' }}
+              >
+                {warehouses
+                  .filter(w => 
+                    w.name?.toLowerCase().includes(warehouseSearchText.toLowerCase()) ||
+                    w.code?.toLowerCase().includes(warehouseSearchText.toLowerCase()) ||
+                    w.address?.toLowerCase().includes(warehouseSearchText.toLowerCase())
+                  )
+                  .map((warehouse, index, arr) => (
+                    <div 
+                      key={warehouse.id}
+                      style={{ 
+                        padding: '12px 16px',
+                        borderBottom: index < arr.length - 1 ? '1px solid var(--border-color, #e8e8e8)' : 'none',
+                        background: selectedWarehouseId === warehouse.id ? 'rgba(124, 58, 237, 0.15)' : 'transparent',
+                        cursor: 'pointer',
+                        transition: 'background 0.2s'
+                      }}
+                      onClick={() => setSelectedWarehouseId(warehouse.id)}
+                    >
+                      <Radio value={warehouse.id} style={{ width: '100%' }}>
+                        <div style={{ marginLeft: 8, display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+                          <div style={{ flex: 1 }}>
+                            <div style={{ fontWeight: 500, fontSize: 14 }}>
+                              {warehouse.name}
+                              {warehouse.code && (
+                                <span style={{ opacity: 0.5, marginLeft: 8, fontSize: 12 }}>({warehouse.code})</span>
+                              )}
+                              {selectedWarehouseId === warehouse.id && (
+                                <Tag color="purple" style={{ marginLeft: 8 }}>เลือกแล้ว</Tag>
+                              )}
+                              {isWarehouseInfoIncomplete(warehouse) && (
+                                <Tag color="warning" icon={<WarningOutlined />} style={{ marginLeft: 4 }}>ไม่มีที่อยู่</Tag>
+                              )}
+                            </div>
+                            {warehouse.address ? (
+                              <div style={{ fontSize: 12, opacity: 0.65, marginTop: 4 }}>
+                                📍 {warehouse.address.length > 50 ? warehouse.address.substring(0, 50) + '...' : warehouse.address}
+                              </div>
+                            ) : (
+                              <div style={{ fontSize: 12, color: '#faad14', marginTop: 4 }}>
+                                ยังไม่ระบุที่อยู่
+                              </div>
+                            )}
+                          </div>
+                          <Button 
+                            type="text" 
+                            size="small" 
+                            icon={<EditOutlined />}
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              openWarehouseEdit(warehouse);
+                            }}
+                            style={{ opacity: 0.6 }}
+                          >
+                            แก้ไข
+                          </Button>
                         </div>
-                      )}
+                      </Radio>
                     </div>
-                  </Radio>
+                  ))}
+                {warehouses.filter(w => 
+                  w.name?.toLowerCase().includes(warehouseSearchText.toLowerCase()) ||
+                  w.code?.toLowerCase().includes(warehouseSearchText.toLowerCase()) ||
+                  w.address?.toLowerCase().includes(warehouseSearchText.toLowerCase())
+                ).length === 0 && (
+                  <div style={{ padding: 24, textAlign: 'center', opacity: 0.5 }}>
+                    ไม่พบคลังสินค้า
+                  </div>
+                )}
+              </Radio.Group>
+            </div>
+            
+            {/* PO Info Summary */}
+            {relatedDocs.purchaseOrders.length > 0 && (
+              <div style={{ marginTop: 16 }}>
+                <div style={{ fontWeight: 500, marginBottom: 8 }}>📋 ใบสั่งซื้อที่เกี่ยวข้อง:</div>
+                <div style={{ 
+                  background: 'var(--bg-card, #f5f5f5)', 
+                  border: '1px solid var(--border-color, #e8e8e8)',
+                  borderRadius: 8, 
+                  padding: 12
+                }}>
+                  <div style={{ fontSize: 13 }}>
+                    <strong>{relatedDocs.purchaseOrders[0]?.docFullNo}</strong>
+                    <span style={{ opacity: 0.6, marginLeft: 8 }}>
+                      ({relatedDocs.purchaseOrders[0]?.items?.length || 0} รายการ)
+                    </span>
+                  </div>
+                  {relatedDocs.purchaseOrders[0]?.supplierName && (
+                    <div style={{ fontSize: 12, opacity: 0.7, marginTop: 4 }}>
+                      🏭 {relatedDocs.purchaseOrders[0].supplierName}
+                    </div>
+                  )}
                 </div>
-              ))}
-            {warehouses.filter(w => 
-              w.name?.toLowerCase().includes(warehouseSearchText.toLowerCase()) ||
-              w.code?.toLowerCase().includes(warehouseSearchText.toLowerCase()) ||
-              w.address?.toLowerCase().includes(warehouseSearchText.toLowerCase())
-            ).length === 0 && (
-              <div style={{ padding: 24, textAlign: 'center', opacity: 0.5 }}>
-                ไม่พบคลังสินค้า
               </div>
             )}
-          </Radio.Group>
-        </div>
-        
-        {/* PO Info Summary */}
-        {relatedDocs.purchaseOrders.length > 0 && (
-          <div style={{ marginTop: 16 }}>
-            <div style={{ fontWeight: 500, marginBottom: 8 }}>📋 ใบสั่งซื้อที่เกี่ยวข้อง:</div>
-            <div style={{ 
-              background: 'var(--bg-card, #f5f5f5)', 
-              border: '1px solid var(--border-color, #e8e8e8)',
-              borderRadius: 8, 
-              padding: 12
-            }}>
-              <div style={{ fontSize: 13 }}>
-                <strong>{relatedDocs.purchaseOrders[0]?.docFullNo}</strong>
-                <span style={{ opacity: 0.6, marginLeft: 8 }}>
-                  ({relatedDocs.purchaseOrders[0]?.items?.length || 0} รายการ)
-                </span>
-              </div>
-              {relatedDocs.purchaseOrders[0]?.supplier?.name && (
-                <div style={{ fontSize: 12, opacity: 0.7, marginTop: 4 }}>
-                  🏭 {relatedDocs.purchaseOrders[0].supplier.name}
-                </div>
-              )}
-            </div>
-          </div>
+          </>
         )}
       </Modal>
 
