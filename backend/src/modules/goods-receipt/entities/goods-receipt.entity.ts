@@ -38,6 +38,9 @@ export class GoodsReceiptEntity {
   @Column({ name: 'supplier_name', type: 'varchar', length: 255, nullable: true })
   supplierName: string;
 
+  @Column({ name: 'supplier_tax_id', type: 'varchar', length: 20, nullable: true })
+  supplierTaxId: string;
+
   // Warehouse
   @Column({ name: 'warehouse_id' })
   warehouseId: number;

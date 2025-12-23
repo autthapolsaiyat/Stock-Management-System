@@ -32,8 +32,17 @@ export class PurchaseOrderEntity {
   @Column({ name: 'supplier_name', type: 'varchar', length: 255, nullable: true })
   supplierName: string;
 
+  @Column({ name: 'supplier_tax_id', type: 'varchar', length: 20, nullable: true })
+  supplierTaxId: string;
+
   @Column({ name: 'supplier_address', type: 'text', nullable: true })
   supplierAddress: string;
+
+  @Column({ name: 'supplier_phone', type: 'varchar', length: 50, nullable: true })
+  supplierPhone: string;
+
+  @Column({ name: 'supplier_email', type: 'varchar', length: 200, nullable: true })
+  supplierEmail: string;
 
   @Column({ name: 'contact_person', type: 'varchar', length: 100, nullable: true })
   contactPerson: string;

@@ -32,6 +32,9 @@ export class SalesInvoiceEntity {
   @Column({ name: 'customer_name', type: 'varchar', length: 255, nullable: true })
   customerName: string;
 
+  @Column({ name: 'customer_tax_id', type: 'varchar', length: 20, nullable: true })
+  customerTaxId: string;
+
   @Column({ name: 'customer_address', type: 'text', nullable: true })
   customerAddress: string;
 
