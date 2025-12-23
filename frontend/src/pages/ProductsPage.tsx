@@ -23,6 +23,7 @@ import {
   DeleteOutlined,
   PictureOutlined,
   LoadingOutlined,
+  FilterOutlined,
 } from '@ant-design/icons';
 import { productsApi, uploadApi } from '../services/api';
 import { Product, ProductCategory, Unit } from '../types';
@@ -35,6 +36,7 @@ const ProductsPage: React.FC = () => {
   const [modalVisible, setModalVisible] = useState(false);
   const [editingProduct, setEditingProduct] = useState<Product | null>(null);
   const [searchText, setSearchText] = useState('');
+  const [selectedCategory, setSelectedCategory] = useState<number | null>(null);
   const [form] = Form.useForm();
   const [fileList, setFileList] = useState<UploadFile[]>([]);
   const [previewOpen, setPreviewOpen] = useState(false);
@@ -73,7 +75,6 @@ const ProductsPage: React.FC = () => {
   const handleEdit = (record: Product) => {
     setEditingProduct(record);
     form.setFieldsValue(record);
-    // Set existing image if available
     if (record.imageUrl) {
       setFileList([
         {
@@ -104,15 +105,11 @@ const ProductsPage: React.FC = () => {
       setUploading(true);
       let imageUrl = null;
 
-      // Check if there's a new image to upload
       if (fileList.length > 0) {
         const file = fileList[0];
-        // If it's an existing URL (from edit), keep it
         if (file.url && !file.originFileObj) {
           imageUrl = file.url;
-        } 
-        // If it's a new file, convert to base64 and upload
-        else if (file.originFileObj) {
+        } else if (file.originFileObj) {
           try {
             const base64 = await getBase64(file.originFileObj as File);
             const uploadRes = await uploadApi.uploadBase64(base64, 'products');
@@ -150,7 +147,6 @@ const ProductsPage: React.FC = () => {
     }
   };
 
-  // Convert file to base64 for preview
   const getBase64 = (file: File): Promise<string> =>
     new Promise((resolve, reject) => {
       const reader = new FileReader();
@@ -211,7 +207,13 @@ const ProductsPage: React.FC = () => {
       key: 'category',
       render: (categoryId: number) => {
         const cat = categories.find((c) => c.id === categoryId);
-        return cat?.name || '-';
+        return cat ? (
+          <Tag color="blue" style={{ borderRadius: 8 }}>
+            {cat.name}
+          </Tag>
+        ) : (
+          <Tag color="default">-</Tag>
+        );
       },
     },
     {
@@ -280,11 +282,29 @@ const ProductsPage: React.FC = () => {
     },
   ];
 
-  const filteredProducts = products.filter(
-    (p) =>
+  // Filter products by search text AND category
+  const filteredProducts = products.filter((p) => {
+    const matchSearch = 
       p.code?.toLowerCase().includes(searchText.toLowerCase()) ||
-      p.name?.toLowerCase().includes(searchText.toLowerCase())
-  );
+      p.name?.toLowerCase().includes(searchText.toLowerCase());
+    
+    const matchCategory = selectedCategory === null || p.categoryId === selectedCategory;
+    
+    return matchSearch && matchCategory;
+  });
+
+  // Count products per category
+  const getCategoryCount = (categoryId: number | null) => {
+    if (categoryId === null) return products.length;
+    return products.filter(p => p.categoryId === categoryId).length;
+  };
+
+  // Get selected category name
+  const getSelectedCategoryName = () => {
+    if (selectedCategory === null) return 'ทั้งหมด';
+    const cat = categories.find(c => c.id === selectedCategory);
+    return cat?.name || 'ไม่ระบุ';
+  };
 
   return (
     <div className="page-container">
@@ -294,25 +314,109 @@ const ProductsPage: React.FC = () => {
       </div>
 
       <Card className="card-holo">
-        <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 16 }}>
-          <Input
-            placeholder="ค้นหาสินค้า..."
-            prefix={<SearchOutlined />}
-            value={searchText}
-            onChange={(e) => setSearchText(e.target.value)}
-            style={{ width: 300 }}
-          />
+        {/* Search & Filter Bar */}
+        <div style={{ 
+          display: 'flex', 
+          justifyContent: 'space-between', 
+          alignItems: 'center',
+          flexWrap: 'wrap',
+          gap: 12,
+          marginBottom: 16 
+        }}>
+          <Space wrap size={12}>
+            <Input
+              placeholder="ค้นหาสินค้า..."
+              prefix={<SearchOutlined />}
+              value={searchText}
+              onChange={(e) => setSearchText(e.target.value)}
+              style={{ width: 250 }}
+              allowClear
+            />
+            
+            {/* Category Filter Dropdown */}
+            <Select
+              placeholder="เลือกหมวดหมู่"
+              value={selectedCategory}
+              onChange={(value) => setSelectedCategory(value)}
+              style={{ width: 200 }}
+              allowClear
+              suffixIcon={<FilterOutlined />}
+            >
+              <Select.Option value={null}>
+                <Space>
+                  <span>📦</span>
+                  <span>ทั้งหมด</span>
+                  <Tag color="blue" style={{ marginLeft: 8 }}>{getCategoryCount(null)}</Tag>
+                </Space>
+              </Select.Option>
+              {categories.map((cat) => (
+                <Select.Option key={cat.id} value={cat.id}>
+                  <Space>
+                    <span>{cat.icon || '🏷️'}</span>
+                    <span>{cat.name}</span>
+                    <Tag color="blue" style={{ marginLeft: 8 }}>{getCategoryCount(cat.id)}</Tag>
+                  </Space>
+                </Select.Option>
+              ))}
+            </Select>
+          </Space>
+
           <Button type="primary" icon={<PlusOutlined />} onClick={handleCreate} className="btn-holo">
             + เพิ่มสินค้า
           </Button>
         </div>
+
+        {/* Filter Status Bar */}
+        {(searchText || selectedCategory !== null) && (
+          <div style={{ 
+            marginBottom: 16, 
+            padding: '8px 16px', 
+            background: 'rgba(34, 211, 238, 0.1)', 
+            borderRadius: 8,
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'space-between'
+          }}>
+            <Space>
+              <span style={{ color: '#22d3ee' }}>
+                🔍 แสดง {filteredProducts.length.toLocaleString()} รายการ
+              </span>
+              {selectedCategory !== null && (
+                <Tag color="cyan" style={{ borderRadius: 8 }}>
+                  หมวด: {getSelectedCategoryName()}
+                </Tag>
+              )}
+              {searchText && (
+                <Tag color="purple" style={{ borderRadius: 8 }}>
+                  ค้นหา: "{searchText}"
+                </Tag>
+              )}
+            </Space>
+            <Button 
+              type="link" 
+              size="small"
+              onClick={() => {
+                setSearchText('');
+                setSelectedCategory(null);
+              }}
+              style={{ color: '#f87171' }}
+            >
+              ล้างตัวกรอง
+            </Button>
+          </div>
+        )}
 
         <Table
           columns={columns}
           dataSource={filteredProducts}
           rowKey="id"
           loading={loading}
-          pagination={{ pageSize: 10 }}
+          pagination={{ 
+            pageSize: 10,
+            showTotal: (total, range) => `${range[0]}-${range[1]} จาก ${total} รายการ`,
+            showSizeChanger: true,
+            pageSizeOptions: ['10', '20', '50', '100'],
+          }}
         />
       </Card>
 
@@ -325,7 +429,6 @@ const ProductsPage: React.FC = () => {
         width={600}
       >
         <Form form={form} layout="vertical" onFinish={handleSubmit}>
-          {/* Image Upload */}
           <Form.Item label="รูปสินค้า">
             <Upload
               listType="picture-card"
@@ -344,7 +447,6 @@ const ProductsPage: React.FC = () => {
             label="รหัสสินค้า"
             rules={[{ required: true, message: 'กรุณากรอกรหัสสินค้า' }]}
           >
-            {/* FIX Bug #8: Disable code field when editing */}
             <Input placeholder="เช่น PRD-001" disabled={!!editingProduct} />
           </Form.Item>
 
@@ -365,6 +467,8 @@ const ProductsPage: React.FC = () => {
               <Select
                 placeholder="เลือกหมวดหมู่"
                 options={categories.map((c) => ({ value: c.id, label: c.name }))}
+                showSearch
+                optionFilterProp="label"
               />
             </Form.Item>
 
@@ -396,7 +500,6 @@ const ProductsPage: React.FC = () => {
             </Form.Item>
           </Space>
 
-          {/* FIX Bug #9: Min/Max Stock fields */}
           <Space style={{ width: '100%' }} size={16}>
             <Form.Item name="minStock" label="สต็อกขั้นต่ำ" style={{ flex: 1 }}>
               <InputNumber style={{ width: '100%' }} min={0} placeholder="0" />
