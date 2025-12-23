@@ -161,6 +161,38 @@ export class SalesInvoiceService {
       throw new BadRequestException('Quotation must be approved before creating invoice');
     }
 
+    // Auto-detect warehouseId from posted GR if not provided
+    let warehouseId = dto.warehouseId;
+    let warehouseName = dto.warehouseName;
+    
+    if (!warehouseId) {
+      // Find GR that's posted for this quotation
+      const grResult = await this.dataSource.query(`
+        SELECT gr.warehouse_id, w.name as warehouse_name
+        FROM goods_receipts gr
+        LEFT JOIN warehouses w ON w.id = gr.warehouse_id
+        WHERE gr.quotation_id = $1 AND gr.status = 'POSTED' AND gr.is_latest_revision = true
+        ORDER BY gr.posted_at DESC
+        LIMIT 1
+      `, [quotationId]);
+      
+      if (grResult.length > 0) {
+        warehouseId = grResult[0].warehouse_id;
+        warehouseName = grResult[0].warehouse_name;
+      } else {
+        // Fallback: get default warehouse
+        const defaultWh = await this.dataSource.query(`
+          SELECT id, name FROM warehouses WHERE is_active = true ORDER BY id LIMIT 1
+        `);
+        if (defaultWh.length > 0) {
+          warehouseId = defaultWh[0].id;
+          warehouseName = defaultWh[0].name;
+        } else {
+          throw new BadRequestException('No warehouse available. Please post GR first or create a warehouse.');
+        }
+      }
+    }
+
     // Get items ready for invoicing (received from GR)
     const readyItems = quotation.items.filter(item =>
       item.itemStatus !== 'CANCELLED' &&
@@ -180,8 +212,8 @@ export class SalesInvoiceService {
       customerName: quotation.customerName,
       customerAddress: quotation.customerAddress,
       contactPerson: quotation.contactPerson,
-      warehouseId: dto.warehouseId,
-      warehouseName: dto.warehouseName,
+      warehouseId: warehouseId,
+      warehouseName: warehouseName,
       docDate: dto.docDate || new Date(),
       dueDate: dto.dueDate || new Date(Date.now() + quotation.creditTermDays * 24 * 60 * 60 * 1000),
       creditTermDays: quotation.creditTermDays,
