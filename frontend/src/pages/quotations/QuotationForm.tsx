@@ -2,11 +2,12 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import {
   Card, Form, Input, Select, DatePicker, InputNumber, Button, Space, Row, Col, Checkbox,
-  Table, Tag, message, Modal, Divider, Radio, Popconfirm
+  Table, Tag, message, Modal, Divider, Radio, Popconfirm, Alert
 } from 'antd';
 import {
   SaveOutlined, SendOutlined, PlusOutlined, DeleteOutlined,
-  SettingOutlined, CalculatorOutlined, EyeOutlined
+  SettingOutlined, CalculatorOutlined, EyeOutlined, FilterOutlined,
+  CheckCircleOutlined
 } from '@ant-design/icons';
 import dayjs from 'dayjs';
 import { quotationsApi, customersApi, productsApi, systemSettingsApi } from '../../services/api';
@@ -38,14 +39,20 @@ const QuotationForm: React.FC = () => {
   const [images, setImages] = useState<QuotationImage[]>([]);
   const [customers, setCustomers] = useState<any[]>([]);
   const [products, setProducts] = useState<any[]>([]);
+  const [categories, setCategories] = useState<any[]>([]);
   const [settings, setSettings] = useState<any>({});
   const [selectedCustomer, setSelectedCustomer] = useState<any>(null);
 
-  // Modals
+  // Product Modal States
+  const [productModalOpen, setProductModalOpen] = useState(false);
+  const [productSearch, setProductSearch] = useState('');
+  const [productCategoryFilter, setProductCategoryFilter] = useState<number | null>(null);
+  const [selectedProducts, setSelectedProducts] = useState<number[]>([]);
+
+  // Other Modals
   const [settingsModalOpen, setSettingsModalOpen] = useState(false);
   const [tempProductModalOpen, setTempProductModalOpen] = useState(false);
   const [calculatorOpen, setCalculatorOpen] = useState(false);
-  const [productModalOpen, setProductModalOpen] = useState(false);
   const [previewOpen, setPreviewOpen] = useState(false);
 
   // Calculated values
@@ -61,44 +68,29 @@ const QuotationForm: React.FC = () => {
     requiresApproval: false,
   });
 
-  // Load initial data
-  useEffect(() => {
-    loadInitialData();
-  }, []);
-
-  useEffect(() => {
-    if (isEdit && id) {
-      loadQuotation(parseInt(id));
-    }
-  }, [id, isEdit]);
-
-  useEffect(() => {
-    calculateSummary();
-  }, [items]);
+  useEffect(() => { loadInitialData(); }, []);
+  useEffect(() => { if (isEdit && id) loadQuotation(parseInt(id)); }, [id, isEdit]);
+  useEffect(() => { calculateSummary(); }, [items]);
 
   // Handle paste from clipboard for images
   useEffect(() => {
     const handlePaste = async (e: ClipboardEvent) => {
-      const items = e.clipboardData?.items;
-      if (!items) return;
-
-      for (let i = 0; i < items.length; i++) {
-        if (items[i].type.indexOf('image') !== -1) {
-          const blob = items[i].getAsFile();
+      const clipItems = e.clipboardData?.items;
+      if (!clipItems) return;
+      for (let i = 0; i < clipItems.length; i++) {
+        if (clipItems[i].type.indexOf('image') !== -1) {
+          const blob = clipItems[i].getAsFile();
           if (blob) {
             const reader = new FileReader();
             reader.onload = (event) => {
               const base64 = event.target?.result as string;
-              if (base64) {
-                addImageFromClipboard(base64);
-              }
+              if (base64) addImageFromClipboard(base64);
             };
             reader.readAsDataURL(blob);
           }
         }
       }
     };
-
     document.addEventListener('paste', handlePaste);
     return () => document.removeEventListener('paste', handlePaste);
   }, [images]);
@@ -114,20 +106,19 @@ const QuotationForm: React.FC = () => {
   };
 
   const loadInitialData = async () => {
-      try {
-      const [customersRes, productsRes] = await Promise.all([
+    try {
+      const [customersRes, productsRes, categoriesRes] = await Promise.all([
         customersApi.getAll(),
-        userQuotationType 
-          ? productsApi.getAll(undefined, userQuotationType)
-          : productsApi.getAll(),
+        userQuotationType ? productsApi.getAll(undefined, userQuotationType) : productsApi.getAll(),
+        productsApi.getCategories(),
       ]);
       setCustomers(customersRes.data || []);
       setProducts(productsRes.data || []);
+      setCategories(categoriesRes.data || []);
       
       let settingsMap: any = {};
       try {
         const settingsRes = await systemSettingsApi.getAll('QUOTATION');
-        
         (settingsRes.data || []).forEach((s: any) => {
           settingsMap[s.settingKey] = s.settingValue;
         });
@@ -154,10 +145,9 @@ const QuotationForm: React.FC = () => {
 
   const loadQuotation = async (quotationId: number) => {
     setLoading(true);
-      try {
+    try {
       const response = await quotationsApi.getById(quotationId);
       const data = response.data;
-      
       form.setFieldsValue({
         ...data,
         docDate: dayjs(data.docDate),
@@ -190,17 +180,7 @@ const QuotationForm: React.FC = () => {
     const minMargin = parseFloat(settings?.QT_MIN_MARGIN_PERCENT || '10');
     const requiresApproval = items.length > 0 && marginPercent < minMargin;
 
-    setSummary({
-      subtotal,
-      discountAmount,
-      afterDiscount,
-      taxAmount,
-      grandTotal,
-      totalCost,
-      marginAmount,
-      marginPercent,
-      requiresApproval,
-    });
+    setSummary({ subtotal, discountAmount, afterDiscount, taxAmount, grandTotal, totalCost, marginAmount, marginPercent, requiresApproval });
   };
 
   const handleCustomerChange = (customerId: number) => {
@@ -218,17 +198,19 @@ const QuotationForm: React.FC = () => {
     }
   };
 
+  // Add single product
   const handleAddProduct = (product: any) => {
-    const existingIndex = items.findIndex(item => 
-      item.sourceType === 'MASTER' && item.productId === product.id
-    );
+    const existingIndex = items.findIndex(item => item.sourceType === 'MASTER' && item.productId === product.id);
 
     if (existingIndex >= 0) {
       const newItems = [...items];
       newItems[existingIndex].qty += 1;
       newItems[existingIndex].lineTotal = newItems[existingIndex].qty * newItems[existingIndex].unitPrice;
       setItems(newItems);
+      message.success(`เพิ่มจำนวน ${product.name}`);
     } else {
+      const cost = product.standardCost || product.cost || 0;
+      const price = product.sellingPrice || 0;
       const newItem: QuotationItem = {
         lineNo: items.length + 1,
         sourceType: 'MASTER',
@@ -238,17 +220,52 @@ const QuotationForm: React.FC = () => {
         itemDescription: product.description,
         brand: product.brand,
         qty: 1,
-        unit: product.unit?.name || product.unit || 'ea',
-        unitPrice: product.sellingPrice || 0,
-        estimatedCost: product.cost || product.standardCost || 0,
-        expectedMarginPercent: product.sellingPrice > 0 
-          ? ((product.sellingPrice - (product.cost || product.standardCost || 0)) / product.sellingPrice) * 100 
-          : 0,
-        lineTotal: product.sellingPrice || 0,
+        unit: product.unit?.name || product.unit || 'EA',
+        unitPrice: price,
+        estimatedCost: cost,
+        expectedMarginPercent: price > 0 ? ((price - cost) / price) * 100 : 0,
+        lineTotal: price,
         itemStatus: 'PENDING',
       };
       setItems([...items, newItem]);
+      message.success(`เพิ่ม ${product.name}`);
     }
+  };
+
+  // Add multiple selected products
+  const handleAddSelectedProducts = () => {
+    const productsToAdd = products.filter(p => selectedProducts.includes(p.id));
+    const newItems: QuotationItem[] = [];
+    
+    productsToAdd.forEach(product => {
+      const existingIndex = items.findIndex(item => item.sourceType === 'MASTER' && item.productId === product.id);
+      if (existingIndex < 0) {
+        const cost = product.standardCost || product.cost || 0;
+        const price = product.sellingPrice || 0;
+        newItems.push({
+          lineNo: items.length + newItems.length + 1,
+          sourceType: 'MASTER',
+          productId: product.id,
+          itemCode: product.code,
+          itemName: product.name,
+          itemDescription: product.description,
+          brand: product.brand,
+          qty: 1,
+          unit: product.unit?.name || product.unit || 'EA',
+          unitPrice: price,
+          estimatedCost: cost,
+          expectedMarginPercent: price > 0 ? ((price - cost) / price) * 100 : 0,
+          lineTotal: price,
+          itemStatus: 'PENDING',
+        });
+      }
+    });
+
+    if (newItems.length > 0) {
+      setItems([...items, ...newItems]);
+      message.success(`เพิ่ม ${newItems.length} รายการ`);
+    }
+    setSelectedProducts([]);
     setProductModalOpen(false);
   };
 
@@ -262,7 +279,7 @@ const QuotationForm: React.FC = () => {
       itemDescription: tempProduct.description,
       brand: tempProduct.brand,
       qty: 1,
-      unit: tempProduct.unit || 'ea',
+      unit: tempProduct.unit || 'EA',
       unitPrice: tempProduct.suggestedPrice || 0,
       estimatedCost: tempProduct.estimatedCost || 0,
       expectedMarginPercent: tempProduct.suggestedPrice > 0
@@ -283,9 +300,7 @@ const QuotationForm: React.FC = () => {
       const item = newItems[index];
       const netPrice = item.unitPrice - (item.discountAmount || 0);
       item.lineTotal = item.qty * netPrice;
-      item.expectedMarginPercent = netPrice > 0 
-        ? ((netPrice - item.estimatedCost) / netPrice) * 100 
-        : 0;
+      item.expectedMarginPercent = netPrice > 0 ? ((netPrice - item.estimatedCost) / netPrice) * 100 : 0;
     }
 
     setItems(newItems);
@@ -298,7 +313,7 @@ const QuotationForm: React.FC = () => {
   };
 
   const handleSave = async (submit: boolean = false) => {
-      try {
+    try {
       await form.validateFields();
       setSaving(true);
 
@@ -309,10 +324,7 @@ const QuotationForm: React.FC = () => {
         ...values,
         docDate: values.docDate?.format('YYYY-MM-DD'),
         validUntil: values.validUntil?.format('YYYY-MM-DD'),
-        items: items.map((item, index) => ({
-          ...item,
-          lineNo: index + 1,
-        })),
+        items: items.map((item, index) => ({ ...item, lineNo: index + 1 })),
         images: images,
         ...summary,
       };
@@ -357,20 +369,24 @@ const QuotationForm: React.FC = () => {
     return labels[type] || type;
   };
 
+  // Filter products for modal
+  const filteredModalProducts = products.filter(p => {
+    const matchSearch = !productSearch || 
+      p.code?.toLowerCase().includes(productSearch.toLowerCase()) ||
+      p.name?.toLowerCase().includes(productSearch.toLowerCase());
+    const matchCategory = productCategoryFilter === null || p.categoryId === productCategoryFilter;
+    return matchSearch && matchCategory;
+  });
+
   const itemColumns = [
-    {
-      title: '#',
-      dataIndex: 'lineNo',
-      width: 50,
-      align: 'center' as const,
-    },
+    { title: '#', dataIndex: 'lineNo', width: 50, align: 'center' as const },
     {
       title: 'สินค้า',
       dataIndex: 'itemName',
       render: (text: string, record: QuotationItem) => (
         <div>
           <div style={{ fontWeight: 500 }}>
-            {record.sourceType === 'TEMP' && <Tag color="orange">🔶 ชั่วคราว</Tag>}
+            {record.sourceType === 'TEMP' && <Tag color="orange">ชั่วคราว</Tag>}
             {text}
           </div>
           <div style={{ fontSize: 12, color: '#888' }}>{record.itemCode}</div>
@@ -382,12 +398,7 @@ const QuotationForm: React.FC = () => {
       dataIndex: 'qty',
       width: 100,
       render: (val: number, _: any, index: number) => (
-        <InputNumber
-          min={1}
-          value={val}
-          onChange={(v) => handleItemChange(index, 'qty', v || 1)}
-          style={{ width: '100%' }}
-        />
+        <InputNumber min={1} value={val} onChange={(v) => handleItemChange(index, 'qty', v || 1)} style={{ width: '100%' }} />
       ),
     },
     {
@@ -408,9 +419,13 @@ const QuotationForm: React.FC = () => {
     {
       title: 'ต้นทุน',
       dataIndex: 'estimatedCost',
-      width: 100,
+      width: 110,
       align: 'right' as const,
-      render: (val: number) => `฿${Number(val || 0).toLocaleString()}`,
+      render: (val: number) => (
+        <span style={{ color: val > 0 ? '#22c55e' : '#6b7280' }}>
+          ฿{Number(val || 0).toLocaleString()}
+        </span>
+      ),
     },
     {
       title: 'Margin',
@@ -446,38 +461,71 @@ const QuotationForm: React.FC = () => {
     },
   ];
 
+  // Product Modal Columns
+  const productModalColumns = [
+    { title: 'รหัส', dataIndex: 'code', width: 120 },
+    { title: 'ชื่อสินค้า', dataIndex: 'name' },
+    { 
+      title: 'หมวดหมู่', 
+      dataIndex: 'categoryId', 
+      width: 120,
+      render: (categoryId: number) => {
+        const cat = categories.find(c => c.id === categoryId);
+        return cat ? <Tag color="blue">{cat.name}</Tag> : '-';
+      }
+    },
+    { 
+      title: 'ต้นทุน', 
+      dataIndex: 'standardCost', 
+      width: 100, 
+      align: 'right' as const,
+      render: (v: number) => (
+        <span style={{ color: v > 0 ? '#22c55e' : '#6b7280' }}>
+          ฿{Number(v || 0).toLocaleString()}
+        </span>
+      )
+    },
+    { 
+      title: 'ราคาขาย', 
+      dataIndex: 'sellingPrice', 
+      width: 100, 
+      align: 'right' as const,
+      render: (v: number) => `฿${Number(v || 0).toLocaleString()}` 
+    },
+    {
+      title: '',
+      width: 60,
+      render: (_: any, record: any) => (
+        <Button 
+          type="primary" 
+          size="small" 
+          icon={<PlusOutlined />}
+          onClick={(e) => {
+            e.stopPropagation();
+            handleAddProduct(record);
+          }}
+        />
+      ),
+    },
+  ];
+
   return (
     <div className="page-container">
       {/* Header */}
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 24 }}>
         <div>
-          <h1 style={{ margin: 0, fontSize: 24 }}>
-            📝 {isEdit ? 'แก้ไขใบเสนอราคา' : 'สร้างใบเสนอราคา'}
-          </h1>
-          {salesOnly && (
-            <Tag color="blue" style={{ marginTop: 8 }}>{getTypeLabel()}</Tag>
-          )}
+          <h1 style={{ margin: 0, fontSize: 24 }}>📝 {isEdit ? 'แก้ไขใบเสนอราคา' : 'สร้างใบเสนอราคา'}</h1>
+          {salesOnly && <Tag color="blue" style={{ marginTop: 8 }}>{getTypeLabel()}</Tag>}
         </div>
         <Space>
-          <Button icon={<EyeOutlined />} onClick={() => setPreviewOpen(true)}>
-            ดูตัวอย่าง
-          </Button>
-          {!salesOnly && (
-            <Button icon={<SettingOutlined />} onClick={() => setSettingsModalOpen(true)}>
-              ตั้งค่า
-            </Button>
-          )}
-          <Button onClick={() => handleSave(false)} loading={saving}>
-            <SaveOutlined /> บันทึกร่าง
-          </Button>
-          <Button type="primary" onClick={() => handleSave(true)} loading={saving}>
-            <SendOutlined /> ส่งอนุมัติ
-          </Button>
+          <Button icon={<EyeOutlined />} onClick={() => setPreviewOpen(true)}>ดูตัวอย่าง</Button>
+          {!salesOnly && <Button icon={<SettingOutlined />} onClick={() => setSettingsModalOpen(true)}>ตั้งค่า</Button>}
+          <Button onClick={() => handleSave(false)} loading={saving}><SaveOutlined /> บันทึกร่าง</Button>
+          <Button type="primary" onClick={() => handleSave(true)} loading={saving}><SendOutlined /> ส่งอนุมัติ</Button>
         </Space>
       </div>
 
       <Row gutter={24}>
-        {/* Left Panel - 70% */}
         <Col xs={24} lg={17}>
           {/* General Info */}
           <Card title="ข้อมูลทั่วไป" style={{ marginBottom: 16 }}>
@@ -495,79 +543,34 @@ const QuotationForm: React.FC = () => {
                     </Form.Item>
                   </Col>
                 )}
-                {salesOnly && (
-                  <Form.Item name="quotationType" hidden>
-                    <Input />
-                  </Form.Item>
-                )}
+                {salesOnly && <Form.Item name="quotationType" hidden><Input /></Form.Item>}
                 <Col xs={24} md={12}>
                   <Form.Item label="ลูกค้า" name="customerId" rules={[{ required: true, message: 'กรุณาเลือกลูกค้า' }]}>
-                    <Select
-                      showSearch
-                      placeholder="เลือกลูกค้า"
-                      optionFilterProp="children"
-                      onChange={handleCustomerChange}
-                      filterOption={(input, option) =>
-                        (option?.children as unknown as string)?.toLowerCase().includes(input.toLowerCase())
-                      }
-                    >
-                      {customers.map(c => (
-                        <Option key={c.id} value={c.id}>{c.name}</Option>
-                      ))}
+                    <Select showSearch placeholder="เลือกลูกค้า" optionFilterProp="children" onChange={handleCustomerChange}
+                      filterOption={(input, option) => (option?.children as unknown as string)?.toLowerCase().includes(input.toLowerCase())}>
+                      {customers.map(c => <Option key={c.id} value={c.id}>{c.name}</Option>)}
                     </Select>
                   </Form.Item>
                 </Col>
-                <Col xs={24} md={12}>
-                  <Form.Item label="ผู้ติดต่อ" name="contactPerson">
-                    <Input placeholder="ชื่อผู้ติดต่อ" />
-                  </Form.Item>
-                </Col>
-                <Col xs={12} md={6}>
-                  <Form.Item label="เบอร์โทร" name="contactPhone">
-                    <Input placeholder="เบอร์โทรผู้ติดต่อ" />
-                  </Form.Item>
-                </Col>
-                <Col xs={12} md={6}>
-                  <Form.Item label="อีเมล" name="contactEmail">
-                    <Input placeholder="อีเมลผู้ติดต่อ" />
-                  </Form.Item>
-                </Col>
-                <Col xs={12} md={6}>
-                  <Form.Item label="วันที่" name="docDate" rules={[{ required: true }]}>
-                    <DatePicker style={{ width: '100%' }} format="DD/MM/YYYY" />
-                  </Form.Item>
-                </Col>
-                <Col xs={12} md={6}>
-                  <Form.Item label="ยืนราคา (วัน)" name="validDays">
-                    <InputNumber min={1} style={{ width: '100%' }} />
-                  </Form.Item>
-                </Col>
-                <Col xs={12} md={6}>
-                  <Form.Item label="กำหนดส่ง (วัน)" name="deliveryDays">
-                    <InputNumber min={1} style={{ width: '100%' }} />
-                  </Form.Item>
-                </Col>
-                <Col xs={12} md={6}>
-                  <Form.Item label="เครดิต (วัน)" name="creditTermDays">
-                    <InputNumber min={0} style={{ width: '100%' }} />
-                  </Form.Item>
-                </Col>
+                <Col xs={24} md={12}><Form.Item label="ผู้ติดต่อ" name="contactPerson"><Input placeholder="ชื่อผู้ติดต่อ" /></Form.Item></Col>
+                <Col xs={12} md={6}><Form.Item label="เบอร์โทร" name="contactPhone"><Input placeholder="เบอร์โทรผู้ติดต่อ" /></Form.Item></Col>
+                <Col xs={12} md={6}><Form.Item label="อีเมล" name="contactEmail"><Input placeholder="อีเมลผู้ติดต่อ" /></Form.Item></Col>
+                <Col xs={12} md={6}><Form.Item label="วันที่" name="docDate" rules={[{ required: true }]}><DatePicker style={{ width: '100%' }} format="DD/MM/YYYY" /></Form.Item></Col>
+                <Col xs={12} md={6}><Form.Item label="ยืนราคา (วัน)" name="validDays"><InputNumber min={1} style={{ width: '100%' }} /></Form.Item></Col>
+                <Col xs={12} md={6}><Form.Item label="กำหนดส่ง (วัน)" name="deliveryDays"><InputNumber min={1} style={{ width: '100%' }} /></Form.Item></Col>
+                <Col xs={12} md={6}><Form.Item label="เครดิต (วัน)" name="creditTermDays"><InputNumber min={0} style={{ width: '100%' }} /></Form.Item></Col>
               </Row>
             </Form>
           </Card>
 
           {/* Items */}
           <Card 
-            title={`รายการสินค้า ${userQuotationType ? `(กลุ่ม${getTypeLabel().replace(/[📦🔬🔧]/g, '').trim()})` : ''}`}
+            title={`รายการสินค้า ${userQuotationType ? `(กลุ่ม${getTypeLabel().replace(/[📦🔬🔧🏭]/g, '').trim()})` : ''}`}
             style={{ marginBottom: 16 }}
             extra={
               <Space>
-                <Button icon={<PlusOutlined />} onClick={() => setProductModalOpen(true)}>
-                  เพิ่มสินค้า
-                </Button>
-                <Button icon={<PlusOutlined />} onClick={() => setTempProductModalOpen(true)}>
-                  สินค้าชั่วคราว
-                </Button>
+                <Button icon={<PlusOutlined />} onClick={() => { setProductModalOpen(true); setSelectedProducts([]); }}>เพิ่มสินค้า</Button>
+                <Button icon={<PlusOutlined />} onClick={() => setTempProductModalOpen(true)}>สินค้าชั่วคราว</Button>
               </Space>
             }
           >
@@ -582,14 +585,7 @@ const QuotationForm: React.FC = () => {
                 expandedRowRender: (record: QuotationItem, index: number) => (
                   <div style={{ padding: '12px 0' }}>
                     <div style={{ marginBottom: 8, fontWeight: 500 }}>
-                      <Checkbox 
-                        checked={!!record.itemDescription}
-                        onChange={(e) => {
-                          if (!e.target.checked) {
-                            handleItemChange(index, 'itemDescription', '');
-                          }
-                        }}
-                      >
+                      <Checkbox checked={!!record.itemDescription} onChange={(e) => { if (!e.target.checked) handleItemChange(index, 'itemDescription', ''); }}>
                         เพิ่มรายละเอียด
                       </Checkbox>
                     </div>
@@ -597,23 +593,23 @@ const QuotationForm: React.FC = () => {
                       rows={6}
                       value={record.itemDescription || ''}
                       onChange={(e) => handleItemChange(index, 'itemDescription', e.target.value)}
-                      placeholder="ใส่รายละเอียดเพิ่มเติม เช่น:&#10;- ตรวจเช็คความสมบูรณ์และรอยรั่วของแท้งค์&#10;- ตรวจเช็คความสมบูรณ์ของกลไกการเปิดปิดฝา&#10;- ตรวจเช็คการทำงานของระบบต่างๆ"
-                      style={{ 
-                        fontFamily: 'monospace',
-                        background: 'rgba(0,0,0,0.02)',
-                      }}
+                      placeholder="ใส่รายละเอียดเพิ่มเติม..."
+                      style={{ fontFamily: 'monospace', background: 'rgba(0,0,0,0.02)' }}
                     />
                   </div>
                 ),
                 rowExpandable: () => true,
-                expandRowByClick: false,
               }}
             />
             
+            {/* Fixed Warning Style */}
             {items.length > 0 && summary.requiresApproval && (
-              <div style={{ marginTop: 16, padding: 12, background: '#fff7e6', borderRadius: 8, border: '1px solid #ffe58f' }}>
-                ⚠️ มีรายการที่ Margin ต่ำกว่า {settings?.QT_MIN_MARGIN_PERCENT || 10}% ต้องขออนุมัติพิเศษ
-              </div>
+              <Alert
+                message={`⚠️ มีรายการที่ Margin ต่ำกว่า ${settings?.QT_MIN_MARGIN_PERCENT || 10}% ต้องขออนุมัติพิเศษ`}
+                type="warning"
+                showIcon
+                style={{ marginTop: 16 }}
+              />
             )}
           </Card>
 
@@ -622,39 +618,19 @@ const QuotationForm: React.FC = () => {
             <Row gutter={24}>
               <Col xs={24} md={12}>
                 <Form form={form}>
-                  <div style={{ 
-                    padding: 16, 
-                    background: 'rgba(255,255,255,0.1)', 
-                    borderRadius: 8, 
-                    marginBottom: 16,
-                    border: '1px solid rgba(255,255,255,0.2)'
-                  }}>
+                  <div style={{ padding: 16, background: 'rgba(255,255,255,0.1)', borderRadius: 8, marginBottom: 16, border: '1px solid rgba(255,255,255,0.2)' }}>
                     <div style={{ fontWeight: 500, marginBottom: 12 }}>💰 ส่วนลด</div>
                     <Row gutter={12}>
                       <Col span={12}>
                         <Form.Item label="จำนวน (บาท)" name="discountAmount" style={{ marginBottom: 8 }}>
-                          <InputNumber 
-                            min={0} 
-                            style={{ width: '100%' }}
-                            formatter={(v) => `${v}`.replace(/\B(?=(\d{3})+(?!\d))/g, ',')}
-                            onChange={() => {
-                              form.setFieldValue('discountPercent', 0);
-                              calculateSummary();
-                            }}
-                          />
+                          <InputNumber min={0} style={{ width: '100%' }} formatter={(v) => `${v}`.replace(/\B(?=(\d{3})+(?!\d))/g, ',')}
+                            onChange={() => { form.setFieldValue('discountPercent', 0); calculateSummary(); }} />
                         </Form.Item>
                       </Col>
                       <Col span={12}>
                         <Form.Item label="หรือ %" name="discountPercent" style={{ marginBottom: 8 }}>
-                          <InputNumber 
-                            min={0} 
-                            max={100} 
-                            style={{ width: '100%' }}
-                            onChange={() => {
-                              form.setFieldValue('discountAmount', 0);
-                              calculateSummary();
-                            }}
-                          />
+                          <InputNumber min={0} max={100} style={{ width: '100%' }}
+                            onChange={() => { form.setFieldValue('discountAmount', 0); calculateSummary(); }} />
                         </Form.Item>
                       </Col>
                     </Row>
@@ -670,41 +646,15 @@ const QuotationForm: React.FC = () => {
               </Col>
               <Col xs={24} md={12}>
                 <div style={{ fontSize: 16 }}>
-                  <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 8 }}>
-                    <span>รวมสินค้า:</span>
-                    <span>฿{summary.subtotal.toLocaleString('th-TH', { minimumFractionDigits: 2 })}</span>
-                  </div>
-                  {summary.discountAmount > 0 && (
-                    <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 8, color: '#f5222d' }}>
-                      <span>ส่วนลด:</span>
-                      <span>-฿{summary.discountAmount.toLocaleString('th-TH', { minimumFractionDigits: 2 })}</span>
-                    </div>
-                  )}
-                  <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 8 }}>
-                    <span>หลังส่วนลด:</span>
-                    <span>฿{summary.afterDiscount.toLocaleString('th-TH', { minimumFractionDigits: 2 })}</span>
-                  </div>
-                  <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 8 }}>
-                    <span>VAT 7%:</span>
-                    <span>฿{summary.taxAmount.toLocaleString('th-TH', { minimumFractionDigits: 2 })}</span>
-                  </div>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 8 }}><span>รวมสินค้า:</span><span>฿{summary.subtotal.toLocaleString('th-TH', { minimumFractionDigits: 2 })}</span></div>
+                  {summary.discountAmount > 0 && (<div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 8, color: '#f5222d' }}><span>ส่วนลด:</span><span>-฿{summary.discountAmount.toLocaleString('th-TH', { minimumFractionDigits: 2 })}</span></div>)}
+                  <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 8 }}><span>หลังส่วนลด:</span><span>฿{summary.afterDiscount.toLocaleString('th-TH', { minimumFractionDigits: 2 })}</span></div>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 8 }}><span>VAT 7%:</span><span>฿{summary.taxAmount.toLocaleString('th-TH', { minimumFractionDigits: 2 })}</span></div>
                   <Divider style={{ margin: '12px 0' }} />
-                  <div style={{ display: 'flex', justifyContent: 'space-between', fontWeight: 'bold', fontSize: 18 }}>
-                    <span>ยอดสุทธิ:</span>
-                    <span>฿{summary.grandTotal.toLocaleString('th-TH', { minimumFractionDigits: 2 })}</span>
-                  </div>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', fontWeight: 'bold', fontSize: 18 }}><span>ยอดสุทธิ:</span><span>฿{summary.grandTotal.toLocaleString('th-TH', { minimumFractionDigits: 2 })}</span></div>
                   <Divider style={{ margin: '12px 0' }} />
-                  <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 8, color: '#888' }}>
-                    <span>ต้นทุนรวม:</span>
-                    <span>฿{summary.totalCost.toLocaleString('th-TH', { minimumFractionDigits: 2 })}</span>
-                  </div>
-                  <div style={{ display: 'flex', justifyContent: 'space-between' }}>
-                    <span>Margin:</span>
-                    <Tag color={items.length > 0 ? getMarginColor(summary.marginPercent) : 'default'}>
-                      {summary.marginPercent.toFixed(1)}% (฿{summary.marginAmount.toLocaleString()})
-                      {items.length > 0 && summary.requiresApproval && ' ⚠️'}
-                    </Tag>
-                  </div>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 8, color: '#22c55e' }}><span>ต้นทุนรวม:</span><span>฿{summary.totalCost.toLocaleString('th-TH', { minimumFractionDigits: 2 })}</span></div>
+                  <div style={{ display: 'flex', justifyContent: 'space-between' }}><span>Margin:</span><Tag color={items.length > 0 ? getMarginColor(summary.marginPercent) : 'default'}>{summary.marginPercent.toFixed(1)}% (฿{summary.marginAmount.toLocaleString()}){items.length > 0 && summary.requiresApproval && ' ⚠️'}</Tag></div>
                 </div>
               </Col>
             </Row>
@@ -714,101 +664,115 @@ const QuotationForm: React.FC = () => {
           <Card title="หมายเหตุ">
             <Form form={form}>
               <Row gutter={16}>
-                <Col span={12}>
-                  <Form.Item label="หมายเหตุสาธารณะ (แสดงในเอกสาร)" name="publicNote">
-                    <TextArea rows={3} />
-                  </Form.Item>
-                </Col>
-                <Col span={12}>
-                  <Form.Item label="หมายเหตุภายใน" name="internalNote">
-                    <TextArea rows={3} />
-                  </Form.Item>
-                </Col>
+                <Col span={12}><Form.Item label="หมายเหตุสาธารณะ (แสดงในเอกสาร)" name="publicNote"><TextArea rows={3} /></Form.Item></Col>
+                <Col span={12}><Form.Item label="หมายเหตุภายใน" name="internalNote"><TextArea rows={3} /></Form.Item></Col>
               </Row>
             </Form>
           </Card>
         </Col>
 
-        {/* Right Panel - 30% */}
+        {/* Right Panel */}
         <Col xs={24} lg={7}>
-          {/* Image Gallery */}
-          <ImageGallery 
-            images={images} 
-            onChange={setImages}
-            onPasteHint={true}
-          />
-
-          {/* Quick Calculator */}
-          <Card 
-            title="🧮 เครื่องคิดเลขด่วน" 
-            style={{ marginTop: 16 }}
-            extra={
-              <Button 
-                type="link" 
-                icon={<CalculatorOutlined />}
-                onClick={() => setCalculatorOpen(true)}
-              >
-                ขยาย
-              </Button>
-            }
-          >
-            <div style={{ color: '#888', textAlign: 'center', padding: 20 }}>
-              คลิก "ขยาย" เพื่อใช้งาน<br/>
-              วางรายการเพื่อคำนวณต้นทุนเบื้องต้น
-            </div>
+          <ImageGallery images={images} onChange={setImages} onPasteHint={true} />
+          <Card title="🧮 เครื่องคิดเลขด่วน" style={{ marginTop: 16 }} extra={<Button type="link" icon={<CalculatorOutlined />} onClick={() => setCalculatorOpen(true)}>ขยาย</Button>}>
+            <div style={{ color: '#888', textAlign: 'center', padding: 20 }}>คลิก "ขยาย" เพื่อใช้งาน<br/>วางรายการเพื่อคำนวณต้นทุนเบื้องต้น</div>
           </Card>
         </Col>
       </Row>
 
-      {/* Product Selection Modal */}
+      {/* ========== IMPROVED PRODUCT SELECTION MODAL ========== */}
       <Modal
-        title={`เลือกสินค้า ${userQuotationType ? `(กลุ่ม${getTypeLabel().replace(/[📦🔬🔧]/g, '').trim()})` : ''}`}
+        title={
+          <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+            <span>📦 เลือกสินค้า</span>
+            {userQuotationType && <Tag color="blue">{getTypeLabel()}</Tag>}
+          </div>
+        }
         open={productModalOpen}
-        onCancel={() => setProductModalOpen(false)}
-        footer={null}
-        width={800}
+        onCancel={() => { setProductModalOpen(false); setSelectedProducts([]); }}
+        width={900}
+        footer={
+          selectedProducts.length > 0 ? (
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+              <span style={{ color: '#22c55e' }}>
+                <CheckCircleOutlined /> เลือกแล้ว {selectedProducts.length} รายการ
+              </span>
+              <Space>
+                <Button onClick={() => setSelectedProducts([])}>ล้างการเลือก</Button>
+                <Button type="primary" icon={<PlusOutlined />} onClick={handleAddSelectedProducts}>
+                  เพิ่มทั้งหมด ({selectedProducts.length})
+                </Button>
+              </Space>
+            </div>
+          ) : null
+        }
       >
-        <Input.Search
-          placeholder="ค้นหาสินค้า..."
-          style={{ marginBottom: 16 }}
-        />
+        {/* Search & Filter */}
+        <div style={{ display: 'flex', gap: 12, marginBottom: 16 }}>
+          <Input.Search
+            placeholder="🔍 ค้นหาสินค้า..."
+            value={productSearch}
+            onChange={(e) => setProductSearch(e.target.value)}
+            style={{ flex: 1 }}
+            allowClear
+          />
+          <Select
+            placeholder="หมวดหมู่"
+            value={productCategoryFilter}
+            onChange={setProductCategoryFilter}
+            style={{ width: 200 }}
+            allowClear
+            suffixIcon={<FilterOutlined />}
+          >
+            <Option value={null}>📦 ทั้งหมด ({products.length})</Option>
+            {categories.map(cat => (
+              <Option key={cat.id} value={cat.id}>
+                🏷️ {cat.name} ({products.filter(p => p.categoryId === cat.id).length})
+              </Option>
+            ))}
+          </Select>
+        </div>
+
+        {/* Filter Status */}
+        {(productSearch || productCategoryFilter !== null) && (
+          <div style={{ marginBottom: 12, padding: '8px 12px', background: 'rgba(34, 211, 238, 0.1)', borderRadius: 8 }}>
+            <span style={{ color: '#22d3ee' }}>
+              🔍 แสดง {filteredModalProducts.length} รายการ
+              {productCategoryFilter !== null && ` | หมวด: ${categories.find(c => c.id === productCategoryFilter)?.name}`}
+              {productSearch && ` | ค้นหา: "${productSearch}"`}
+            </span>
+            <Button type="link" size="small" onClick={() => { setProductSearch(''); setProductCategoryFilter(null); }} style={{ float: 'right', color: '#f87171' }}>
+              ล้างตัวกรอง
+            </Button>
+          </div>
+        )}
+
         <Table
-          dataSource={products}
+          dataSource={filteredModalProducts}
           rowKey="id"
           size="small"
-          pagination={{ pageSize: 10 }}
+          pagination={{ pageSize: 8, showTotal: (total) => `ทั้งหมด ${total} รายการ` }}
+          columns={productModalColumns}
+          rowSelection={{
+            selectedRowKeys: selectedProducts,
+            onChange: (keys) => setSelectedProducts(keys as number[]),
+          }}
           onRow={(record) => ({
-            onClick: () => handleAddProduct(record),
+            onClick: () => {
+              const newSelected = selectedProducts.includes(record.id)
+                ? selectedProducts.filter(id => id !== record.id)
+                : [...selectedProducts, record.id];
+              setSelectedProducts(newSelected);
+            },
             style: { cursor: 'pointer' },
           })}
-          columns={[
-            { title: 'รหัส', dataIndex: 'code', width: 100 },
-            { title: 'ชื่อสินค้า', dataIndex: 'name' },
-            { title: 'ราคา', dataIndex: 'sellingPrice', width: 120, 
-              render: (v: number) => `฿${Number(v || 0).toLocaleString()}` },
-          ]}
-          locale={{ emptyText: 'ยังไม่มีสินค้าในกลุ่มนี้' }}
+          locale={{ emptyText: 'ไม่พบสินค้า' }}
         />
       </Modal>
 
-      {/* Temp Product Modal */}
-      <TempProductModal
-        open={tempProductModalOpen}
-        onClose={() => setTempProductModalOpen(false)}
-        onAdd={handleAddTempProduct}
-      />
-
-      {/* Settings Modal */}
-      <SettingsModal
-        open={settingsModalOpen}
-        onClose={() => setSettingsModalOpen(false)}
-        onSave={() => {
-          loadInitialData();
-          setSettingsModalOpen(false);
-        }}
-      />
-
-      {/* Quick Calculator Modal */}
+      {/* Other Modals */}
+      <TempProductModal open={tempProductModalOpen} onClose={() => setTempProductModalOpen(false)} onAdd={handleAddTempProduct} />
+      <SettingsModal open={settingsModalOpen} onClose={() => setSettingsModalOpen(false)} onSave={() => { loadInitialData(); setSettingsModalOpen(false); }} />
       <QuickCalculator
         open={calculatorOpen}
         onClose={() => setCalculatorOpen(false)}
@@ -819,7 +783,7 @@ const QuotationForm: React.FC = () => {
             itemCode: `CALC-${Date.now()}-${index}`,
             itemName: item.name,
             qty: item.qty,
-            unit: 'ea',
+            unit: 'EA',
             unitPrice: item.price,
             estimatedCost: 0,
             expectedMarginPercent: 100,
@@ -830,8 +794,6 @@ const QuotationForm: React.FC = () => {
           setCalculatorOpen(false);
         }}
       />
-
-      {/* Preview Modal */}
       <QuotationPrintPreview
         open={previewOpen}
         onClose={() => setPreviewOpen(false)}
