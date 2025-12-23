@@ -200,21 +200,6 @@ const QuotationForm: React.FC = () => {
     setSummary({ subtotal, discountAmount, afterDiscount, taxAmount, grandTotal, totalCost, marginAmount, marginPercent, requiresApproval });
   };
 
-  const handleCustomerChange = (customerId: number) => {
-    const customer = customers.find(c => c.id === customerId);
-    if (customer) {
-      setSelectedCustomer(customer);
-      form.setFieldsValue({
-        customerName: customer.name,
-        customerAddress: customer.address,
-        contactPerson: customer.contactPerson || '',
-        contactPhone: customer.contactPhone || customer.phone || '',
-        contactEmail: customer.contactEmail || customer.email || '',
-        creditTermDays: customer.creditTermDays || 30,
-      });
-    }
-  };
-
   // Customer Modal Functions
   const openCustomerModal = () => {
     setCustomerSearchText('');
