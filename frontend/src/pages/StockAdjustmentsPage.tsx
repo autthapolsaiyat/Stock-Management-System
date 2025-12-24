@@ -1,7 +1,8 @@
 import React, { useEffect, useState } from 'react';
 import { Table, Button, Card, Space, Tag, message, Modal, Form, Select, InputNumber, Input, DatePicker } from 'antd';
-import { PlusOutlined, EyeOutlined, CheckOutlined, CloseOutlined, DeleteOutlined } from '@ant-design/icons';
+import { PlusOutlined, EyeOutlined, CheckOutlined, CloseOutlined, DeleteOutlined, PrinterOutlined } from '@ant-design/icons';
 import { stockAdjustmentsApi, warehousesApi } from '../services/api';
+import { StockAdjustmentPrintPreview } from '../components/print';
 import dayjs from 'dayjs';
 
 interface StockAdjustment {
@@ -40,6 +41,7 @@ const StockAdjustmentsPage: React.FC = () => {
   const [loading, setLoading] = useState(true);
   const [modalVisible, setModalVisible] = useState(false);
   const [detailVisible, setDetailVisible] = useState(false);
+  const [printVisible, setPrintVisible] = useState(false);
   const [selectedAdjustment, setSelectedAdjustment] = useState<StockAdjustment | null>(null);
   const [items, setItems] = useState<any[]>([{ productId: undefined, qtyAdjust: 0, qtyCounted: 0 }]);
   const [selectedWarehouse, setSelectedWarehouse] = useState<number | null>(null);
@@ -234,18 +236,21 @@ const StockAdjustmentsPage: React.FC = () => {
     },
     { title: 'สถานะ', dataIndex: 'status', key: 'status', render: (s: string) => <Tag color={statusColors[s]}>{statusLabels[s] || s}</Tag> },
     {
-      title: 'จัดการ', key: 'actions', width: 140,
+      title: 'จัดการ', key: 'actions', width: 160,
       render: (_: any, r: StockAdjustment) => (
         <Space>
-          <Button type="text" icon={<EyeOutlined />} onClick={() => handleView(r.id)} style={{ color: '#22d3ee' }} />
+          <Button type="text" icon={<EyeOutlined />} onClick={() => handleView(r.id)} style={{ color: '#22d3ee' }} title="ดูรายละเอียด" />
+          {r.status === 'POSTED' && (
+            <>
+              <Button type="text" icon={<PrinterOutlined />} onClick={async () => { await handleView(r.id); setPrintVisible(true); }} style={{ color: '#8b5cf6' }} title="พิมพ์" />
+              <Button type="text" icon={<CloseOutlined />} onClick={() => handleCancel(r.id)} style={{ color: '#f59e0b' }} title="ยกเลิก" />
+            </>
+          )}
           {r.status === 'DRAFT' && (
             <>
               <Button type="text" icon={<CheckOutlined />} onClick={() => handlePost(r.id)} style={{ color: '#10b981' }} title="ยืนยัน" />
               <Button type="text" icon={<DeleteOutlined />} onClick={() => handleDelete(r.id)} style={{ color: '#ef4444' }} title="ลบ" />
             </>
-          )}
-          {r.status === 'POSTED' && (
-            <Button type="text" icon={<CloseOutlined />} onClick={() => handleCancel(r.id)} style={{ color: '#f59e0b' }} title="ยกเลิก" />
           )}
           {r.status === 'CANCELLED' && (
             <Button type="text" icon={<DeleteOutlined />} onClick={() => handleDelete(r.id)} style={{ color: '#ef4444' }} title="ลบ" />
@@ -463,6 +468,13 @@ const StockAdjustmentsPage: React.FC = () => {
           </div>
         )}
       </Modal>
+
+      {/* Print Preview */}
+      <StockAdjustmentPrintPreview
+        open={printVisible}
+        onClose={() => setPrintVisible(false)}
+        adjustment={selectedAdjustment}
+      />
     </div>
   );
 };

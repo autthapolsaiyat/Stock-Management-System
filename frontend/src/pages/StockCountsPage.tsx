@@ -1,7 +1,8 @@
 import React, { useEffect, useState } from 'react';
 import { Table, Button, Card, Space, Tag, message, Modal, Form, Select, Input, DatePicker, Progress, InputNumber } from 'antd';
-import { PlusOutlined, EyeOutlined, PlayCircleOutlined, CheckOutlined, FileDoneOutlined, SyncOutlined, DeleteOutlined, StopOutlined } from '@ant-design/icons';
+import { PlusOutlined, EyeOutlined, PlayCircleOutlined, CheckOutlined, FileDoneOutlined, SyncOutlined, DeleteOutlined, StopOutlined, PrinterOutlined } from '@ant-design/icons';
 import { stockCountsApi, warehousesApi, categoriesApi } from '../services/api';
+import { StockCountPrintPreview } from '../components/print';
 import dayjs from 'dayjs';
 
 interface StockCount {
@@ -38,6 +39,8 @@ const StockCountsPage: React.FC = () => {
   const [loading, setLoading] = useState(true);
   const [modalVisible, setModalVisible] = useState(false);
   const [detailVisible, setDetailVisible] = useState(false);
+  const [printVisible, setPrintVisible] = useState(false);
+  const [printType, setPrintType] = useState<'count_sheet' | 'variance_report'>('count_sheet');
   const [selectedCount, setSelectedCount] = useState<StockCount | null>(null);
   const [countType, setCountType] = useState<string>('FULL');
   const [countingItem, setCountingItem] = useState<any>(null);
@@ -293,24 +296,32 @@ const StockCountsPage: React.FC = () => {
           <Button type="text" icon={<EyeOutlined />} onClick={() => handleView(r.id)} style={{ color: '#22d3ee' }} title="ดูรายละเอียด" />
           {r.status === 'DRAFT' && (
             <>
+              <Button type="text" icon={<PrinterOutlined />} onClick={async () => { await handleView(r.id); setPrintType('count_sheet'); setPrintVisible(true); }} style={{ color: '#8b5cf6' }} title="พิมพ์ใบนับ" />
               <Button type="text" icon={<PlayCircleOutlined />} onClick={() => handleStart(r.id)} style={{ color: '#10b981' }} title="เริ่มนับ" />
               <Button type="text" icon={<DeleteOutlined />} onClick={() => handleDelete(r.id)} style={{ color: '#ef4444' }} title="ลบ" />
             </>
           )}
           {r.status === 'IN_PROGRESS' && (
             <>
+              <Button type="text" icon={<PrinterOutlined />} onClick={async () => { await handleView(r.id); setPrintType('count_sheet'); setPrintVisible(true); }} style={{ color: '#8b5cf6' }} title="พิมพ์ใบนับ" />
               <Button type="text" icon={<CheckOutlined />} onClick={() => handleComplete(r.id)} style={{ color: '#f59e0b' }} title="เสร็จสิ้น" />
               <Button type="text" icon={<StopOutlined />} onClick={() => handleCancelCount(r.id)} style={{ color: '#ef4444' }} title="ยกเลิกการนับ" />
             </>
           )}
           {r.status === 'COMPLETED' && (
             <>
+              <Button type="text" icon={<PrinterOutlined />} onClick={async () => { await handleView(r.id); setPrintType('variance_report'); setPrintVisible(true); }} style={{ color: '#8b5cf6' }} title="พิมพ์รายงานผลต่าง" />
               <Button type="text" icon={<FileDoneOutlined />} onClick={() => handleApprove(r.id)} style={{ color: '#8b5cf6' }} title="อนุมัติ" />
               <Button type="text" icon={<StopOutlined />} onClick={() => handleCancelCount(r.id)} style={{ color: '#ef4444' }} title="ยกเลิกการนับ" />
             </>
           )}
-          {r.status === 'APPROVED' && !r.adjustment_id && (
-            <Button type="text" icon={<SyncOutlined />} onClick={() => handleCreateAdjustment(r.id)} style={{ color: '#ec4899' }} title="สร้างใบปรับสต็อก" />
+          {r.status === 'APPROVED' && (
+            <>
+              <Button type="text" icon={<PrinterOutlined />} onClick={async () => { await handleView(r.id); setPrintType('variance_report'); setPrintVisible(true); }} style={{ color: '#8b5cf6' }} title="พิมพ์รายงานผลต่าง" />
+              {!r.adjustment_id && (
+                <Button type="text" icon={<SyncOutlined />} onClick={() => handleCreateAdjustment(r.id)} style={{ color: '#ec4899' }} title="สร้างใบปรับสต็อก" />
+              )}
+            </>
           )}
           {r.status === 'CANCELLED' && (
             <Button type="text" icon={<DeleteOutlined />} onClick={() => handleDelete(r.id)} style={{ color: '#ef4444' }} title="ลบ" />
@@ -531,6 +542,14 @@ const StockCountsPage: React.FC = () => {
           </Form>
         )}
       </Modal>
+
+      {/* Print Preview */}
+      <StockCountPrintPreview
+        open={printVisible}
+        onClose={() => setPrintVisible(false)}
+        stockCount={selectedCount}
+        printType={printType}
+      />
     </div>
   );
 };
