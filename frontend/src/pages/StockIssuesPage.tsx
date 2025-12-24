@@ -1,8 +1,9 @@
 import React, { useEffect, useState } from 'react';
 import { Table, Button, Card, Space, Tag, message, Modal, Form, Select, InputNumber, Input, DatePicker } from 'antd';
-import { PlusOutlined, EyeOutlined, CheckOutlined } from '@ant-design/icons';
+import { PlusOutlined, EyeOutlined, CheckOutlined, PrinterOutlined, CloseOutlined, DeleteOutlined } from '@ant-design/icons';
 import { stockIssuesApi, warehousesApi, productsApi } from '../services/api';
 import { StockIssue, Warehouse, Product } from '../types';
+import { StockIssuePrintPreview } from '../components/print';
 import dayjs from 'dayjs';
 
 const StockIssuesPage: React.FC = () => {
@@ -12,6 +13,7 @@ const StockIssuesPage: React.FC = () => {
   const [loading, setLoading] = useState(true);
   const [modalVisible, setModalVisible] = useState(false);
   const [detailVisible, setDetailVisible] = useState(false);
+  const [printVisible, setPrintVisible] = useState(false);
   const [selectedIssue, setSelectedIssue] = useState<StockIssue | null>(null);
   const [items, setItems] = useState<any[]>([{ productId: undefined, qty: 1 }]);
   const [form] = Form.useForm();
@@ -62,6 +64,44 @@ const StockIssuesPage: React.FC = () => {
     }
   };
 
+  const handleCancel = async (id: number) => {
+    Modal.confirm({
+      title: 'ยืนยันยกเลิก',
+      content: 'คุณต้องการยกเลิกใบเบิกสินค้านี้หรือไม่? สต็อกจะถูกคืนกลับ',
+      okText: 'ยกเลิกใบเบิก',
+      cancelText: 'ไม่',
+      okButtonProps: { danger: true },
+      onOk: async () => {
+        try {
+          await stockIssuesApi.cancel(id);
+          message.success('ยกเลิกใบเบิกสินค้าสำเร็จ');
+          loadData();
+        } catch (error: any) {
+          message.error(error.response?.data?.message || 'เกิดข้อผิดพลาด');
+        }
+      },
+    });
+  };
+
+  const handleDelete = async (id: number) => {
+    Modal.confirm({
+      title: 'ยืนยันลบ',
+      content: 'คุณต้องการลบใบเบิกสินค้านี้หรือไม่?',
+      okText: 'ลบ',
+      cancelText: 'ไม่',
+      okButtonProps: { danger: true },
+      onOk: async () => {
+        try {
+          await stockIssuesApi.delete(id);
+          message.success('ลบใบเบิกสินค้าสำเร็จ');
+          loadData();
+        } catch (error: any) {
+          message.error(error.response?.data?.message || 'เกิดข้อผิดพลาด');
+        }
+      },
+    });
+  };
+
   const handleSubmit = async (values: any) => {
     try {
       const payload = {
@@ -97,22 +137,34 @@ const StockIssuesPage: React.FC = () => {
     { value: 'expired', label: 'หมดอายุ' },
   ];
 
-  const statusColors: Record<string, string> = { draft: 'default', posted: 'success', cancelled: 'error' };
-  const statusLabels: Record<string, string> = { draft: 'ร่าง', posted: 'เบิกแล้ว', cancelled: 'ยกเลิก' };
+  const statusColors: Record<string, string> = { DRAFT: 'default', POSTED: 'success', CANCELLED: 'error', draft: 'default', posted: 'success', cancelled: 'error' };
+  const statusLabels: Record<string, string> = { DRAFT: 'ร่าง', POSTED: 'เบิกแล้ว', CANCELLED: 'ยกเลิก', draft: 'ร่าง', posted: 'เบิกแล้ว', cancelled: 'ยกเลิก' };
 
   const columns = [
-    { title: 'เลขที่', dataIndex: 'docNo', key: 'docNo', width: 140 },
+    { title: 'เลขที่', dataIndex: 'docFullNo', key: 'docFullNo', width: 150, render: (v: string, r: any) => v || r.docNo || '-' },
     { title: 'วันที่', dataIndex: 'docDate', key: 'docDate', width: 110, render: (d: string) => d ? dayjs(d).format('DD/MM/YYYY') : '-' },
     { title: 'คลัง', key: 'warehouse', render: (_: any, r: StockIssue) => warehouses.find(w => w.id === r.warehouseId)?.name || '-' },
-    { title: 'ประเภท', dataIndex: 'issueType', key: 'issueType', render: (t: string) => issueTypes.find(i => i.value === t)?.label || t },
+    { title: 'ประเภท', dataIndex: 'issueType', key: 'issueType', render: (t: string) => issueTypes.find(i => i.value === t)?.label || t || '-' },
     { title: 'สถานะ', dataIndex: 'status', key: 'status', render: (s: string) => <Tag color={statusColors[s]}>{statusLabels[s] || s}</Tag> },
     {
-      title: 'จัดการ', key: 'actions', width: 120,
+      title: 'จัดการ', key: 'actions', width: 160,
       render: (_: any, r: StockIssue) => (
         <Space>
-          <Button type="text" icon={<EyeOutlined />} onClick={() => handleView(r.id)} style={{ color: '#22d3ee' }} />
-          {r.status === 'draft' && (
-            <Button type="text" icon={<CheckOutlined />} onClick={() => handlePost(r.id)} style={{ color: '#10b981' }} title="เบิกสินค้า" />
+          <Button type="text" icon={<EyeOutlined />} onClick={() => handleView(r.id)} style={{ color: '#22d3ee' }} title="ดูรายละเอียด" />
+          {(r.status === 'POSTED' || r.status === 'posted') && (
+            <>
+              <Button type="text" icon={<PrinterOutlined />} onClick={async () => { await handleView(r.id); setPrintVisible(true); }} style={{ color: '#8b5cf6' }} title="พิมพ์" />
+              <Button type="text" icon={<CloseOutlined />} onClick={() => handleCancel(r.id)} style={{ color: '#f59e0b' }} title="ยกเลิก" />
+            </>
+          )}
+          {(r.status === 'DRAFT' || r.status === 'draft') && (
+            <>
+              <Button type="text" icon={<CheckOutlined />} onClick={() => handlePost(r.id)} style={{ color: '#10b981' }} title="เบิกสินค้า" />
+              <Button type="text" icon={<DeleteOutlined />} onClick={() => handleDelete(r.id)} style={{ color: '#ef4444' }} title="ลบ" />
+            </>
+          )}
+          {(r.status === 'CANCELLED' || r.status === 'cancelled') && (
+            <Button type="text" icon={<DeleteOutlined />} onClick={() => handleDelete(r.id)} style={{ color: '#ef4444' }} title="ลบ" />
           )}
         </Space>
       ),
@@ -196,6 +248,13 @@ const StockIssuesPage: React.FC = () => {
           </div>
         )}
       </Modal>
+
+      {/* Print Preview */}
+      <StockIssuePrintPreview
+        open={printVisible}
+        onClose={() => setPrintVisible(false)}
+        issue={selectedIssue}
+      />
     </div>
   );
 };

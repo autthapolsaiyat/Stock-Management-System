@@ -1,7 +1,9 @@
 import React, { useEffect, useState } from 'react';
-import { Table, Card, Select, Space, Tag } from 'antd';
+import { Table, Card, Select, Space, Tag, Button } from 'antd';
+import { PrinterOutlined } from '@ant-design/icons';
 import { stockApi, productsApi, warehousesApi } from '../services/api';
 import { StockBalance, Product, Warehouse } from '../types';
+import { StockBalanceReportPrint } from '../components/print';
 
 const StockBalancePage: React.FC = () => {
   const [stockBalances, setStockBalances] = useState<StockBalance[]>([]);
@@ -9,6 +11,7 @@ const StockBalancePage: React.FC = () => {
   const [warehouses, setWarehouses] = useState<Warehouse[]>([]);
   const [loading, setLoading] = useState(true);
   const [filters, setFilters] = useState({ productId: undefined, warehouseId: undefined });
+  const [printVisible, setPrintVisible] = useState(false);
 
   useEffect(() => { loadMasterData(); }, []);
   useEffect(() => { loadStockBalance(); }, [filters]);
@@ -99,26 +102,31 @@ const StockBalancePage: React.FC = () => {
       </div>
 
       <Card className="card-holo">
-        <Space style={{ marginBottom: 16 }} wrap>
-          <Select
-            placeholder="เลือกสินค้า"
-            allowClear
-            style={{ width: 250 }}
-            value={filters.productId}
-            onChange={(v) => setFilters({ ...filters, productId: v })}
-            options={products.map((p) => ({ value: p.id, label: `${p.code} - ${p.name}` }))}
-            showSearch
-            filterOption={(input, option) => (option?.label ?? '').toLowerCase().includes(input.toLowerCase())}
-          />
-          <Select
-            placeholder="เลือกคลังสินค้า"
-            allowClear
-            style={{ width: 200 }}
-            value={filters.warehouseId}
-            onChange={(v) => setFilters({ ...filters, warehouseId: v })}
-            options={warehouses.map((w) => ({ value: w.id, label: w.name }))}
-          />
-        </Space>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16, flexWrap: 'wrap', gap: 8 }}>
+          <Space wrap>
+            <Select
+              placeholder="เลือกสินค้า"
+              allowClear
+              style={{ width: 250 }}
+              value={filters.productId}
+              onChange={(v) => setFilters({ ...filters, productId: v })}
+              options={products.map((p) => ({ value: p.id, label: `${p.code} - ${p.name}` }))}
+              showSearch
+              filterOption={(input, option) => (option?.label ?? '').toLowerCase().includes(input.toLowerCase())}
+            />
+            <Select
+              placeholder="เลือกคลังสินค้า"
+              allowClear
+              style={{ width: 200 }}
+              value={filters.warehouseId}
+              onChange={(v) => setFilters({ ...filters, warehouseId: v })}
+              options={warehouses.map((w) => ({ value: w.id, label: w.name }))}
+            />
+          </Space>
+          <Button type="primary" icon={<PrinterOutlined />} onClick={() => setPrintVisible(true)} className="btn-holo">
+            พิมพ์รายงาน
+          </Button>
+        </div>
 
         <Table
           columns={columns}
@@ -128,6 +136,12 @@ const StockBalancePage: React.FC = () => {
           pagination={{ pageSize: 15, showTotal: (total) => `ทั้งหมด ${total} รายการ` }}
         />
       </Card>
+
+      {/* Print Report */}
+      <StockBalanceReportPrint
+        open={printVisible}
+        onClose={() => setPrintVisible(false)}
+      />
     </div>
   );
 };

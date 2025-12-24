@@ -4,3 +4,6 @@ export { default as TaxInvoicePrintPreview } from './TaxInvoicePrintPreview';
 export { default as ReceiptPrintPreview } from './ReceiptPrintPreview';
 export { default as StockAdjustmentPrintPreview } from './StockAdjustmentPrintPreview';
 export { default as StockCountPrintPreview } from './StockCountPrintPreview';
+export { default as StockIssuePrintPreview } from './StockIssuePrintPreview';
+export { default as StockTransferPrintPreview } from './StockTransferPrintPreview';
+export { default as StockBalanceReportPrint } from './StockBalanceReportPrint';

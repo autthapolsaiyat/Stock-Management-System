@@ -119,6 +119,12 @@ export const stockApi = {
   getMovements: (productId: number) => api.get(`/api/stock/movements/${productId}`),
 };
 
+// Stock Balance API (for reporting)
+export const stockBalanceApi = {
+  getAll: (params?: { warehouse_id?: number }) => 
+    api.get('/api/stock/balance', { params: { warehouseId: params?.warehouse_id } }),
+};
+
 // System Settings API
 export const systemSettingsApi = {
   getByCategory: (category: string) => api.get(`/api/system-settings/category/${category}`),
@@ -174,6 +180,8 @@ export const stockIssuesApi = {
   getById: (id: number) => api.get(`/api/stock-issues/${id}`),
   create: (data: any) => api.post('/api/stock-issues', data),
   post: (id: number) => api.post(`/api/stock-issues/${id}/post`),
+  cancel: (id: number) => api.post(`/api/stock-issues/${id}/cancel`),
+  delete: (id: number) => api.delete(`/api/stock-issues/${id}`),
 };
 
 // Stock Transfers API
@@ -182,6 +190,8 @@ export const stockTransfersApi = {
   getById: (id: number) => api.get(`/api/stock-transfers/${id}`),
   create: (data: any) => api.post('/api/stock-transfers', data),
   post: (id: number) => api.post(`/api/stock-transfers/${id}/post`),
+  cancel: (id: number) => api.post(`/api/stock-transfers/${id}/cancel`),
+  delete: (id: number) => api.delete(`/api/stock-transfers/${id}`),
 };
 
 // Stock Adjustments API

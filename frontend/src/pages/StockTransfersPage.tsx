@@ -1,13 +1,15 @@
 import React, { useEffect, useState } from 'react';
 import { Table, Button, Card, Space, Tag, message, Modal, Form, Select, InputNumber, Input, DatePicker } from 'antd';
-import { PlusOutlined, EyeOutlined, CheckOutlined } from '@ant-design/icons';
+import { PlusOutlined, EyeOutlined, CheckOutlined, PrinterOutlined, CloseOutlined, DeleteOutlined } from '@ant-design/icons';
 import { stockTransfersApi, warehousesApi, productsApi } from '../services/api';
 import { Warehouse, Product } from '../types';
+import { StockTransferPrintPreview } from '../components/print';
 import dayjs from 'dayjs';
 
 interface StockTransfer {
   id: number;
   docNo: string;
+  docFullNo?: string;
   docDate: string;
   fromWarehouseId: number;
   toWarehouseId: number;
@@ -23,6 +25,7 @@ const StockTransfersPage: React.FC = () => {
   const [loading, setLoading] = useState(true);
   const [modalVisible, setModalVisible] = useState(false);
   const [detailVisible, setDetailVisible] = useState(false);
+  const [printVisible, setPrintVisible] = useState(false);
   const [selectedTransfer, setSelectedTransfer] = useState<StockTransfer | null>(null);
   const [items, setItems] = useState<any[]>([{ productId: undefined, qty: 1 }]);
   const [form] = Form.useForm();
@@ -73,6 +76,44 @@ const StockTransfersPage: React.FC = () => {
     }
   };
 
+  const handleCancel = async (id: number) => {
+    Modal.confirm({
+      title: 'ยืนยันยกเลิก',
+      content: 'คุณต้องการยกเลิกใบโอนสินค้านี้หรือไม่? สต็อกจะถูกคืนกลับคลังต้นทาง',
+      okText: 'ยกเลิกใบโอน',
+      cancelText: 'ไม่',
+      okButtonProps: { danger: true },
+      onOk: async () => {
+        try {
+          await stockTransfersApi.cancel(id);
+          message.success('ยกเลิกใบโอนสินค้าสำเร็จ');
+          loadData();
+        } catch (error: any) {
+          message.error(error.response?.data?.message || 'เกิดข้อผิดพลาด');
+        }
+      },
+    });
+  };
+
+  const handleDelete = async (id: number) => {
+    Modal.confirm({
+      title: 'ยืนยันลบ',
+      content: 'คุณต้องการลบใบโอนสินค้านี้หรือไม่?',
+      okText: 'ลบ',
+      cancelText: 'ไม่',
+      okButtonProps: { danger: true },
+      onOk: async () => {
+        try {
+          await stockTransfersApi.delete(id);
+          message.success('ลบใบโอนสินค้าสำเร็จ');
+          loadData();
+        } catch (error: any) {
+          message.error(error.response?.data?.message || 'เกิดข้อผิดพลาด');
+        }
+      },
+    });
+  };
+
   const handleSubmit = async (values: any) => {
     if (values.fromWarehouseId === values.toWarehouseId) {
       message.error('คลังต้นทางและปลายทางต้องไม่เหมือนกัน');
@@ -104,22 +145,34 @@ const StockTransfersPage: React.FC = () => {
     setItems(newItems);
   };
 
-  const statusColors: Record<string, string> = { draft: 'default', posted: 'success', cancelled: 'error' };
-  const statusLabels: Record<string, string> = { draft: 'ร่าง', posted: 'โอนแล้ว', cancelled: 'ยกเลิก' };
+  const statusColors: Record<string, string> = { DRAFT: 'default', POSTED: 'success', CANCELLED: 'error', draft: 'default', posted: 'success', cancelled: 'error' };
+  const statusLabels: Record<string, string> = { DRAFT: 'ร่าง', POSTED: 'โอนแล้ว', CANCELLED: 'ยกเลิก', draft: 'ร่าง', posted: 'โอนแล้ว', cancelled: 'ยกเลิก' };
 
   const columns = [
-    { title: 'เลขที่', dataIndex: 'docNo', key: 'docNo', width: 140 },
+    { title: 'เลขที่', dataIndex: 'docFullNo', key: 'docFullNo', width: 150, render: (v: string, r: any) => v || r.docNo || '-' },
     { title: 'วันที่', dataIndex: 'docDate', key: 'docDate', width: 110, render: (d: string) => d ? dayjs(d).format('DD/MM/YYYY') : '-' },
     { title: 'จากคลัง', key: 'fromWarehouse', render: (_: any, r: StockTransfer) => warehouses.find(w => w.id === r.fromWarehouseId)?.name || '-' },
     { title: 'ไปคลัง', key: 'toWarehouse', render: (_: any, r: StockTransfer) => warehouses.find(w => w.id === r.toWarehouseId)?.name || '-' },
     { title: 'สถานะ', dataIndex: 'status', key: 'status', render: (s: string) => <Tag color={statusColors[s]}>{statusLabels[s] || s}</Tag> },
     {
-      title: 'จัดการ', key: 'actions', width: 120,
+      title: 'จัดการ', key: 'actions', width: 160,
       render: (_: any, r: StockTransfer) => (
         <Space>
-          <Button type="text" icon={<EyeOutlined />} onClick={() => handleView(r.id)} style={{ color: '#22d3ee' }} />
-          {r.status === 'draft' && (
-            <Button type="text" icon={<CheckOutlined />} onClick={() => handlePost(r.id)} style={{ color: '#10b981' }} title="โอนสินค้า" />
+          <Button type="text" icon={<EyeOutlined />} onClick={() => handleView(r.id)} style={{ color: '#22d3ee' }} title="ดูรายละเอียด" />
+          {(r.status === 'POSTED' || r.status === 'posted') && (
+            <>
+              <Button type="text" icon={<PrinterOutlined />} onClick={async () => { await handleView(r.id); setPrintVisible(true); }} style={{ color: '#8b5cf6' }} title="พิมพ์" />
+              <Button type="text" icon={<CloseOutlined />} onClick={() => handleCancel(r.id)} style={{ color: '#f59e0b' }} title="ยกเลิก" />
+            </>
+          )}
+          {(r.status === 'DRAFT' || r.status === 'draft') && (
+            <>
+              <Button type="text" icon={<CheckOutlined />} onClick={() => handlePost(r.id)} style={{ color: '#10b981' }} title="โอนสินค้า" />
+              <Button type="text" icon={<DeleteOutlined />} onClick={() => handleDelete(r.id)} style={{ color: '#ef4444' }} title="ลบ" />
+            </>
+          )}
+          {(r.status === 'CANCELLED' || r.status === 'cancelled') && (
+            <Button type="text" icon={<DeleteOutlined />} onClick={() => handleDelete(r.id)} style={{ color: '#ef4444' }} title="ลบ" />
           )}
         </Space>
       ),
@@ -203,6 +256,13 @@ const StockTransfersPage: React.FC = () => {
           </div>
         )}
       </Modal>
+
+      {/* Print Preview */}
+      <StockTransferPrintPreview
+        open={printVisible}
+        onClose={() => setPrintVisible(false)}
+        transfer={selectedTransfer}
+      />
     </div>
   );
 };
