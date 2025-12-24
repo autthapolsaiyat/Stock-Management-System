@@ -126,13 +126,6 @@ const StockCardPrintPreview: React.FC<StockCardPrintPreviewProps> = ({
     return Number(num || 0).toLocaleString('th-TH', { minimumFractionDigits: 0, maximumFractionDigits: 4 });
   };
 
-  const formatThaiDate = (date: string) => {
-    const d = dayjs(date);
-    const thaiMonths = ['มกราคม', 'กุมภาพันธ์', 'มีนาคม', 'เมษายน', 'พฤษภาคม', 'มิถุนายน', 
-                        'กรกฎาคม', 'สิงหาคม', 'กันยายน', 'ตุลาคม', 'พฤศจิกายน', 'ธันวาคม'];
-    const thaiYear = d.year() + 543;
-    return `${d.date()} ${thaiMonths[d.month()]} ${thaiYear}`;
-  };
 
   const getReferenceLabel = (type: string) => {
     const labels: Record<string, string> = {
