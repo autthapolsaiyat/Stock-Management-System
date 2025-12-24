@@ -268,7 +268,7 @@ export class FifoService {
     let query = this.layerRepository
       .createQueryBuilder('layer')
       .innerJoin('products', 'p', 'p.id = layer.product_id')
-      .leftJoin('categories', 'c', 'c.id = p.category_id')
+      .leftJoin('product_categories', 'c', 'c.id = p.category_id')
       .leftJoin('warehouses', 'w', 'w.id = layer.warehouse_id');
     
     if (warehouseId) {
@@ -290,7 +290,7 @@ export class FifoService {
     const valuationQuery = this.layerRepository
       .createQueryBuilder('layer')
       .innerJoin('products', 'p', 'p.id = layer.product_id')
-      .leftJoin('categories', 'c', 'c.id = p.category_id')
+      .leftJoin('product_categories', 'c', 'c.id = p.category_id')
       .leftJoin('warehouses', 'w', 'w.id = layer.warehouse_id')
       .select([
         'p.id as product_id',
