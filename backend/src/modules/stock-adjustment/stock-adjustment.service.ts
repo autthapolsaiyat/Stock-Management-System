@@ -146,7 +146,7 @@ export class StockAdjustmentService {
   async post(id: number, userId?: number) {
     const adjustment = await this.findOne(id);
 
-    if (adjustment.status !== 'DRAFT') {
+    if (!["DRAFT", "CANCELLED"].includes(adjustment.status)) {
       throw new BadRequestException('Only DRAFT adjustments can be posted');
     }
 
@@ -240,8 +240,8 @@ export class StockAdjustmentService {
   async delete(id: number) {
     const adjustment = await this.findOne(id);
 
-    if (adjustment.status !== 'DRAFT') {
-      throw new BadRequestException('Only DRAFT adjustments can be deleted');
+    if (!["DRAFT", "CANCELLED"].includes(adjustment.status)) {
+      throw new BadRequestException('Only DRAFT or CANCELLED adjustments can be deleted');
     }
 
     await this.dataSource.query('DELETE FROM stock_adjustment_items WHERE stock_adjustment_id = $1', [id]);
