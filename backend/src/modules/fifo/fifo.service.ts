@@ -262,4 +262,136 @@ export class FifoService {
       transactions: mappedTransactions,
     };
   }
+
+  async getStockValuation(warehouseId?: number, categoryId?: number, asOfDate?: string) {
+    // Build query to get valuation from FIFO layers
+    let query = this.layerRepository
+      .createQueryBuilder('layer')
+      .innerJoin('products', 'p', 'p.id = layer.product_id')
+      .leftJoin('categories', 'c', 'c.id = p.category_id')
+      .leftJoin('warehouses', 'w', 'w.id = layer.warehouse_id');
+    
+    if (warehouseId) {
+      query = query.andWhere('layer.warehouse_id = :warehouseId', { warehouseId });
+    }
+    
+    if (categoryId) {
+      query = query.andWhere('p.category_id = :categoryId', { categoryId });
+    }
+    
+    // If asOfDate provided, calculate historical valuation
+    if (asOfDate) {
+      const asOf = new Date(asOfDate);
+      asOf.setHours(23, 59, 59, 999);
+      query = query.andWhere('layer.received_at <= :asOfDate', { asOfDate: asOf });
+    }
+    
+    // Get detailed valuation by product
+    const valuationQuery = this.layerRepository
+      .createQueryBuilder('layer')
+      .innerJoin('products', 'p', 'p.id = layer.product_id')
+      .leftJoin('categories', 'c', 'c.id = p.category_id')
+      .leftJoin('warehouses', 'w', 'w.id = layer.warehouse_id')
+      .select([
+        'p.id as product_id',
+        'p.code as product_code',
+        'p.name as product_name',
+        'p.unit as unit',
+        'c.id as category_id',
+        'c.name as category_name',
+        'layer.warehouse_id as warehouse_id',
+        'w.name as warehouse_name',
+        'SUM(layer.qty_remaining) as qty',
+        'SUM(layer.qty_remaining * layer.unit_cost) as value',
+        'CASE WHEN SUM(layer.qty_remaining) > 0 THEN SUM(layer.qty_remaining * layer.unit_cost) / SUM(layer.qty_remaining) ELSE 0 END as avg_cost',
+      ])
+      .where('layer.qty_remaining > 0')
+      .groupBy('p.id, p.code, p.name, p.unit, c.id, c.name, layer.warehouse_id, w.name');
+    
+    if (warehouseId) {
+      valuationQuery.andWhere('layer.warehouse_id = :warehouseId', { warehouseId });
+    }
+    
+    if (categoryId) {
+      valuationQuery.andWhere('p.category_id = :categoryId', { categoryId });
+    }
+    
+    if (asOfDate) {
+      const asOf = new Date(asOfDate);
+      asOf.setHours(23, 59, 59, 999);
+      valuationQuery.andWhere('layer.received_at <= :asOfDate', { asOfDate: asOf });
+    }
+    
+    const items = await valuationQuery.orderBy('p.code', 'ASC').getRawMany();
+    
+    // Calculate summary by category
+    const categoryMap = new Map<string, { categoryId: number; categoryName: string; qty: number; value: number }>();
+    let totalQty = 0;
+    let totalValue = 0;
+    
+    items.forEach(item => {
+      const catName = item.category_name || 'ไม่ระบุหมวด';
+      const catId = item.category_id || 0;
+      const qty = parseFloat(item.qty) || 0;
+      const value = parseFloat(item.value) || 0;
+      
+      if (!categoryMap.has(catName)) {
+        categoryMap.set(catName, { categoryId: catId, categoryName: catName, qty: 0, value: 0 });
+      }
+      const cat = categoryMap.get(catName)!;
+      cat.qty += qty;
+      cat.value += value;
+      
+      totalQty += qty;
+      totalValue += value;
+    });
+    
+    const categoryBreakdown = Array.from(categoryMap.values())
+      .sort((a, b) => b.value - a.value);
+    
+    // Calculate summary by warehouse
+    const warehouseMap = new Map<string, { warehouseId: number; warehouseName: string; qty: number; value: number }>();
+    
+    items.forEach(item => {
+      const whName = item.warehouse_name || 'ไม่ระบุคลัง';
+      const whId = item.warehouse_id || 0;
+      const qty = parseFloat(item.qty) || 0;
+      const value = parseFloat(item.value) || 0;
+      
+      if (!warehouseMap.has(whName)) {
+        warehouseMap.set(whName, { warehouseId: whId, warehouseName: whName, qty: 0, value: 0 });
+      }
+      const wh = warehouseMap.get(whName)!;
+      wh.qty += qty;
+      wh.value += value;
+    });
+    
+    const warehouseBreakdown = Array.from(warehouseMap.values())
+      .sort((a, b) => b.value - a.value);
+    
+    return {
+      asOfDate: asOfDate || new Date().toISOString().split('T')[0],
+      summary: {
+        totalItems: items.length,
+        totalQty,
+        totalValue,
+        avgCost: totalQty > 0 ? totalValue / totalQty : 0,
+      },
+      categoryBreakdown,
+      warehouseBreakdown,
+      items: items.map(item => ({
+        productId: item.product_id,
+        productCode: item.product_code,
+        productName: item.product_name,
+        unit: item.unit,
+        categoryId: item.category_id,
+        categoryName: item.category_name || 'ไม่ระบุหมวด',
+        warehouseId: item.warehouse_id,
+        warehouseName: item.warehouse_name || 'ไม่ระบุคลัง',
+        qty: parseFloat(item.qty) || 0,
+        avgCost: parseFloat(item.avg_cost) || 0,
+        value: parseFloat(item.value) || 0,
+      })),
+    };
+  }
 }

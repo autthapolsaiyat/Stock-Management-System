@@ -93,4 +93,39 @@ export class FifoController {
     
     return result;
   }
+
+  @Get('valuation')
+  @ApiQuery({ name: 'warehouseId', required: false })
+  @ApiQuery({ name: 'categoryId', required: false })
+  @ApiQuery({ name: 'asOfDate', required: false })
+  async getStockValuation(
+    @Query('warehouseId') warehouseId?: number,
+    @Query('categoryId') categoryId?: number,
+    @Query('asOfDate') asOfDate?: string,
+    @Request() req?: any,
+  ) {
+    const result = await this.fifoService.getStockValuation(
+      warehouseId ? Number(warehouseId) : undefined,
+      categoryId ? Number(categoryId) : undefined,
+      asOfDate,
+    );
+    
+    // Log VIEW action
+    const ctx = getAuditContext(req);
+    await this.auditLogService.log({
+      module: 'STOCK_VALUATION',
+      action: 'VIEW',
+      userId: ctx.userId,
+      userName: ctx.userName,
+      ipAddress: ctx.ipAddress,
+      userAgent: ctx.userAgent,
+      details: { 
+        filter: { warehouseId, categoryId, asOfDate },
+        totalItems: result.summary?.totalItems || 0,
+        totalValue: result.summary?.totalValue || 0,
+      },
+    });
+    
+    return result;
+  }
 }
