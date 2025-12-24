@@ -1,4 +1,4 @@
-import { Controller, Get, Post, Body, Param, Query, ParseIntPipe, UseGuards, Request } from '@nestjs/common';
+import { Controller, Get, Post, Delete, Body, Param, Query, ParseIntPipe, UseGuards, Request } from '@nestjs/common';
 import { ApiTags, ApiBearerAuth } from '@nestjs/swagger';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { StockIssueService } from './stock-issue.service';
@@ -21,4 +21,10 @@ export class StockIssueController {
 
   @Post(':id/post')
   post(@Param('id', ParseIntPipe) id: number, @Request() req: any) { return this.issueService.post(id, req.user.sub); }
+
+  @Post(':id/cancel')
+  cancel(@Param('id', ParseIntPipe) id: number, @Request() req: any) { return this.issueService.cancel(id, req.user.sub); }
+
+  @Delete(':id')
+  delete(@Param('id', ParseIntPipe) id: number) { return this.issueService.delete(id); }
 }

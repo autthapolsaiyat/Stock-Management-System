@@ -106,4 +106,47 @@ export class StockIssueService {
       await queryRunner.release();
     }
   }
+
+  async cancel(id: number, userId: number) {
+    const issue = await this.findOne(id);
+    if (issue.status !== 'POSTED') throw new BadRequestException('Only posted issues can be cancelled');
+    
+    const queryRunner = this.dataSource.createQueryRunner();
+    await queryRunner.connect();
+    await queryRunner.startTransaction();
+    
+    try {
+      // Reverse FIFO - add stock back
+      for (const item of issue.items) {
+        await this.fifoService.addFifo(
+          item.productId, issue.warehouseId, Number(item.qty), Number(item.unitCost),
+          'ISSUE_CANCEL', issue.id, item.id, queryRunner
+        );
+      }
+      
+      issue.status = 'CANCELLED';
+      issue.cancelledAt = new Date();
+      issue.cancelledBy = userId;
+      await queryRunner.manager.save(issue);
+      
+      await queryRunner.commitTransaction();
+      return this.findOne(id);
+    } catch (error) {
+      await queryRunner.rollbackTransaction();
+      throw error;
+    } finally {
+      await queryRunner.release();
+    }
+  }
+
+  async delete(id: number) {
+    const issue = await this.findOne(id);
+    if (!['DRAFT', 'CANCELLED'].includes(issue.status)) {
+      throw new BadRequestException('Only DRAFT or CANCELLED issues can be deleted');
+    }
+    
+    await this.itemRepository.delete({ stockIssueId: id });
+    await this.issueRepository.delete(id);
+    return { message: 'Deleted successfully' };
+  }
 }

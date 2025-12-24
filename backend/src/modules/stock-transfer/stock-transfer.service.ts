@@ -118,4 +118,53 @@ export class StockTransferService {
       await queryRunner.release();
     }
   }
+
+  async cancel(id: number, userId: number) {
+    const transfer = await this.findOne(id);
+    if (transfer.status !== 'POSTED') throw new BadRequestException('Only posted transfers can be cancelled');
+    
+    const queryRunner = this.dataSource.createQueryRunner();
+    await queryRunner.connect();
+    await queryRunner.startTransaction();
+    
+    try {
+      for (const item of transfer.items) {
+        // Reverse: Add back to source warehouse
+        await this.fifoService.addFifo(
+          item.productId, transfer.fromWarehouseId, Number(item.qty), Number(item.unitCost),
+          'TRANSFER_CANCEL', transfer.id, item.id, queryRunner
+        );
+        
+        // Reverse: Deduct from destination warehouse
+        await this.fifoService.deductFifo(
+          item.productId, transfer.toWarehouseId, Number(item.qty),
+          'TRANSFER_CANCEL', transfer.id, item.id, queryRunner
+        );
+      }
+      
+      transfer.status = 'CANCELLED';
+      transfer.cancelledAt = new Date();
+      transfer.cancelledBy = userId;
+      await queryRunner.manager.save(transfer);
+      
+      await queryRunner.commitTransaction();
+      return this.findOne(id);
+    } catch (error) {
+      await queryRunner.rollbackTransaction();
+      throw error;
+    } finally {
+      await queryRunner.release();
+    }
+  }
+
+  async delete(id: number) {
+    const transfer = await this.findOne(id);
+    if (!['DRAFT', 'CANCELLED'].includes(transfer.status)) {
+      throw new BadRequestException('Only DRAFT or CANCELLED transfers can be deleted');
+    }
+    
+    await this.itemRepository.delete({ stockTransferId: id });
+    await this.transferRepository.delete(id);
+    return { message: 'Deleted successfully' };
+  }
 }
