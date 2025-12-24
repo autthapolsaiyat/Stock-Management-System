@@ -7,3 +7,5 @@ export { default as StockCountPrintPreview } from './StockCountPrintPreview';
 export { default as StockIssuePrintPreview } from './StockIssuePrintPreview';
 export { default as StockTransferPrintPreview } from './StockTransferPrintPreview';
 export { default as StockBalanceReportPrint } from './StockBalanceReportPrint';
+export { default as StockValuationPrintPreview } from './StockValuationPrintPreview';
+export { default as StockCardPrintPreview } from './StockCardPrintPreview';

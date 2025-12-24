@@ -1,4 +1,4 @@
-import React, { useEffect, useState, useRef } from 'react';
+import React, { useEffect, useState } from 'react';
 import { Card, Table, Select, DatePicker, Button, Space, Tag, Spin, Row, Col, Statistic, message, Descriptions } from 'antd';
 import { 
   FileTextOutlined, 
@@ -8,9 +8,9 @@ import {
   ArrowDownOutlined,
   ReloadOutlined,
 } from '@ant-design/icons';
-import { useReactToPrint } from 'react-to-print';
 import dayjs from 'dayjs';
 import api from '../services/api';
+import { StockCardPrintPreview } from '../components/print';
 
 const { RangePicker } = DatePicker;
 
@@ -59,8 +59,7 @@ const StockCardPage: React.FC = () => {
   const [dateRange, setDateRange] = useState<[dayjs.Dayjs, dayjs.Dayjs] | null>(null);
   const [stockCard, setStockCard] = useState<StockCardData | null>(null);
   const [darkMode] = useState(() => localStorage.getItem('darkMode') === 'true');
-  
-  const printRef = useRef<HTMLDivElement>(null);
+  const [printVisible, setPrintVisible] = useState(false);
 
   useEffect(() => {
     loadMasterData();
@@ -103,11 +102,6 @@ const StockCardPage: React.FC = () => {
       setLoading(false);
     }
   };
-
-  const handlePrint = useReactToPrint({
-    contentRef: printRef,
-    documentTitle: `Stock_Card_${selectedProduct}`,
-  });
 
   const exportCSV = () => {
     if (!stockCard || !stockCard.transactions.length) {
@@ -312,7 +306,7 @@ const StockCardPage: React.FC = () => {
               <Button type="primary" icon={<ReloadOutlined />} onClick={loadStockCard} loading={loading}>
                 แสดงข้อมูล
               </Button>
-              <Button icon={<PrinterOutlined />} onClick={() => handlePrint()} disabled={!stockCard}>
+              <Button icon={<PrinterOutlined />} onClick={() => setPrintVisible(true)} disabled={!stockCard}>
                 พิมพ์
               </Button>
               <Button icon={<DownloadOutlined />} onClick={exportCSV} disabled={!stockCard}>
@@ -326,7 +320,7 @@ const StockCardPage: React.FC = () => {
       {/* Stock Card Content */}
       <Spin spinning={loading}>
         {stockCard && (
-          <div ref={printRef}>
+          <div>
             <Card style={{ marginBottom: 16 }}>
               {/* Header */}
               <Descriptions title={`Stock Card: ${selectedProductData?.code} - ${selectedProductData?.name}`} bordered column={{ xs: 1, sm: 2, md: 4 }}>
@@ -449,16 +443,15 @@ const StockCardPage: React.FC = () => {
         )}
       </Spin>
 
-      {/* Print Styles */}
-      <style>{`
-        @media print {
-          body * { visibility: hidden; }
-          #print-area, #print-area * { visibility: visible; }
-          #print-area { position: absolute; left: 0; top: 0; width: 100%; }
-          .ant-table { font-size: 10px !important; }
-          .ant-card { box-shadow: none !important; border: 1px solid #ddd !important; }
-        }
-      `}</style>
+      {/* Print Preview Modal */}
+      <StockCardPrintPreview
+        open={printVisible}
+        onClose={() => setPrintVisible(false)}
+        data={stockCard}
+        product={selectedProduct ? products.find(p => p.id === selectedProduct) : undefined}
+        warehouseName={selectedWarehouse ? warehouses.find(w => w.id === selectedWarehouse)?.name : undefined}
+        dateRange={dateRange ? [dateRange[0].format('YYYY-MM-DD'), dateRange[1].format('YYYY-MM-DD')] : undefined}
+      />
     </div>
   );
 };

@@ -1,4 +1,4 @@
-import React, { useEffect, useState, useRef } from 'react';
+import React, { useEffect, useState } from 'react';
 import { Card, Table, Select, DatePicker, Button, Space, Tag, Spin, Row, Col, Statistic, message, Progress } from 'antd';
 import { 
   DollarOutlined, 
@@ -8,9 +8,9 @@ import {
   PieChartOutlined,
   BarChartOutlined,
 } from '@ant-design/icons';
-import { useReactToPrint } from 'react-to-print';
 import dayjs from 'dayjs';
 import api from '../services/api';
+import { StockValuationPrintPreview } from '../components/print';
 
 interface Category {
   id: number;
@@ -73,8 +73,7 @@ const StockValuationPage: React.FC = () => {
   const [asOfDate, setAsOfDate] = useState<dayjs.Dayjs | null>(dayjs());
   const [valuation, setValuation] = useState<ValuationData | null>(null);
   const [darkMode] = useState(() => localStorage.getItem('darkMode') === 'true');
-  
-  const printRef = useRef<HTMLDivElement>(null);
+  const [printVisible, setPrintVisible] = useState(false);
 
   useEffect(() => {
     loadMasterData();
@@ -111,11 +110,6 @@ const StockValuationPage: React.FC = () => {
       setLoading(false);
     }
   };
-
-  const handlePrint = useReactToPrint({
-    contentRef: printRef,
-    documentTitle: `Stock_Valuation_${asOfDate?.format('YYYYMMDD')}`,
-  });
 
   const exportCSV = () => {
     if (!valuation || !valuation.items.length) {
@@ -298,7 +292,7 @@ const StockValuationPage: React.FC = () => {
               <Button type="primary" icon={<ReloadOutlined />} onClick={loadValuation} loading={loading}>
                 แสดงข้อมูล
               </Button>
-              <Button icon={<PrinterOutlined />} onClick={() => handlePrint()} disabled={!valuation}>
+              <Button icon={<PrinterOutlined />} onClick={() => setPrintVisible(true)} disabled={!valuation}>
                 พิมพ์
               </Button>
               <Button icon={<DownloadOutlined />} onClick={exportCSV} disabled={!valuation}>
@@ -312,7 +306,7 @@ const StockValuationPage: React.FC = () => {
       {/* Valuation Content */}
       <Spin spinning={loading}>
         {valuation && (
-          <div ref={printRef}>
+          <div>
             {/* Summary Cards */}
             <Row gutter={[16, 16]} style={{ marginBottom: 16 }}>
               <Col xs={24} sm={12} md={6}>
@@ -460,16 +454,15 @@ const StockValuationPage: React.FC = () => {
         )}
       </Spin>
 
-      {/* Print Styles */}
-      <style>{`
-        @media print {
-          body * { visibility: hidden; }
-          #print-area, #print-area * { visibility: visible; }
-          #print-area { position: absolute; left: 0; top: 0; width: 100%; }
-          .ant-table { font-size: 10px !important; }
-          .ant-card { box-shadow: none !important; border: 1px solid #ddd !important; }
-        }
-      `}</style>
+      {/* Print Preview Modal */}
+      <StockValuationPrintPreview
+        open={printVisible}
+        onClose={() => setPrintVisible(false)}
+        data={valuation}
+        asOfDate={asOfDate?.format('YYYY-MM-DD')}
+        warehouseName={selectedWarehouse ? warehouses.find(w => w.id === selectedWarehouse)?.name : undefined}
+        categoryName={selectedCategory ? categories.find(c => c.id === selectedCategory)?.name : undefined}
+      />
     </div>
   );
 };
