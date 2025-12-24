@@ -78,11 +78,12 @@ const StockTransfersPage: React.FC = () => {
 
   const handleCancel = async (id: number) => {
     Modal.confirm({
-      title: 'ยืนยันยกเลิก',
-      content: 'คุณต้องการยกเลิกใบโอนสินค้านี้หรือไม่? สต็อกจะถูกคืนกลับคลังต้นทาง',
+      title: <span style={{ color: '#fff' }}>ยืนยันยกเลิก</span>,
+      content: <span style={{ color: '#d1d5db' }}>คุณต้องการยกเลิกใบโอนสินค้านี้หรือไม่? สต็อกจะถูกคืนกลับคลังต้นทาง</span>,
       okText: 'ยกเลิกใบโอน',
       cancelText: 'ไม่',
       okButtonProps: { danger: true },
+      className: 'dark-modal-confirm',
       onOk: async () => {
         try {
           await stockTransfersApi.cancel(id);
@@ -97,11 +98,12 @@ const StockTransfersPage: React.FC = () => {
 
   const handleDelete = async (id: number) => {
     Modal.confirm({
-      title: 'ยืนยันลบ',
-      content: 'คุณต้องการลบใบโอนสินค้านี้หรือไม่?',
+      title: <span style={{ color: '#fff' }}>ยืนยันลบ</span>,
+      content: <span style={{ color: '#d1d5db' }}>คุณต้องการลบใบโอนสินค้านี้หรือไม่?</span>,
       okText: 'ลบ',
       cancelText: 'ไม่',
       okButtonProps: { danger: true },
+      className: 'dark-modal-confirm',
       onOk: async () => {
         try {
           await stockTransfersApi.delete(id);
