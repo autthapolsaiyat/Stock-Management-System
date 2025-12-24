@@ -138,7 +138,7 @@ const ExecutiveDashboardPage: React.FC = () => {
 
       // Calculate Financial Metrics
       const totalStockValue = stockBalances.reduce((sum: number, sb: any) => 
-        sum + (Number(sb.balance || 0) * Number(sb.avgCost || 0)), 0);
+        sum + (Number(sb.qtyOnHand || sb.qty_on_hand || sb.balance || 0) * Number(sb.avgCost || sb.avg_cost || 0)), 0);
 
       // Filter this year and this month
       const now = new Date();

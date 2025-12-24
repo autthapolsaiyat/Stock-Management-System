@@ -83,11 +83,17 @@ const DashboardPage: React.FC = () => {
         return sum + (parseFloat(sb.qtyOnHand || sb.qty_on_hand || 0) * parseFloat(sb.avgCost || sb.avg_cost || 0));
       }, 0);
 
+      // ใช้ minStock จาก product แทน hardcode < 5
       let lowStock = 0, warningStock = 0, normalStock = 0;
       stockBalances.forEach((sb: any) => {
         const qty = parseFloat(sb.qtyOnHand || sb.qty_on_hand || 0);
+        const productId = sb.productId || sb.product_id;
+        const product = products.find((p: any) => p.id === productId);
+        const minStock = parseFloat(product?.minStock || product?.min_stock || 0);
+        const reorderPoint = parseFloat(product?.reorderPoint || product?.reorder_point || minStock);
+        
         if (qty <= 0) lowStock++;
-        else if (qty < 5) warningStock++;
+        else if (qty <= minStock || (reorderPoint > 0 && qty <= reorderPoint)) warningStock++;
         else normalStock++;
       });
 
