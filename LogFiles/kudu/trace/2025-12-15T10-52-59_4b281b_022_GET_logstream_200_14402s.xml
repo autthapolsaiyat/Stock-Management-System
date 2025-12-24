@@ -1,0 +1,8 @@
+<step title="Incoming Request" date="2025-12-15T10:52:59.323" instance="4b281b" url="/logstream" method="GET" type="request" pid="831,1,22" Host="svs-stock-api.scm.azurewebsites.net" User-Agent="AZURECLI/2.78.0 (HOMEBREW)" Accept-Encoding="identity" Authorization="Bea..." x-ms-client-request-id="35c42e4e-d9a4-11f0-9972-c6eea053c943" X-ARR-LOG-ID="35c42e4e-d9a4-11f0-9972-c6eea053c943" CLIENT-IP="184.22.101.158:52254" X-SITE-DEPLOYMENT-ID="svs-stock-api" WAS-DEFAULT-HOSTNAME="svs-stock-api.scm.azurewebsites.net" X-Forwarded-Proto="https" X-AppService-Proto="https" X-Forwarded-TlsVersion="1.3" X-WAWS-Unencoded-URL="/logstream" X-Client-IP="184.22.101.158" X-Client-Port="52254" >
+  <step title="Cleanup Xml Logs" date="2025-12-15T10:52:59.336" /><!-- duration: 14ms -->
+  <step title="LogStreamHandlerMiddleware.Invoke" date="2025-12-15T10:52:59.370" /><!-- duration: 82ms -->
+  <step title="Error occurred" date="2025-12-15T12:52:59.463" type="error" text="LogStreamManager: Inside TerminateClient" /><!-- duration: 18ms -->
+  <step title="Error occurred" date="2025-12-15T12:52:59.533" type="error" text="LogStreamManager: Inside Reset" /><!-- duration: 28ms -->
+  <step title="Error occurred" date="2025-12-15T14:53:00.892" type="error" text="LogStreamManager: ProcessRequest end due to timeout" /><!-- duration: 13ms -->
+  <step title="Outgoing response" date="2025-12-15T14:53:00.928" type="response" statusCode="200" statusText="OK" /><!-- duration: 5ms -->
+</step><!-- duration: 14401614ms -->

@@ -1,0 +1,6 @@
+<step title="Incoming Request" date="2025-12-23T10:29:58.801" instance="93ba60" url="/api/settings" method="GET" type="request" pid="837,1,47" Host="svs-stock-api.scm.azurewebsites.net" User-Agent="GITHUBACTIONS_DeployWebAppToAzure_9c77270b4dc11c65de193eb13ad2e59e3b6f8f2f23b9c7b3dc72a9e29892decc" Authorization="Bea..." Content-Type="application/json; charset=utf-8" Content-Length="0" X-ARR-LOG-ID="be01db61-fb9f-45b0-b60e-fa0b80d6fbb3" CLIENT-IP="57.151.128.198:33840" X-SITE-DEPLOYMENT-ID="svs-stock-api" WAS-DEFAULT-HOSTNAME="svs-stock-api.scm.azurewebsites.net" X-Forwarded-Proto="https" X-AppService-Proto="https" X-Forwarded-TlsVersion="1.3" X-WAWS-Unencoded-URL="/api/settings" X-Client-IP="57.151.128.198" X-Client-Port="33840" >
+  <step title="Cleanup Xml Logs" date="2025-12-23T10:29:58.808" >
+    <step title="Cleanup Infos" date="2025-12-23T10:29:58.881" totalFiles="1232" totalCleanup="1072" /><!-- duration: 27ms -->
+  </step><!-- duration: 107ms -->
+  <step title="Outgoing response" date="2025-12-23T10:29:59.019" type="response" statusCode="200" statusText="OK" /><!-- duration: 22ms -->
+</step><!-- duration: 261ms -->

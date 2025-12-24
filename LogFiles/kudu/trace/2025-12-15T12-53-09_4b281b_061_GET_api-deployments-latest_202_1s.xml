@@ -1,0 +1,9 @@
+<step title="Incoming Request" date="2025-12-15T12:53:09.156" instance="4b281b" url="/api/deployments/latest" method="GET" type="request" pid="831,1,24" Accept="*/*" Host="svs-stock-api.scm.azurewebsites.net" User-Agent="AZURECLI/2.78.0 (HOMEBREW)" Accept-Encoding="gzip, deflate" Authorization="Bea..." x-ms-client-request-id="eae9e722-d9b4-11f0-ad7d-c6eea053c943" X-ARR-LOG-ID="eae9e722-d9b4-11f0-ad7d-c6eea053c943" CLIENT-IP="184.22.101.158:63708" X-SITE-DEPLOYMENT-ID="svs-stock-api" WAS-DEFAULT-HOSTNAME="svs-stock-api.scm.azurewebsites.net" X-Forwarded-Proto="https" X-AppService-Proto="https" X-Forwarded-TlsVersion="1.3" X-WAWS-Unencoded-URL="/api/deployments/latest" X-Client-IP="184.22.101.158" X-Client-Port="63708" >
+  <step title="Cleanup Xml Logs" date="2025-12-15T12:53:09.161" /><!-- duration: 14ms -->
+  <step title="DeploymentService.GetResult" date="2025-12-15T12:53:09.190" >
+    <step title="DeploymentService.GetLatestDeployment" date="2025-12-15T12:53:09.198" >
+      <step title="DeploymentManager.GetResults" date="2025-12-15T12:53:09.215" /><!-- duration: 995ms -->
+    </step><!-- duration: 1093ms -->
+  </step><!-- duration: 1130ms -->
+  <step title="Outgoing response" date="2025-12-15T12:53:10.352" type="response" statusCode="202" statusText="Accepted" /><!-- duration: 31ms -->
+</step><!-- duration: 1236ms -->

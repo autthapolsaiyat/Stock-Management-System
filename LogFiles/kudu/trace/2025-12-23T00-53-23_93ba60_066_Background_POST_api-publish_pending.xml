@@ -1,0 +1,40 @@
+<step title="BackgroundTrace" date="2025-12-23T00:53:23.789" instance="93ba60" url="/api/publish" method="POST" >
+  <step title="Cleanup Xml Logs" date="2025-12-23T00:53:23.815" >
+    <step title="Cleanup Infos" date="2025-12-23T00:53:23.858" totalFiles="1136" totalCleanup="976" /><!-- duration: 13ms -->
+  </step><!-- duration: 64ms -->
+  <step title="Creating temporary deployment - FetchDeploymentManager" date="2025-12-23T00:53:24.307" /><!-- duration: 13ms -->
+  <step title="Creating temporary deployment" date="2025-12-23T00:53:24.397" /><!-- duration: 242ms -->
+  <step title="Performing fetch based deployment" date="2025-12-23T00:53:24.869" >
+    <step title="Cleaning up temp folders from previous zip deployments and extracting pushed zip file /tmp/zipdeploy/1cd4b961-3f55-41c9-bb1e-42901dc5c089.zip (48.16 MB) to /tmp/zipdeploy/extracted" date="2025-12-23T00:53:26.442" >
+      <step title="ChmodRecursive Process exited with total time taken in ms: 650" date="2025-12-23T00:54:15.585" /><!-- duration: 61ms -->
+    </step><!-- duration: 49243ms -->
+    <step title="Deployment timer started" date="2025-12-23T00:54:18.112" >
+      <step title="DeploymentManager.Deploy(id:dd0b9077-7d9f-4a59-9175-33241813118e)" date="2025-12-23T00:54:18.141" >
+        <step title="Collecting changeset information" date="2025-12-23T00:54:18.213" /><!-- duration: 293ms -->
+        <step title="Updating submodules" date="2025-12-23T00:54:18.521" /><!-- duration: 1175ms -->
+        <step title="Determining deployment builder" date="2025-12-23T00:54:21.346" >
+          <step title="Builder is OneDeployBuilder" date="2025-12-23T00:54:21.436" /><!-- duration: 11ms -->
+        </step><!-- duration: 194ms -->
+        <step title="PreDeployment: context.CleanOutputPath False" date="2025-12-23T00:54:21.636" >
+          <step title="PreDeployment: context.OutputPath /home/site/wwwroot" date="2025-12-23T00:54:21.844" >
+            <step title="Building" date="2025-12-23T00:54:22.150" >
+              <step title="Executing external process" date="2025-12-23T00:54:23.200" type="process" path="starter.sh" arguments="/opt/Kudu/Scripts/absoluteTar.sh /tmp/zipdeploy/extracted/node_modules /tmp/zipdeploy/extracted/node_modules.tar.gz" >
+                <step title="Cpu: gzip(10849,14.860s)+sh(10848,0.000s)+tar(10847,3.970s)+absoluteTar.sh(10846,0.010s)=total(18.830s)" date="2025-12-23T00:55:26.690" /><!-- duration: 19ms -->
+                <step title="starter.sh: no io activity for 60s, prev-cpu=-1.000s, current-cpu=18.830s" date="2025-12-23T00:55:26.779" /><!-- duration: 28ms -->
+              </step><!-- duration: 88343ms -->
+              <step title="Executing external process" date="2025-12-23T00:55:52.060" type="process" path="starter.sh" arguments="/opt/Kudu/Scripts/parallel_rsync.sh /tmp/zipdeploy/extracted /home/site/wwwroot 8 /tmp/ False False node_modules " /><!-- duration: 17999ms -->
+              <step title="Modified file to trigger a restart of the app container." date="2025-12-23T00:56:11.427" /><!-- duration: 9ms -->
+              <step title="Skip function trigger and logicapp sync because function is not enabled." date="2025-12-23T00:56:11.461" /><!-- duration: 17ms -->
+              <step title="Purge deployment items" date="2025-12-23T00:56:12.992" >
+                <step title="Remove 88169c51-, Success, received at 12/21/2025 12:06:35" date="2025-12-23T00:56:13.194" /><!-- duration: 28ms -->
+              </step><!-- duration: 248ms -->
+            </step><!-- duration: 111247ms -->
+          </step><!-- duration: 111566ms -->
+          <step title="Cleaning up temp files" date="2025-12-23T00:56:13.419" /><!-- duration: 8ms -->
+          <step title="Cleaning up temp files" date="2025-12-23T00:56:13.459" /><!-- duration: 520ms -->
+          <step title="Reloading status file with latest updates" date="2025-12-23T00:56:14.926" >
+            <step title="WebHooksManager.PublishEventAsync: PostDeployment" date="2025-12-23T00:56:15.002" /><!-- duration: 75ms -->
+          </step><!-- duration: 178ms -->
+          <step title="Cleaning up temporary deployment - fetch deployment was successful" date="2025-12-23T00:56:15.196" /><!-- duration: 39ms -->
+        </step><!-- duration: 113734ms -->
+      </step><!-- duration: 117298ms -->

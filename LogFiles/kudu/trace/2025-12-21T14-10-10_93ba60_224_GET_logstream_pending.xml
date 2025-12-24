@@ -1,0 +1,5 @@
+<step title="Incoming Request" date="2025-12-21T14:10:10.599" instance="93ba60" url="/logstream" method="GET" type="request" pid="837,1,18" Host="svs-stock-api.scm.azurewebsites.net" User-Agent="AZURECLI/2.78.0 (HOMEBREW)" Accept-Encoding="identity" Authorization="Bea..." x-ms-client-request-id="bbb5f8f8-de76-11f0-8150-c6eea053c943" X-ARR-LOG-ID="bbb5f8f8-de76-11f0-8150-c6eea053c943" CLIENT-IP="184.22.106.81:52513" X-SITE-DEPLOYMENT-ID="svs-stock-api" WAS-DEFAULT-HOSTNAME="svs-stock-api.scm.azurewebsites.net" X-Forwarded-Proto="https" X-AppService-Proto="https" X-Forwarded-TlsVersion="1.3" X-WAWS-Unencoded-URL="/logstream" X-Client-IP="184.22.106.81" X-Client-Port="52513" >
+  <step title="Cleanup Xml Logs" date="2025-12-21T14:10:10.640" >
+    <step title="Cleanup Infos" date="2025-12-21T14:10:11.088" totalFiles="951" totalCleanup="791" /><!-- duration: 40ms -->
+  </step><!-- duration: 507ms -->
+  <step title="LogStreamHandlerMiddleware.Invoke" date="2025-12-21T14:10:11.180" /><!-- duration: 2468ms -->

@@ -1,0 +1,17 @@
+<step title="Incoming Request" date="2025-12-15T13:07:57.859" instance="4b281b" url="/api/zipdeploy?isAsync=true" method="POST" type="request" pid="831,1,40" Accept="*/*" Host="svs-stock-api.scm.azurewebsites.net" User-Agent="AZURECLI/2.78.0 (HOMEBREW)" Accept-Encoding="gzip, deflate" Authorization="Bea..." Cache-Control="no-cache" Content-Type="application/octet-stream" Content-Length="50398473" x-ms-client-request-id="11774fae-d9b7-11f0-b608-c6eea053c943" x-ms-artifact-checksum="c48fb95cde9879ad955f971d6140d093559eab56635ede5de3c5c0cacf16342d" X-ARR-LOG-ID="11774fae-d9b7-11f0-b608-c6eea053c943" CLIENT-IP="184.22.101.158:49638" X-SITE-DEPLOYMENT-ID="svs-stock-api" WAS-DEFAULT-HOSTNAME="svs-stock-api.scm.azurewebsites.net" X-Forwarded-Proto="https" X-AppService-Proto="https" X-Forwarded-TlsVersion="1.3" X-WAWS-Unencoded-URL="/api/zipdeploy?isAsync=true" X-Client-IP="184.22.101.158" X-Client-Port="49638" >
+  <step title="Cleanup Xml Logs" date="2025-12-15T13:07:57.870" /><!-- duration: 38ms -->
+  <step title="ZipPushDeploy" date="2025-12-15T13:07:58.263" >
+    <step title="ZipDeploy. Extract zip." date="2025-12-15T13:07:58.322" /><!-- duration: 18ms -->
+    <step title="Starting PushDeployAsync" date="2025-12-15T13:07:58.362" /><!-- duration: 20ms -->
+    <step title="Removing node_modules symlink" date="2025-12-15T13:07:58.453" >
+      <step title="Writing artifact to /tmp/zipdeploy/820575b7-dfaf-43b6-b9f2-bc883aead961.zip" date="2025-12-15T13:07:58.531" >
+        <step title="Writing multipart request body to /tmp/zipdeploy/820575b7-dfaf-43b6-b9f2-bc883aead961.zip" date="2025-12-15T13:07:58.536" /><!-- duration: 5ms -->
+      </step><!-- duration: 2095ms -->
+      <step title="Removing previous build artifact&apos;s manifest file" date="2025-12-15T13:08:00.641" >
+        <step title="Start deployment in the background" date="2025-12-15T13:08:00.659" >
+          <step title="Acquiring Deployment Lock" date="2025-12-15T13:08:00.679" /><!-- duration: 9ms -->
+          <step title="Acquired Deployment Lock" date="2025-12-15T13:08:00.724" /><!-- duration: 5ms -->
+        </step><!-- duration: 176ms -->
+      </step><!-- duration: 202ms -->
+      <step title="Outgoing response" date="2025-12-15T13:08:00.848" type="response" statusCode="202" statusText="Accepted" /><!-- duration: 5ms -->
+    </step><!-- duration: 2405ms -->

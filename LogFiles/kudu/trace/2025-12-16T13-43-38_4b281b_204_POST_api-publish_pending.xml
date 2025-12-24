@@ -1,0 +1,14 @@
+<step title="Incoming Request" date="2025-12-16T13:43:38.507" instance="4b281b" url="/api/publish?async=true&amp;deployer=GITHUB_ONE_DEPLOY&amp;type=zip&amp;message=%7B%22type%22%3A%22deployment%22%2C%22sha%22%3A%22d6d49ab7a1cd9f8d046f0884572eabbbade709ba%22%2C%22repoName%22%3A%22autthapolsaiyat%2FStock-Management-System%22%2C%22actor%22%3A%22autthapolsaiyat%22%2C%22slotName%22%3A%22production%22%2C%22commitMessage%22%3A%22fix%3A%20api.ts%20methods%20and%20print%20preview%22%7D" method="POST" type="request" pid="831,1,85" Host="svs-stock-api.scm.azurewebsites.net" User-Agent="GITHUBACTIONS_DeployWebAppToAzure_9c77270b4dc11c65de193eb13ad2e59e3b6f8f2f23b9c7b3dc72a9e29892decc" Authorization="Bea..." Content-Type="application/octet-stream" Cookie="ARRAffinity=4b281b4a9d9abb39450d23d8928bbaecc835ef9d48685f67465bb26c36f1b731;Path=/;HttpOnly;Secure;Domain=svs-stock-api.scm.azurewebsites.net; ARRAffinitySameSite=4b281b4a9d9abb39450d23d8928bbaecc835ef9d48685f67465bb26c36f1b731;Path=/;HttpOnly;SameSite=None;Secure;Domain=svs-stock-api.scm.azurewebsites.net" Transfer-Encoding="chunked" X-ARR-LOG-ID="54328670-1f21-4521-9c1d-0a59778f3001" CLIENT-IP="64.236.134.168:57344" X-SITE-DEPLOYMENT-ID="svs-stock-api" WAS-DEFAULT-HOSTNAME="svs-stock-api.scm.azurewebsites.net" X-Forwarded-Proto="https" X-AppService-Proto="https" X-Forwarded-TlsVersion="1.3" X-WAWS-Unencoded-URL="/api/publish?async=true&amp;deployer=GITHUB_ONE_DEPLOY&amp;type=zip&amp;message=%7B%22type%22%3A%22deployment%22%2C%22sha%22%3A%22d6d49ab7a1cd9f8d046f0884572eabbbade709ba%22%2C%22repoName%22%3A%22autthapolsaiyat%2FStock-Management-System%22%2C%22actor%22%3A%22autthapolsaiyat%22%2C%22slotName%22%3A%22production%22%2C%22commitMessage%22%3A%22fix%3A%20api.ts%20methods%20and%20print%20preview%22%7D" X-Client-IP="64.236.134.168" X-Client-Port="57344" >
+  <step title="OneDeploy" date="2025-12-16T13:43:38.530" >
+    <step title="Starting PushDeployAsync" date="2025-12-16T13:43:38.541" /><!-- duration: 6ms -->
+    <step title="Removing node_modules symlink" date="2025-12-16T13:43:38.561" >
+      <step title="Writing artifact to /tmp/zipdeploy/fb06c235-8927-499c-82d2-7928d9fafaf0.zip" date="2025-12-16T13:43:38.662" >
+        <step title="Writing multipart request body to /tmp/zipdeploy/fb06c235-8927-499c-82d2-7928d9fafaf0.zip" date="2025-12-16T13:43:38.690" /><!-- duration: 15ms -->
+      </step><!-- duration: 3968ms -->
+      <step title="Start deployment in the background" date="2025-12-16T13:43:42.664" >
+        <step title="Acquiring Deployment Lock" date="2025-12-16T13:43:42.716" /><!-- duration: 7ms -->
+        <step title="Acquired Deployment Lock" date="2025-12-16T13:43:42.776" /><!-- duration: 8ms -->
+      </step><!-- duration: 200ms -->
+    </step><!-- duration: 4313ms -->
+    <step title="Outgoing response" date="2025-12-16T13:43:42.879" type="response" statusCode="202" statusText="Accepted" /><!-- duration: 6ms -->
+  </step><!-- duration: 4370ms -->

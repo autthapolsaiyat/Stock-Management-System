@@ -1,0 +1,5 @@
+<step title="Incoming Request" date="2025-12-23T15:34:25.871" instance="93ba60" url="/logstream" method="GET" type="request" pid="837,1,25" Host="svs-stock-api.scm.azurewebsites.net" User-Agent="AZURECLI/2.78.0 (HOMEBREW)" Accept-Encoding="identity" Authorization="Bea..." x-ms-client-request-id="da336b4a-e014-11f0-9f53-c6eea053c943" X-ARR-LOG-ID="da336b4a-e014-11f0-9f53-c6eea053c943" CLIENT-IP="184.22.106.81:58723" X-SITE-DEPLOYMENT-ID="svs-stock-api" WAS-DEFAULT-HOSTNAME="svs-stock-api.scm.azurewebsites.net" X-Forwarded-Proto="https" X-AppService-Proto="https" X-Forwarded-TlsVersion="1.3" X-WAWS-Unencoded-URL="/logstream" X-Client-IP="184.22.106.81" X-Client-Port="58723" >
+  <step title="LogStreamHandlerMiddleware.Invoke" date="2025-12-23T15:34:25.975" /><!-- duration: 388ms -->
+  <step title="Error occurred" date="2025-12-23T15:35:26.362" type="error" text="LogStreamManager: ProcessRequest end" /><!-- duration: 5ms -->
+  <step title="Outgoing response" date="2025-12-23T15:35:26.385" type="response" statusCode="200" statusText="OK" /><!-- duration: 7ms -->
+</step><!-- duration: 60526ms -->

@@ -61,4 +61,36 @@ export class FifoController {
   ) {
     return this.fifoService.getFifoLayers(productId, warehouseId);
   }
+
+  @Get('card')
+  @ApiQuery({ name: 'productId', required: true })
+  @ApiQuery({ name: 'warehouseId', required: false })
+  @ApiQuery({ name: 'startDate', required: false })
+  @ApiQuery({ name: 'endDate', required: false })
+  async getStockCard(
+    @Query('productId', ParseIntPipe) productId: number,
+    @Query('warehouseId') warehouseId?: number,
+    @Query('startDate') startDate?: string,
+    @Query('endDate') endDate?: string,
+    @Request() req?: any,
+  ) {
+    const result = await this.fifoService.getStockCard(productId, warehouseId, startDate, endDate);
+    
+    // Log VIEW action
+    const ctx = getAuditContext(req);
+    await this.auditLogService.log({
+      module: 'STOCK_CARD',
+      action: 'VIEW',
+      userId: ctx.userId,
+      userName: ctx.userName,
+      ipAddress: ctx.ipAddress,
+      userAgent: ctx.userAgent,
+      details: { 
+        filter: { productId, warehouseId, startDate, endDate },
+        transactionCount: result.transactions?.length || 0,
+      },
+    });
+    
+    return result;
+  }
 }

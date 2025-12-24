@@ -1,0 +1,11 @@
+<step title="Incoming Request" date="2025-12-18T12:15:13.070" instance="93ba60" url="/api/deployments/latest?deployer=OneDeploy&amp;time=2025-12-18_12-14-49Z" method="GET" type="request" pid="833,1,72" Host="svs-stock-api.scm.azurewebsites.net" User-Agent="GITHUBACTIONS_DeployWebAppToAzure_9c77270b4dc11c65de193eb13ad2e59e3b6f8f2f23b9c7b3dc72a9e29892decc" Authorization="Bea..." Content-Type="application/json; charset=utf-8" Cookie="ARRAffinity=93ba60693efd27c98d25ac695a6ef440c44ba4652104de2a3ed78f5e62ba7f13;Path=/;HttpOnly;Secure;Domain=svs-stock-api.scm.azurewebsites.net; ARRAffinitySameSite=93ba60693efd27c98d25ac695a6ef440c44ba4652104de2a3ed78f5e62ba7f13;Path=/;HttpOnly;SameSite=None;Secure;Domain=svs-stock-api.scm.azurewebsites.net" Content-Length="0" X-ARR-LOG-ID="bf25322a-c1f2-4168-b6b0-9f9c82da169d" CLIENT-IP="135.232.200.34:21441" X-SITE-DEPLOYMENT-ID="svs-stock-api" WAS-DEFAULT-HOSTNAME="svs-stock-api.scm.azurewebsites.net" X-Forwarded-Proto="https" X-AppService-Proto="https" X-Forwarded-TlsVersion="1.3" X-WAWS-Unencoded-URL="/api/deployments/latest?deployer=OneDeploy&amp;time=2025-12-18_12-14-49Z" X-Client-IP="135.232.200.34" X-Client-Port="21441" >
+  <step title="Cleanup Xml Logs" date="2025-12-18T12:15:13.080" >
+    <step title="Cleanup Infos" date="2025-12-18T12:15:13.127" totalFiles="308" totalCleanup="148" /><!-- duration: 19ms -->
+  </step><!-- duration: 83ms -->
+  <step title="DeploymentService.GetResult" date="2025-12-18T12:15:13.191" >
+    <step title="DeploymentService.GetLatestDeployment" date="2025-12-18T12:15:13.237" >
+      <step title="DeploymentManager.GetResults" date="2025-12-18T12:15:13.284" /><!-- duration: 1128ms -->
+    </step><!-- duration: 1193ms -->
+  </step><!-- duration: 1250ms -->
+  <step title="Outgoing response" date="2025-12-18T12:15:14.480" type="response" statusCode="202" statusText="Accepted" /><!-- duration: 11ms -->
+</step><!-- duration: 1437ms -->
