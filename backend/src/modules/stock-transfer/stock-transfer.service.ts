@@ -132,7 +132,7 @@ export class StockTransferService {
       for (const item of issue.items) {
         await this.fifoService.createLayer({
           productId: item.productId,
-          warehouseId: issue.warehouseId,
+          warehouseId: transfer.fromWarehouseId,
           qty: Number(item.qty),
           unitCost: Number(item.unitCost),
           referenceType: 'ISSUE_CANCEL',
