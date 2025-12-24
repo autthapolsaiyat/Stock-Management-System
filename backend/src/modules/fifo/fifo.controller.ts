@@ -165,4 +165,35 @@ export class FifoController {
     
     return result;
   }
+
+  @Get('reorder-alerts')
+  @ApiQuery({ name: 'warehouseId', required: false })
+  @ApiQuery({ name: 'categoryId', required: false })
+  async getReorderAlerts(
+    @Query('warehouseId') warehouseId?: number,
+    @Query('categoryId') categoryId?: number,
+    @Request() req?: any,
+  ) {
+    const result = await this.fifoService.getReorderAlerts(
+      warehouseId ? Number(warehouseId) : undefined,
+      categoryId ? Number(categoryId) : undefined,
+    );
+    
+    // Log VIEW action
+    const ctx = getAuditContext(req);
+    await this.auditLogService.log({
+      module: 'REORDER_ALERT',
+      action: 'VIEW',
+      userId: ctx.userId,
+      userName: ctx.userName,
+      ipAddress: ctx.ipAddress,
+      userAgent: ctx.userAgent,
+      details: { 
+        filter: { warehouseId, categoryId },
+        totalAlerts: result.summary?.totalAlerts || 0,
+      },
+    });
+    
+    return result;
+  }
 }

@@ -22,6 +22,7 @@ import {
   MoonOutlined,
   AppstoreOutlined,
   HistoryOutlined,
+  AlertOutlined,
 } from '@ant-design/icons';
 import { useAuth } from '../contexts/AuthContext';
 import { SettingOutlined } from '@ant-design/icons';
@@ -103,6 +104,7 @@ const MainLayout: React.FC = () => {
         { key: '/stock-card', icon: <FileTextOutlined />, label: 'Stock Card' },
         { key: '/stock-valuation', icon: <DollarOutlined />, label: 'มูลค่าสต็อก' },
         { key: '/stock-movement', icon: <SwapOutlined />, label: 'การเคลื่อนไหว' },
+        { key: '/reorder-alerts', icon: <AlertOutlined />, label: 'แจ้งเตือนสั่งซื้อ' },
         { key: '/stock-issues', icon: <ExportOutlined />, label: 'เบิกสินค้า' },
         { key: '/stock-transfers', icon: <SwapOutlined />, label: 'โอนสินค้า' },
         { key: '/stock-adjustments', icon: <SwapOutlined />, label: 'ปรับปรุงสต็อก' },

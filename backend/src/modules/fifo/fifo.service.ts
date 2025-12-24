@@ -520,4 +520,124 @@ export class FifoService {
       items: classifiedItems,
     };
   }
+
+  async getReorderAlerts(warehouseId?: number, categoryId?: number) {
+    // Get products with reorder point or min stock set
+    let query = `
+      SELECT 
+        p.id as product_id,
+        p.code as product_code,
+        p.name as product_name,
+        p.unit,
+        p.min_stock,
+        p.max_stock,
+        p.reorder_point,
+        p.standard_cost,
+        c.name as category_name,
+        w.id as warehouse_id,
+        w.code as warehouse_code,
+        w.name as warehouse_name,
+        COALESCE(sb.qty_on_hand, 0) as qty_on_hand,
+        COALESCE(sb.avg_cost, 0) as avg_cost
+      FROM products p
+      LEFT JOIN product_categories c ON c.id = p.category_id
+      CROSS JOIN warehouses w
+      LEFT JOIN stock_balance sb ON sb.product_id = p.id AND sb.warehouse_id = w.id
+      WHERE p.is_active = true
+        AND (p.reorder_point > 0 OR p.min_stock > 0)
+    `;
+    
+    const params: any[] = [];
+    let paramIndex = 1;
+    
+    if (warehouseId) {
+      query += ` AND w.id = $${paramIndex++}`;
+      params.push(warehouseId);
+    }
+    
+    if (categoryId) {
+      query += ` AND p.category_id = $${paramIndex++}`;
+      params.push(categoryId);
+    }
+    
+    query += ` ORDER BY p.code, w.code`;
+    
+    const items = await this.balanceRepository.query(query, params);
+    
+    // Classify alerts
+    const alerts: any[] = [];
+    let criticalCount = 0, warningCount = 0, normalCount = 0;
+    
+    items.forEach((item: any) => {
+      const qtyOnHand = parseFloat(item.qty_on_hand) || 0;
+      const minStock = parseFloat(item.min_stock) || 0;
+      const maxStock = parseFloat(item.max_stock) || 0;
+      const reorderPoint = parseFloat(item.reorder_point) || minStock;
+      const standardCost = parseFloat(item.standard_cost) || parseFloat(item.avg_cost) || 0;
+      
+      let alertLevel: 'CRITICAL' | 'WARNING' | 'NORMAL' | 'OVERSTOCK';
+      let suggestedOrderQty = 0;
+      
+      if (qtyOnHand <= 0) {
+        alertLevel = 'CRITICAL';
+        suggestedOrderQty = maxStock > 0 ? maxStock : reorderPoint * 2;
+        criticalCount++;
+      } else if (qtyOnHand <= minStock) {
+        alertLevel = 'CRITICAL';
+        suggestedOrderQty = (maxStock > 0 ? maxStock : reorderPoint * 2) - qtyOnHand;
+        criticalCount++;
+      } else if (qtyOnHand <= reorderPoint) {
+        alertLevel = 'WARNING';
+        suggestedOrderQty = (maxStock > 0 ? maxStock : reorderPoint * 2) - qtyOnHand;
+        warningCount++;
+      } else if (maxStock > 0 && qtyOnHand > maxStock) {
+        alertLevel = 'OVERSTOCK';
+        normalCount++;
+      } else {
+        alertLevel = 'NORMAL';
+        normalCount++;
+      }
+      
+      // Only include items that need attention
+      if (alertLevel === 'CRITICAL' || alertLevel === 'WARNING') {
+        alerts.push({
+          productId: item.product_id,
+          productCode: item.product_code,
+          productName: item.product_name,
+          unit: item.unit,
+          categoryName: item.category_name || 'ไม่ระบุหมวด',
+          warehouseId: item.warehouse_id,
+          warehouseCode: item.warehouse_code,
+          warehouseName: item.warehouse_name,
+          qtyOnHand,
+          minStock,
+          maxStock,
+          reorderPoint,
+          avgCost: parseFloat(item.avg_cost) || 0,
+          alertLevel,
+          suggestedOrderQty: Math.max(0, Math.ceil(suggestedOrderQty)),
+          estimatedCost: Math.max(0, suggestedOrderQty) * standardCost,
+        });
+      }
+    });
+    
+    // Sort by alert level (CRITICAL first) then by qty
+    alerts.sort((a, b) => {
+      if (a.alertLevel === 'CRITICAL' && b.alertLevel !== 'CRITICAL') return -1;
+      if (a.alertLevel !== 'CRITICAL' && b.alertLevel === 'CRITICAL') return 1;
+      return a.qtyOnHand - b.qtyOnHand;
+    });
+    
+    return {
+      summary: {
+        totalProducts: items.length,
+        critical: criticalCount,
+        warning: warningCount,
+        normal: normalCount,
+        totalAlerts: alerts.length,
+        totalEstimatedCost: alerts.reduce((sum, a) => sum + a.estimatedCost, 0),
+      },
+      alerts,
+    };
+  }
 }
