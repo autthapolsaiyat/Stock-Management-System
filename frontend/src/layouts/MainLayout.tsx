@@ -21,6 +21,7 @@ import {
   SunOutlined,
   MoonOutlined,
   AppstoreOutlined,
+  HistoryOutlined,
 } from '@ant-design/icons';
 import { useAuth } from '../contexts/AuthContext';
 import { SettingOutlined } from '@ant-design/icons';
@@ -90,6 +91,7 @@ const MainLayout: React.FC = () => {
       children: [
         { key: '/settings', icon: <SettingOutlined />, label: 'ตั้งค่าส่วนตัว' },
         { key: '/settings/company', icon: <SettingOutlined />, label: 'ตั้งค่าบริษัท' },
+        { key: '/admin/activity-logs', icon: <HistoryOutlined />, label: 'บันทึกกิจกรรม' },
       ],
     },
     {

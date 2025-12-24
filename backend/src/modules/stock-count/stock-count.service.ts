@@ -3,6 +3,8 @@ import { InjectDataSource } from '@nestjs/typeorm';
 import { DataSource } from 'typeorm';
 import { DocNumberingService } from '../doc-numbering/doc-numbering.service';
 import { StockAdjustmentService } from '../stock-adjustment/stock-adjustment.service';
+import { AuditLogService } from '../audit-log/audit-log.service';
+import { AuditContext } from '../stock-issue/stock-issue.service';
 
 @Injectable()
 export class StockCountService {
@@ -10,9 +12,10 @@ export class StockCountService {
     @InjectDataSource() private dataSource: DataSource,
     private docNumberingService: DocNumberingService,
     private stockAdjustmentService: StockAdjustmentService,
+    private auditLogService: AuditLogService,
   ) {}
 
-  async findAll() {
+  async findAll(ctx?: AuditContext) {
     const result = await this.dataSource.query(`
       SELECT sc.*, 
         w.name as warehouse_name_ref,
@@ -23,10 +26,23 @@ export class StockCountService {
       WHERE sc.is_latest_revision = true
       ORDER BY sc.created_at DESC
     `);
+    
+    if (ctx) {
+      await this.auditLogService.log({
+        module: 'STOCK_COUNT',
+        action: 'VIEW',
+        userId: ctx.userId,
+        userName: ctx.userName,
+        ipAddress: ctx.ipAddress,
+        userAgent: ctx.userAgent,
+        details: { count: result.length },
+      });
+    }
+    
     return result;
   }
 
-  async findOne(id: number) {
+  async findOne(id: number, ctx?: AuditContext) {
     const [count] = await this.dataSource.query(
       `SELECT sc.*, w.name as warehouse_name_ref
        FROM stock_counts sc
@@ -48,22 +64,32 @@ export class StockCountService {
       [id]
     );
 
+    if (ctx) {
+      await this.auditLogService.log({
+        module: 'STOCK_COUNT',
+        action: 'VIEW',
+        documentId: id,
+        documentNo: count.doc_full_no,
+        userId: ctx.userId,
+        userName: ctx.userName,
+        ipAddress: ctx.ipAddress,
+        userAgent: ctx.userAgent,
+      });
+    }
+
     return { ...count, items };
   }
 
-  async create(dto: any, userId?: number) {
+  async create(dto: any, ctx: AuditContext) {
     const { warehouseId, countDate, countType, categoryIds, description, remark } = dto;
 
-    // Get warehouse name
     const [warehouse] = await this.dataSource.query(
       'SELECT name FROM warehouses WHERE id = $1',
       [warehouseId]
     );
 
-    // Generate document number
     const { docBaseNo, docFullNo } = await this.docNumberingService.generateDocNumber('CNT');
 
-    // Get products to count based on type
     let productQuery = `
       SELECT 
         p.id as product_id, p.code, p.name, u.name as unit,
@@ -86,7 +112,6 @@ export class StockCountService {
 
     const products = await this.dataSource.query(productQuery, params);
 
-    // Insert header
     const [result] = await this.dataSource.query(`
       INSERT INTO stock_counts (
         doc_base_no, doc_revision, doc_full_no, is_latest_revision,
@@ -97,10 +122,9 @@ export class StockCountService {
     `, [
       docBaseNo, docFullNo, warehouseId, warehouse?.name, countDate,
       countType, categoryIds ? JSON.stringify(categoryIds) : null,
-      description, products.length, remark, userId
+      description, products.length, remark, ctx.userId
     ]);
 
-    // Insert items
     for (let i = 0; i < products.length; i++) {
       const p = products[i];
       await this.dataSource.query(`
@@ -114,17 +138,28 @@ export class StockCountService {
       ]);
     }
 
+    await this.auditLogService.log({
+      module: 'STOCK_COUNT',
+      action: 'CREATE',
+      documentId: result.id,
+      documentNo: docFullNo,
+      userId: ctx.userId,
+      userName: ctx.userName,
+      ipAddress: ctx.ipAddress,
+      userAgent: ctx.userAgent,
+      details: { warehouseId, countType, itemCount: products.length },
+    });
+
     return this.findOne(result.id);
   }
 
-  async startCount(id: number, userId?: number) {
+  async startCount(id: number, ctx: AuditContext) {
     const count = await this.findOne(id);
 
     if (!["DRAFT", "CANCELLED"].includes(count.status)) {
       throw new BadRequestException('Can only start DRAFT counts');
     }
 
-    // Refresh system quantities
     for (const item of count.items) {
       const [stockInfo] = await this.dataSource.query(`
         SELECT COALESCE(qty_on_hand, 0) as qty_on_hand, COALESCE(avg_cost, 0) as avg_cost
@@ -143,12 +178,23 @@ export class StockCountService {
       UPDATE stock_counts 
       SET status = 'IN_PROGRESS', started_at = NOW(), updated_by = $2
       WHERE id = $1
-    `, [id, userId]);
+    `, [id, ctx.userId]);
+
+    await this.auditLogService.log({
+      module: 'STOCK_COUNT',
+      action: 'START',
+      documentId: id,
+      documentNo: count.doc_full_no,
+      userId: ctx.userId,
+      userName: ctx.userName,
+      ipAddress: ctx.ipAddress,
+      userAgent: ctx.userAgent,
+    });
 
     return this.findOne(id);
   }
 
-  async updateItemCount(id: number, itemId: number, dto: any, userId?: number) {
+  async updateItemCount(id: number, itemId: number, dto: any, ctx: AuditContext) {
     const { qtyCount1, qtyCount2, remark } = dto;
 
     const [item] = await this.dataSource.query(
@@ -160,7 +206,6 @@ export class StockCountService {
       throw new NotFoundException('Count item not found');
     }
 
-    // Determine final quantity and status
     let qtyFinal = qtyCount1;
     let countStatus = 'COUNTED';
     
@@ -178,9 +223,8 @@ export class StockCountService {
           qty_variance = $4, value_variance = $5, count_status = $6,
           counted_at = NOW(), counted_by = $7, remark = $8
       WHERE id = $9
-    `, [qtyCount1, qtyCount2, qtyFinal, qtyVariance, valueVariance, countStatus, userId, remark, itemId]);
+    `, [qtyCount1, qtyCount2, qtyFinal, qtyVariance, valueVariance, countStatus, ctx.userId, remark, itemId]);
 
-    // Update header counts
     await this.updateHeaderCounts(id);
 
     return this.findOne(id);
@@ -205,14 +249,13 @@ export class StockCountService {
     `, [id]);
   }
 
-  async complete(id: number, userId?: number) {
+  async complete(id: number, ctx: AuditContext) {
     const count = await this.findOne(id);
 
     if (count.status !== 'IN_PROGRESS') {
       throw new BadRequestException('Can only complete IN_PROGRESS counts');
     }
 
-    // Check all items are counted
     const uncountedItems = count.items.filter(i => i.count_status === 'NOT_COUNTED');
     if (uncountedItems.length > 0) {
       throw new BadRequestException(`${uncountedItems.length} items are not counted yet`);
@@ -222,12 +265,27 @@ export class StockCountService {
       UPDATE stock_counts 
       SET status = 'COMPLETED', completed_at = NOW(), updated_by = $2
       WHERE id = $1
-    `, [id, userId]);
+    `, [id, ctx.userId]);
+
+    await this.auditLogService.log({
+      module: 'STOCK_COUNT',
+      action: 'COMPLETE',
+      documentId: id,
+      documentNo: count.doc_full_no,
+      userId: ctx.userId,
+      userName: ctx.userName,
+      ipAddress: ctx.ipAddress,
+      userAgent: ctx.userAgent,
+      details: { 
+        totalItems: count.total_items,
+        varianceItems: count.variance_items,
+      },
+    });
 
     return this.findOne(id);
   }
 
-  async approve(id: number, userId?: number) {
+  async approve(id: number, ctx: AuditContext) {
     const count = await this.findOne(id);
 
     if (count.status !== 'COMPLETED') {
@@ -238,26 +296,36 @@ export class StockCountService {
       UPDATE stock_counts 
       SET status = 'APPROVED', approved_at = NOW(), approved_by = $2
       WHERE id = $1
-    `, [id, userId]);
+    `, [id, ctx.userId]);
+
+    await this.auditLogService.log({
+      module: 'STOCK_COUNT',
+      action: 'APPROVE',
+      documentId: id,
+      documentNo: count.doc_full_no,
+      userId: ctx.userId,
+      userName: ctx.userName,
+      ipAddress: ctx.ipAddress,
+      userAgent: ctx.userAgent,
+      details: { totalVarianceValue: count.total_variance_value },
+    });
 
     return this.findOne(id);
   }
 
-  async createAdjustment(id: number, userId?: number) {
+  async createAdjustment(id: number, ctx: AuditContext) {
     const count = await this.findOne(id);
 
     if (count.status !== 'APPROVED') {
       throw new BadRequestException('Can only create adjustment from APPROVED counts');
     }
 
-    // Filter items with variance
     const varianceItems = count.items.filter(i => Number(i.qty_variance) !== 0);
 
     if (varianceItems.length === 0) {
       throw new BadRequestException('No variance items to adjust');
     }
 
-    // Create stock adjustment
     const adjustmentDto = {
       warehouseId: count.warehouse_id,
       docDate: new Date(),
@@ -274,26 +342,26 @@ export class StockCountService {
       })),
     };
 
-    const adjustment = await this.stockAdjustmentService.create(adjustmentDto, userId);
+    const adjustment = await this.stockAdjustmentService.create(adjustmentDto, ctx);
 
-    // Link adjustment to count
     await this.dataSource.query(`
       UPDATE stock_counts 
       SET adjustment_id = $1, status = 'ADJUSTED', updated_by = $2
       WHERE id = $3
-    `, [adjustment.id, userId, id]);
+    `, [adjustment.id, ctx.userId, id]);
 
     return { count: await this.findOne(id), adjustment };
   }
 
-  async cancel(id: number, userId: number) {
+  async cancel(id: number, ctx: AuditContext) {
     const count = await this.findOne(id);
 
     if (!['IN_PROGRESS', 'COMPLETED'].includes(count.status)) {
       throw new BadRequestException('Only IN_PROGRESS or COMPLETED counts can be cancelled');
     }
 
-    // Reset all item counts
+    const previousStatus = count.status;
+
     await this.dataSource.query(`
       UPDATE stock_count_items 
       SET qty_count1 = NULL, qty_count2 = NULL, qty_final = NULL, 
@@ -301,7 +369,6 @@ export class StockCountService {
       WHERE stock_count_id = $1
     `, [id]);
 
-    // Reset count status to DRAFT
     await this.dataSource.query(`
       UPDATE stock_counts 
       SET status = 'CANCELLED', 
@@ -310,20 +377,47 @@ export class StockCountService {
           total_variance_value = 0, 
           updated_by = $1
       WHERE id = $2
-    `, [userId, id]);
+    `, [ctx.userId, id]);
+
+    await this.auditLogService.log({
+      module: 'STOCK_COUNT',
+      action: 'CANCEL',
+      documentId: id,
+      documentNo: count.doc_full_no,
+      userId: ctx.userId,
+      userName: ctx.userName,
+      ipAddress: ctx.ipAddress,
+      userAgent: ctx.userAgent,
+      details: { previousStatus },
+    });
 
     return this.findOne(id);
   }
 
-  async delete(id: number) {
+  async delete(id: number, ctx: AuditContext) {
     const count = await this.findOne(id);
 
     if (!["DRAFT", "CANCELLED"].includes(count.status)) {
       throw new BadRequestException('Only DRAFT or CANCELLED counts can be deleted');
     }
 
+    const docFullNo = count.doc_full_no;
+    const previousStatus = count.status;
+
     await this.dataSource.query('DELETE FROM stock_count_items WHERE stock_count_id = $1', [id]);
     await this.dataSource.query('DELETE FROM stock_counts WHERE id = $1', [id]);
+
+    await this.auditLogService.log({
+      module: 'STOCK_COUNT',
+      action: 'DELETE',
+      documentId: id,
+      documentNo: docFullNo,
+      userId: ctx.userId,
+      userName: ctx.userName,
+      ipAddress: ctx.ipAddress,
+      userAgent: ctx.userAgent,
+      details: { previousStatus },
+    });
 
     return { deleted: true };
   }

@@ -1,59 +1,160 @@
 import { useState, useEffect } from 'react';
 import { 
   Card, Table, Input, Space, Tag, DatePicker, Select, 
-  Button, Typography
+  Button, Typography, message, Tooltip
 } from 'antd';
 import { 
   HistoryOutlined, SearchOutlined, ReloadOutlined,
-  ExportOutlined, FilterOutlined
+  FilterOutlined, DownloadOutlined
 } from '@ant-design/icons';
-import api from '../../services/api';
+import { auditLogsApi } from '../../services/api';
 import dayjs from 'dayjs';
 
 const { RangePicker } = DatePicker;
 const { Text } = Typography;
 
-interface ActivityLog {
+interface AuditLog {
   id: number;
-  userId: number;
-  username: string;
-  fullName: string;
-  action: string;
   module: string;
-  description: string;
-  ipAddress: string;
-  userAgent: string;
+  action: string;
+  documentId: number | null;
+  documentNo: string | null;
+  userId: number;
+  userName: string | null;
+  ipAddress: string | null;
+  userAgent: string | null;
+  details: any;
   createdAt: string;
 }
 
+interface ModuleOption {
+  value: string;
+  label: string;
+}
+
+interface ActionOption {
+  value: string;
+  label: string;
+}
+
 const ActivityLogPage = () => {
-  const [logs, setLogs] = useState<ActivityLog[]>([]);
+  const [logs, setLogs] = useState<AuditLog[]>([]);
+  const [total, setTotal] = useState(0);
   const [loading, setLoading] = useState(false);
+  const [exporting, setExporting] = useState(false);
   const [searchText, setSearchText] = useState('');
   const [actionFilter, setActionFilter] = useState<string | null>(null);
   const [moduleFilter, setModuleFilter] = useState<string | null>(null);
   const [dateRange, setDateRange] = useState<[dayjs.Dayjs, dayjs.Dayjs] | null>(null);
+  const [pagination, setPagination] = useState({ current: 1, pageSize: 20 });
+  
+  const [moduleOptions, setModuleOptions] = useState<ModuleOption[]>([]);
+  const [actionOptions, setActionOptions] = useState<ActionOption[]>([]);
+
+  useEffect(() => {
+    fetchOptions();
+  }, []);
 
   useEffect(() => {
     fetchLogs();
-  }, []);
+  }, [moduleFilter, actionFilter, dateRange, pagination.current, pagination.pageSize]);
+
+  const fetchOptions = async () => {
+    try {
+      const [modulesRes, actionsRes] = await Promise.all([
+        auditLogsApi.getModules(),
+        auditLogsApi.getActions(),
+      ]);
+      setModuleOptions(modulesRes.data);
+      setActionOptions(actionsRes.data);
+    } catch (error) {
+      // Use fallback options
+      setModuleOptions([
+        { value: 'STOCK_ISSUE', label: 'เบิกสินค้า' },
+        { value: 'STOCK_TRANSFER', label: 'โอนสินค้า' },
+        { value: 'STOCK_ADJUSTMENT', label: 'ปรับปรุงสต็อก' },
+        { value: 'STOCK_COUNT', label: 'นับสต็อก' },
+        { value: 'STOCK_BALANCE', label: 'ยอดคงเหลือ' },
+        { value: 'QUOTATION', label: 'ใบเสนอราคา' },
+        { value: 'PURCHASE_ORDER', label: 'ใบสั่งซื้อ' },
+        { value: 'GOODS_RECEIPT', label: 'ใบรับสินค้า' },
+        { value: 'SALES_INVOICE', label: 'ใบขายสินค้า' },
+        { value: 'AUTH', label: 'การยืนยันตัวตน' },
+      ]);
+      setActionOptions([
+        { value: 'VIEW', label: 'ดู' },
+        { value: 'CREATE', label: 'สร้าง' },
+        { value: 'UPDATE', label: 'แก้ไข' },
+        { value: 'DELETE', label: 'ลบ' },
+        { value: 'POST', label: 'ผ่านรายการ' },
+        { value: 'CANCEL', label: 'ยกเลิก' },
+        { value: 'APPROVE', label: 'อนุมัติ' },
+      ]);
+    }
+  };
 
   const fetchLogs = async () => {
     setLoading(true);
     try {
-      const response = await api.get('/activity-logs');
-      setLogs(response.data);
+      const params: any = {
+        limit: pagination.pageSize,
+        offset: (pagination.current - 1) * pagination.pageSize,
+      };
+      
+      if (moduleFilter) params.module = moduleFilter;
+      if (actionFilter) params.action = actionFilter;
+      if (dateRange) {
+        params.startDate = dateRange[0].startOf('day').toISOString();
+        params.endDate = dateRange[1].endOf('day').toISOString();
+      }
+
+      const response = await auditLogsApi.getAll(params);
+      setLogs(response.data.data);
+      setTotal(response.data.total);
     } catch (error) {
-      // Mock data for demo
-      setLogs([
-        { id: 1, userId: 1, username: 'admin', fullName: 'อรรถพล ไสญาติ', action: 'LOGIN', module: 'AUTH', description: 'เข้าสู่ระบบสำเร็จ', ipAddress: '203.150.xxx.xxx', userAgent: 'Chrome/120', createdAt: new Date().toISOString() },
-        { id: 2, userId: 1, username: 'admin', fullName: 'อรรถพล ไสญาติ', action: 'CREATE', module: 'QUOTATION', description: 'สร้างใบเสนอราคา QT-2568-0001', ipAddress: '203.150.xxx.xxx', userAgent: 'Chrome/120', createdAt: new Date().toISOString() },
-        { id: 3, userId: 2, username: 'sunisa.k', fullName: 'สุนิสา แก้ววิเศษ', action: 'VIEW', module: 'PRODUCT', description: 'ดูรายการสินค้า', ipAddress: '203.150.xxx.xxx', userAgent: 'Safari/17', createdAt: new Date().toISOString() },
-        { id: 4, userId: 1, username: 'admin', fullName: 'อรรถพล ไสญาติ', action: 'UPDATE', module: 'USER', description: 'แก้ไขข้อมูลผู้ใช้ ID: 5', ipAddress: '203.150.xxx.xxx', userAgent: 'Chrome/120', createdAt: new Date().toISOString() },
-        { id: 5, userId: 3, username: 'wilawan.k', fullName: 'วิลาวรรณ โคตรสมบัติ', action: 'APPROVE', module: 'QUOTATION', description: 'อนุมัติใบเสนอราคา QT-2568-0001', ipAddress: '203.150.xxx.xxx', userAgent: 'Chrome/120', createdAt: new Date().toISOString() },
-      ]);
+      console.error('Failed to fetch audit logs:', error);
+      message.error('ไม่สามารถโหลดข้อมูลได้');
+      setLogs([]);
     }
     setLoading(false);
+  };
+
+  const handleExport = async () => {
+    setExporting(true);
+    try {
+      const params: any = {};
+      if (moduleFilter) params.module = moduleFilter;
+      if (actionFilter) params.action = actionFilter;
+      if (dateRange) {
+        params.startDate = dateRange[0].startOf('day').toISOString();
+        params.endDate = dateRange[1].endOf('day').toISOString();
+      }
+
+      const response = await auditLogsApi.exportCsv(params);
+      
+      // Create download link
+      const blob = new Blob([response.data], { type: 'text/csv;charset=utf-8;' });
+      const url = window.URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = `audit-logs-${dayjs().format('YYYY-MM-DD-HHmmss')}.csv`;
+      link.click();
+      window.URL.revokeObjectURL(url);
+      
+      message.success('ส่งออกข้อมูลสำเร็จ');
+    } catch (error) {
+      console.error('Failed to export:', error);
+      message.error('ไม่สามารถส่งออกข้อมูลได้');
+    }
+    setExporting(false);
+  };
+
+  const clearFilters = () => {
+    setSearchText('');
+    setActionFilter(null);
+    setModuleFilter(null);
+    setDateRange(null);
+    setPagination({ ...pagination, current: 1 });
   };
 
   const actionColors: Record<string, string> = {
@@ -63,57 +164,37 @@ const ActivityLogPage = () => {
     UPDATE: 'orange',
     DELETE: 'red',
     VIEW: 'default',
-    APPROVE: 'purple',
+    POST: 'purple',
+    CANCEL: 'volcano',
+    APPROVE: 'cyan',
     REJECT: 'red',
-    EXPORT: 'cyan',
+    EXPORT: 'geekblue',
   };
 
   const moduleColors: Record<string, string> = {
     AUTH: 'blue',
     USER: 'purple',
     QUOTATION: 'green',
-    PO: 'orange',
-    INVOICE: 'magenta',
-    PRODUCT: 'cyan',
-    CUSTOMER: 'geekblue',
-    STOCK: 'lime',
+    PURCHASE_ORDER: 'orange',
+    GOODS_RECEIPT: 'lime',
+    SALES_INVOICE: 'magenta',
+    STOCK_ISSUE: 'red',
+    STOCK_TRANSFER: 'cyan',
+    STOCK_ADJUSTMENT: 'gold',
+    STOCK_COUNT: 'geekblue',
+    STOCK_BALANCE: 'volcano',
   };
 
-  const actionOptions = [
-    { value: 'LOGIN', label: 'LOGIN - เข้าสู่ระบบ' },
-    { value: 'LOGOUT', label: 'LOGOUT - ออกจากระบบ' },
-    { value: 'CREATE', label: 'CREATE - สร้าง' },
-    { value: 'UPDATE', label: 'UPDATE - แก้ไข' },
-    { value: 'DELETE', label: 'DELETE - ลบ' },
-    { value: 'VIEW', label: 'VIEW - ดู' },
-    { value: 'APPROVE', label: 'APPROVE - อนุมัติ' },
-    { value: 'REJECT', label: 'REJECT - ปฏิเสธ' },
-    { value: 'EXPORT', label: 'EXPORT - ส่งออก' },
-  ];
-
-  const moduleOptions = [
-    { value: 'AUTH', label: 'AUTH - การยืนยันตัวตน' },
-    { value: 'USER', label: 'USER - ผู้ใช้งาน' },
-    { value: 'QUOTATION', label: 'QUOTATION - ใบเสนอราคา' },
-    { value: 'PO', label: 'PO - ใบสั่งซื้อ' },
-    { value: 'INVOICE', label: 'INVOICE - ใบแจ้งหนี้' },
-    { value: 'PRODUCT', label: 'PRODUCT - สินค้า' },
-    { value: 'CUSTOMER', label: 'CUSTOMER - ลูกค้า' },
-    { value: 'STOCK', label: 'STOCK - คลังสินค้า' },
-  ];
-
+  // Client-side search filter
   const filteredLogs = logs.filter((log) => {
-    const matchSearch = 
-      log.username?.toLowerCase().includes(searchText.toLowerCase()) ||
-      log.fullName?.toLowerCase().includes(searchText.toLowerCase()) ||
-      log.description?.toLowerCase().includes(searchText.toLowerCase());
-    const matchAction = !actionFilter || log.action === actionFilter;
-    const matchModule = !moduleFilter || log.module === moduleFilter;
-    const matchDate = !dateRange || (
-      dayjs(log.createdAt).isAfter(dateRange[0].startOf('day')) &&
-      dayjs(log.createdAt).isBefore(dateRange[1].endOf('day'))
+    if (!searchText) return true;
+    const searchLower = searchText.toLowerCase();
+    return (
+      log.userName?.toLowerCase().includes(searchLower) ||
+      log.documentNo?.toLowerCase().includes(searchLower) ||
+      log.module?.toLowerCase().includes(searchLower) ||
+      log.action?.toLowerCase().includes(searchLower)
     );
-    return matchSearch && matchAction && matchModule && matchDate;
   });
 
   const columns = [
@@ -131,11 +212,11 @@ const ActivityLogPage = () => {
     {
       title: 'ผู้ใช้',
       key: 'user',
-      width: 180,
-      render: (_: any, record: ActivityLog) => (
+      width: 150,
+      render: (_: any, record: AuditLog) => (
         <div>
-          <div style={{ fontWeight: 500 }}>{record.fullName}</div>
-          <div style={{ fontSize: 11, color: '#6b7280' }}>@{record.username}</div>
+          <div style={{ fontWeight: 500 }}>{record.userName || '-'}</div>
+          <div style={{ fontSize: 11, color: '#6b7280' }}>ID: {record.userId}</div>
         </div>
       ),
     },
@@ -143,7 +224,7 @@ const ActivityLogPage = () => {
       title: 'การกระทำ',
       dataIndex: 'action',
       key: 'action',
-      width: 110,
+      width: 100,
       render: (action: string) => (
         <Tag color={actionColors[action] || 'default'}>{action}</Tag>
       ),
@@ -152,23 +233,45 @@ const ActivityLogPage = () => {
       title: 'โมดูล',
       dataIndex: 'module',
       key: 'module',
-      width: 120,
+      width: 140,
       render: (module: string) => (
         <Tag color={moduleColors[module] || 'default'}>{module}</Tag>
       ),
     },
     {
+      title: 'เอกสาร',
+      key: 'document',
+      width: 150,
+      render: (_: any, record: AuditLog) => (
+        record.documentNo ? (
+          <Text code style={{ fontSize: 12 }}>{record.documentNo}</Text>
+        ) : (
+          <Text type="secondary">-</Text>
+        )
+      ),
+    },
+    {
       title: 'รายละเอียด',
-      dataIndex: 'description',
-      key: 'description',
+      dataIndex: 'details',
+      key: 'details',
+      ellipsis: true,
+      render: (details: any) => (
+        details ? (
+          <Tooltip title={JSON.stringify(details, null, 2)}>
+            <Text style={{ fontSize: 12 }} ellipsis>
+              {typeof details === 'object' ? JSON.stringify(details) : details}
+            </Text>
+          </Tooltip>
+        ) : '-'
+      ),
     },
     {
       title: 'IP Address',
       dataIndex: 'ipAddress',
       key: 'ipAddress',
-      width: 140,
+      width: 130,
       render: (ip: string) => (
-        <Text code style={{ fontSize: 11 }}>{ip}</Text>
+        ip ? <Text code style={{ fontSize: 11 }}>{ip}</Text> : '-'
       ),
     },
   ];
@@ -178,7 +281,7 @@ const ActivityLogPage = () => {
       {/* Info Banner */}
       <Card 
         style={{ marginBottom: 16, background: '#fef3c7', border: '1px solid #f59e0b' }}
-        bodyStyle={{ padding: 16 }}
+        styles={{ body: { padding: 16 } }}
       >
         <Space>
           <span style={{ fontSize: 20 }}>⚖️</span>
@@ -187,7 +290,7 @@ const ActivityLogPage = () => {
               บันทึกกิจกรรมตาม พ.ร.บ. คอมพิวเตอร์ พ.ศ. 2560
             </div>
             <div style={{ fontSize: 12, color: '#a16207' }}>
-              ข้อมูลจะถูกเก็บรักษาไว้อย่างน้อย 90 วัน ตามกฎหมายกำหนด
+              ข้อมูลจะถูกเก็บรักษาไว้อย่างน้อย 90 วัน ตามกฎหมายกำหนด (ลบอัตโนมัติทุกวัน 02:00 น.)
             </div>
           </div>
         </Space>
@@ -197,16 +300,20 @@ const ActivityLogPage = () => {
         title={
           <Space>
             <HistoryOutlined />
-            <span>บันทึกกิจกรรม (Activity Log)</span>
-            <Tag color="blue">{filteredLogs.length} รายการ</Tag>
+            <span>บันทึกกิจกรรม (Audit Log)</span>
+            <Tag color="blue">{total} รายการ</Tag>
           </Space>
         }
         extra={
           <Space>
-            <Button icon={<ReloadOutlined />} onClick={fetchLogs}>
+            <Button icon={<ReloadOutlined />} onClick={fetchLogs} loading={loading}>
               รีเฟรช
             </Button>
-            <Button icon={<ExportOutlined />}>
+            <Button 
+              icon={<DownloadOutlined />} 
+              onClick={handleExport}
+              loading={exporting}
+            >
               ส่งออก CSV
             </Button>
           </Space>
@@ -219,39 +326,43 @@ const ActivityLogPage = () => {
             prefix={<SearchOutlined />}
             value={searchText}
             onChange={(e) => setSearchText(e.target.value)}
-            style={{ width: 250 }}
+            style={{ width: 200 }}
             allowClear
           />
           <Select
             placeholder="การกระทำ"
             value={actionFilter}
-            onChange={setActionFilter}
-            style={{ width: 180 }}
+            onChange={(value) => {
+              setActionFilter(value);
+              setPagination({ ...pagination, current: 1 });
+            }}
+            style={{ width: 150 }}
             allowClear
             options={actionOptions}
           />
           <Select
             placeholder="โมดูล"
             value={moduleFilter}
-            onChange={setModuleFilter}
-            style={{ width: 200 }}
+            onChange={(value) => {
+              setModuleFilter(value);
+              setPagination({ ...pagination, current: 1 });
+            }}
+            style={{ width: 180 }}
             allowClear
             options={moduleOptions}
           />
           <RangePicker
             value={dateRange}
-            onChange={(dates) => setDateRange(dates as [dayjs.Dayjs, dayjs.Dayjs])}
+            onChange={(dates) => {
+              setDateRange(dates as [dayjs.Dayjs, dayjs.Dayjs]);
+              setPagination({ ...pagination, current: 1 });
+            }}
             format="DD/MM/YYYY"
             placeholder={['วันที่เริ่ม', 'วันที่สิ้นสุด']}
           />
           <Button 
             icon={<FilterOutlined />} 
-            onClick={() => {
-              setSearchText('');
-              setActionFilter(null);
-              setModuleFilter(null);
-              setDateRange(null);
-            }}
+            onClick={clearFilters}
           >
             ล้างตัวกรอง
           </Button>
@@ -263,11 +374,18 @@ const ActivityLogPage = () => {
           rowKey="id"
           loading={loading}
           pagination={{ 
-            pageSize: 20, 
+            current: pagination.current,
+            pageSize: pagination.pageSize,
+            total: total,
             showSizeChanger: true,
-            showTotal: (total) => `ทั้งหมด ${total} รายการ`
+            pageSizeOptions: ['10', '20', '50', '100'],
+            showTotal: (t) => `ทั้งหมด ${t} รายการ`,
+            onChange: (page, pageSize) => {
+              setPagination({ current: page, pageSize: pageSize || 20 });
+            },
           }}
           size="small"
+          scroll={{ x: 1000 }}
         />
       </Card>
     </div>

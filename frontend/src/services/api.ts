@@ -219,6 +219,30 @@ export const stockCountsApi = {
   delete: (id: number) => api.delete(`/api/stock-counts/${id}`),
 };
 
+// Audit Logs API
+export const auditLogsApi = {
+  getAll: (params?: { 
+    module?: string; 
+    action?: string; 
+    userId?: number;
+    startDate?: string;
+    endDate?: string;
+    limit?: number;
+    offset?: number;
+  }) => api.get('/api/audit-logs', { params }),
+  getModules: () => api.get('/api/audit-logs/modules'),
+  getActions: () => api.get('/api/audit-logs/actions'),
+  exportCsv: (params?: { 
+    module?: string; 
+    action?: string;
+    startDate?: string;
+    endDate?: string;
+  }) => api.get('/api/audit-logs/export', { 
+    params, 
+    responseType: 'blob' 
+  }),
+};
+
 // Quotations API
 export const quotationsApi = {
   getAll: (params?: any) => api.get('/api/quotations', { params }),

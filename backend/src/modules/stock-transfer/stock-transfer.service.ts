@@ -4,6 +4,8 @@ import { Repository, DataSource } from 'typeorm';
 import { StockTransferEntity, StockTransferItemEntity } from './entities';
 import { DocNumberingService } from '../doc-numbering/doc-numbering.service';
 import { FifoService } from '../fifo/fifo.service';
+import { AuditLogService } from '../audit-log/audit-log.service';
+import { AuditContext } from '../stock-issue/stock-issue.service';
 
 @Injectable()
 export class StockTransferService {
@@ -14,22 +16,51 @@ export class StockTransferService {
     private itemRepository: Repository<StockTransferItemEntity>,
     private docNumberingService: DocNumberingService,
     private fifoService: FifoService,
+    private auditLogService: AuditLogService,
     private dataSource: DataSource,
   ) {}
 
-  async findAll(status?: string) {
+  async findAll(status?: string, ctx?: AuditContext) {
     const where: any = { isLatestRevision: true };
     if (status) where.status = status;
-    return this.transferRepository.find({ where, order: { createdAt: 'DESC' }, relations: ['items'] });
+    const result = await this.transferRepository.find({ where, order: { createdAt: 'DESC' }, relations: ['items'] });
+    
+    if (ctx) {
+      await this.auditLogService.log({
+        module: 'STOCK_TRANSFER',
+        action: 'VIEW',
+        userId: ctx.userId,
+        userName: ctx.userName,
+        ipAddress: ctx.ipAddress,
+        userAgent: ctx.userAgent,
+        details: { filter: { status }, count: result.length },
+      });
+    }
+    
+    return result;
   }
 
-  async findOne(id: number) {
+  async findOne(id: number, ctx?: AuditContext) {
     const transfer = await this.transferRepository.findOne({ where: { id }, relations: ['items'] });
     if (!transfer) throw new NotFoundException('Stock Transfer not found');
+    
+    if (ctx) {
+      await this.auditLogService.log({
+        module: 'STOCK_TRANSFER',
+        action: 'VIEW',
+        documentId: transfer.id,
+        documentNo: transfer.docFullNo,
+        userId: ctx.userId,
+        userName: ctx.userName,
+        ipAddress: ctx.ipAddress,
+        userAgent: ctx.userAgent,
+      });
+    }
+    
     return transfer;
   }
 
-  async create(dto: any, userId: number) {
+  async create(dto: any, ctx: AuditContext) {
     const queryRunner = this.dataSource.createQueryRunner();
     await queryRunner.connect();
     await queryRunner.startTransaction();
@@ -44,7 +75,7 @@ export class StockTransferService {
         toWarehouseId: dto.toWarehouseId,
         reason: dto.reason,
         status: 'DRAFT',
-        createdBy: userId,
+        createdBy: ctx.userId,
       });
       const savedTransfer = await queryRunner.manager.save(transfer);
       
@@ -60,6 +91,24 @@ export class StockTransferService {
       }
       
       await queryRunner.commitTransaction();
+      
+      await this.auditLogService.log({
+        module: 'STOCK_TRANSFER',
+        action: 'CREATE',
+        documentId: savedTransfer.id,
+        documentNo: docFullNo,
+        userId: ctx.userId,
+        userName: ctx.userName,
+        ipAddress: ctx.ipAddress,
+        userAgent: ctx.userAgent,
+        details: { 
+          fromWarehouseId: dto.fromWarehouseId,
+          toWarehouseId: dto.toWarehouseId,
+          reason: dto.reason,
+          itemCount: dto.items.length,
+        },
+      });
+      
       return this.findOne(savedTransfer.id);
     } catch (error) {
       await queryRunner.rollbackTransaction();
@@ -69,7 +118,7 @@ export class StockTransferService {
     }
   }
 
-  async post(id: number, userId: number) {
+  async post(id: number, ctx: AuditContext) {
     const transfer = await this.findOne(id);
     if (transfer.status !== 'DRAFT') throw new BadRequestException('Only draft can be posted');
     
@@ -80,13 +129,11 @@ export class StockTransferService {
     try {
       let totalAmount = 0;
       for (const item of transfer.items) {
-        // Deduct from source
         const result = await this.fifoService.deductFifo(
           item.productId, transfer.fromWarehouseId, Number(item.qty),
           'TRANSFER', transfer.id, item.id, queryRunner
         );
         
-        // Add to destination
         await this.fifoService.createLayer({
           productId: item.productId,
           warehouseId: transfer.toWarehouseId,
@@ -106,10 +153,23 @@ export class StockTransferService {
       transfer.totalAmount = totalAmount;
       transfer.status = 'POSTED';
       transfer.postedAt = new Date();
-      transfer.postedBy = userId;
+      transfer.postedBy = ctx.userId;
       await queryRunner.manager.save(transfer);
       
       await queryRunner.commitTransaction();
+      
+      await this.auditLogService.log({
+        module: 'STOCK_TRANSFER',
+        action: 'POST',
+        documentId: transfer.id,
+        documentNo: transfer.docFullNo,
+        userId: ctx.userId,
+        userName: ctx.userName,
+        ipAddress: ctx.ipAddress,
+        userAgent: ctx.userAgent,
+        details: { totalAmount, itemCount: transfer.items.length },
+      });
+      
       return this.findOne(id);
     } catch (error) {
       await queryRunner.rollbackTransaction();
@@ -119,7 +179,7 @@ export class StockTransferService {
     }
   }
 
- async cancel(id: number, userId: number) {
+  async cancel(id: number, ctx: AuditContext) {
     const transfer = await this.findOne(id);
     if (transfer.status !== 'POSTED') throw new BadRequestException('Only posted transfers can be cancelled');
     
@@ -129,7 +189,6 @@ export class StockTransferService {
     
     try {
       for (const item of transfer.items) {
-        // Reverse: Add back to source warehouse
         await this.fifoService.createLayer({
           productId: item.productId,
           warehouseId: transfer.fromWarehouseId,
@@ -140,7 +199,6 @@ export class StockTransferService {
           referenceItemId: item.id,
         }, queryRunner);
         
-        // Reverse: Deduct from destination warehouse
         await this.fifoService.deductFifo(
           item.productId, transfer.toWarehouseId, Number(item.qty),
           'TRANSFER_CANCEL', transfer.id, item.id, queryRunner
@@ -149,10 +207,23 @@ export class StockTransferService {
       
       transfer.status = 'CANCELLED';
       transfer.cancelledAt = new Date();
-      transfer.cancelledBy = userId;
+      transfer.cancelledBy = ctx.userId;
       await queryRunner.manager.save(transfer);
       
       await queryRunner.commitTransaction();
+      
+      await this.auditLogService.log({
+        module: 'STOCK_TRANSFER',
+        action: 'CANCEL',
+        documentId: transfer.id,
+        documentNo: transfer.docFullNo,
+        userId: ctx.userId,
+        userName: ctx.userName,
+        ipAddress: ctx.ipAddress,
+        userAgent: ctx.userAgent,
+        details: { previousStatus: 'POSTED', totalAmount: transfer.totalAmount },
+      });
+      
       return this.findOne(id);
     } catch (error) {
       await queryRunner.rollbackTransaction();
@@ -162,14 +233,30 @@ export class StockTransferService {
     }
   }
 
-  async delete(id: number) {
+  async delete(id: number, ctx: AuditContext) {
     const transfer = await this.findOne(id);
     if (!['DRAFT', 'CANCELLED'].includes(transfer.status)) {
       throw new BadRequestException('Only DRAFT or CANCELLED transfers can be deleted');
     }
     
+    const docFullNo = transfer.docFullNo;
+    const previousStatus = transfer.status;
+    
     await this.itemRepository.delete({ stockTransferId: id });
     await this.transferRepository.delete(id);
+    
+    await this.auditLogService.log({
+      module: 'STOCK_TRANSFER',
+      action: 'DELETE',
+      documentId: id,
+      documentNo: docFullNo,
+      userId: ctx.userId,
+      userName: ctx.userName,
+      ipAddress: ctx.ipAddress,
+      userAgent: ctx.userAgent,
+      details: { previousStatus },
+    });
+    
     return { message: 'Deleted successfully' };
   }
 }

@@ -1,6 +1,7 @@
 import { Module } from '@nestjs/common';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import { TypeOrmModule } from '@nestjs/typeorm';
+import { ScheduleModule } from '@nestjs/schedule';
 import { HealthModule } from './modules/health/health.module';
 import { AuthModule } from './modules/auth/auth.module';
 import { UserModule } from './modules/user/user.module';
@@ -25,10 +26,12 @@ import { CategoryModule } from './modules/category/category.module';
 import { CustomerGroupModule } from './modules/customer-group/customer-group.module';
 import { StockAdjustmentModule } from './modules/stock-adjustment/stock-adjustment.module';
 import { StockCountModule } from './modules/stock-count/stock-count.module';
+import { AuditLogModule } from './modules/audit-log/audit-log.module';
 
 @Module({
   imports: [
     ConfigModule.forRoot({ isGlobal: true }),
+    ScheduleModule.forRoot(),
     TypeOrmModule.forRootAsync({
       imports: [ConfigModule],
       useFactory: (configService: ConfigService) => ({
@@ -68,6 +71,7 @@ import { StockCountModule } from './modules/stock-count/stock-count.module';
     CustomerGroupModule,
     StockAdjustmentModule,
     StockCountModule,
+    AuditLogModule,
   ],
 })
 export class AppModule {}

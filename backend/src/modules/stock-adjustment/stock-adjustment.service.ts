@@ -3,6 +3,8 @@ import { InjectDataSource } from '@nestjs/typeorm';
 import { DataSource } from 'typeorm';
 import { DocNumberingService } from '../doc-numbering/doc-numbering.service';
 import { FifoService } from '../fifo/fifo.service';
+import { AuditLogService } from '../audit-log/audit-log.service';
+import { AuditContext } from '../stock-issue/stock-issue.service';
 
 @Injectable()
 export class StockAdjustmentService {
@@ -10,9 +12,10 @@ export class StockAdjustmentService {
     @InjectDataSource() private dataSource: DataSource,
     private docNumberingService: DocNumberingService,
     private fifoService: FifoService,
+    private auditLogService: AuditLogService,
   ) {}
 
-  async findAll() {
+  async findAll(ctx?: AuditContext) {
     const result = await this.dataSource.query(`
       SELECT sa.*, 
         (SELECT COUNT(*) FROM stock_adjustment_items WHERE stock_adjustment_id = sa.id) as total_items,
@@ -22,10 +25,23 @@ export class StockAdjustmentService {
       WHERE sa.is_latest_revision = true
       ORDER BY sa.created_at DESC
     `);
+    
+    if (ctx) {
+      await this.auditLogService.log({
+        module: 'STOCK_ADJUSTMENT',
+        action: 'VIEW',
+        userId: ctx.userId,
+        userName: ctx.userName,
+        ipAddress: ctx.ipAddress,
+        userAgent: ctx.userAgent,
+        details: { count: result.length },
+      });
+    }
+    
     return result;
   }
 
-  async findOne(id: number) {
+  async findOne(id: number, ctx?: AuditContext) {
     const [adjustment] = await this.dataSource.query(
       `SELECT sa.*, w.name as warehouse_name_ref
        FROM stock_adjustments sa
@@ -47,22 +63,32 @@ export class StockAdjustmentService {
       [id]
     );
 
+    if (ctx) {
+      await this.auditLogService.log({
+        module: 'STOCK_ADJUSTMENT',
+        action: 'VIEW',
+        documentId: id,
+        documentNo: adjustment.doc_full_no,
+        userId: ctx.userId,
+        userName: ctx.userName,
+        ipAddress: ctx.ipAddress,
+        userAgent: ctx.userAgent,
+      });
+    }
+
     return { ...adjustment, items };
   }
 
-  async create(dto: any, userId?: number) {
+  async create(dto: any, ctx: AuditContext) {
     const { warehouseId, docDate, adjustmentType, reason, remark, items } = dto;
 
-    // Get warehouse name
     const [warehouse] = await this.dataSource.query(
       'SELECT name FROM warehouses WHERE id = $1',
       [warehouseId]
     );
 
-    // Generate document number
     const { docBaseNo, docFullNo } = await this.docNumberingService.generateDocNumber('ADJ');
 
-    // Calculate totals
     let totalQtyAdjust = 0;
     let totalValueAdjust = 0;
 
@@ -70,7 +96,6 @@ export class StockAdjustmentService {
     for (let i = 0; i < items.length; i++) {
       const item = items[i];
       
-      // Get current stock info
       const [stockInfo] = await this.dataSource.query(`
         SELECT sb.qty_on_hand, sb.avg_cost, p.code, p.name, u.name as unit_name
         FROM stock_balances sb
@@ -87,7 +112,7 @@ export class StockAdjustmentService {
         qtyAdjust = Math.abs(Number(item.qtyAdjust || 0));
       } else if (adjustmentType === 'ADJ_OUT') {
         qtyAdjust = -Math.abs(Number(item.qtyAdjust || 0));
-      } else { // ADJ_COUNT
+      } else {
         const qtyCounted = Number(item.qtyCounted || 0);
         qtyAdjust = qtyCounted - qtySystem;
       }
@@ -111,7 +136,6 @@ export class StockAdjustmentService {
       });
     }
 
-    // Insert header
     const [result] = await this.dataSource.query(`
       INSERT INTO stock_adjustments (
         doc_base_no, doc_revision, doc_full_no, is_latest_revision,
@@ -123,10 +147,9 @@ export class StockAdjustmentService {
     `, [
       docBaseNo, docFullNo, warehouseId, warehouse?.name, docDate,
       adjustmentType, reason, totalQtyAdjust, totalValueAdjust,
-      remark, userId
+      remark, ctx.userId
     ]);
 
-    // Insert items
     for (const item of processedItems) {
       await this.dataSource.query(`
         INSERT INTO stock_adjustment_items (
@@ -140,26 +163,35 @@ export class StockAdjustmentService {
       ]);
     }
 
+    await this.auditLogService.log({
+      module: 'STOCK_ADJUSTMENT',
+      action: 'CREATE',
+      documentId: result.id,
+      documentNo: docFullNo,
+      userId: ctx.userId,
+      userName: ctx.userName,
+      ipAddress: ctx.ipAddress,
+      userAgent: ctx.userAgent,
+      details: { warehouseId, adjustmentType, reason, itemCount: items.length },
+    });
+
     return this.findOne(result.id);
   }
 
-  async post(id: number, userId?: number) {
+  async post(id: number, ctx: AuditContext) {
     const adjustment = await this.findOne(id);
 
     if (!["DRAFT", "CANCELLED"].includes(adjustment.status)) {
       throw new BadRequestException('Only DRAFT adjustments can be posted');
     }
 
-    // Process each item
     for (const item of adjustment.items) {
       const qtyAdjust = Number(item.qty_adjust || item.qtyAdjust);
       const productId = item.product_id || item.productId;
       const warehouseId = adjustment.warehouse_id || adjustment.warehouseId;
       const unitCost = Number(item.unit_cost || item.unitCost);
-      const docFullNo = adjustment.doc_full_no || adjustment.docFullNo;
       
       if (qtyAdjust > 0) {
-        // Add stock - create FIFO layer
         await this.fifoService.createLayer({
           productId,
           warehouseId,
@@ -169,7 +201,6 @@ export class StockAdjustmentService {
           referenceId: id,
         });
       } else if (qtyAdjust < 0) {
-        // Reduce stock - deduct from FIFO
         await this.fifoService.deductFifo(
           productId,
           warehouseId,
@@ -180,25 +211,41 @@ export class StockAdjustmentService {
       }
     }
 
-    // Update status
     await this.dataSource.query(`
       UPDATE stock_adjustments 
       SET status = 'POSTED', posted_at = NOW(), posted_by = $2
       WHERE id = $1
-    `, [id, userId]);
+    `, [id, ctx.userId]);
+
+    await this.auditLogService.log({
+      module: 'STOCK_ADJUSTMENT',
+      action: 'POST',
+      documentId: id,
+      documentNo: adjustment.doc_full_no,
+      userId: ctx.userId,
+      userName: ctx.userName,
+      ipAddress: ctx.ipAddress,
+      userAgent: ctx.userAgent,
+      details: { 
+        adjustmentType: adjustment.adjustment_type,
+        totalQtyAdjust: adjustment.total_qty_adjust,
+        totalValueAdjust: adjustment.total_value_adjust,
+      },
+    });
 
     return this.findOne(id);
   }
 
-  async cancel(id: number, userId?: number) {
+  async cancel(id: number, ctx: AuditContext) {
     const adjustment = await this.findOne(id);
 
     if (adjustment.status === 'CANCELLED') {
       throw new BadRequestException('Adjustment is already cancelled');
     }
 
+    const previousStatus = adjustment.status;
+
     if (adjustment.status === 'POSTED') {
-      // Reverse the stock changes
       for (const item of adjustment.items) {
         const qtyAdjust = Number(item.qty_adjust || item.qtyAdjust);
         const productId = item.product_id || item.productId;
@@ -206,7 +253,6 @@ export class StockAdjustmentService {
         const unitCost = Number(item.unit_cost || item.unitCost);
         
         if (qtyAdjust > 0) {
-          // Was added, now deduct
           await this.fifoService.deductFifo(
             productId,
             warehouseId,
@@ -215,7 +261,6 @@ export class StockAdjustmentService {
             id
           );
         } else if (qtyAdjust < 0) {
-          // Was deducted, now add back
           await this.fifoService.createLayer({
             productId,
             warehouseId,
@@ -232,25 +277,51 @@ export class StockAdjustmentService {
       UPDATE stock_adjustments 
       SET status = 'CANCELLED', cancelled_at = NOW(), cancelled_by = $2
       WHERE id = $1
-    `, [id, userId]);
+    `, [id, ctx.userId]);
+
+    await this.auditLogService.log({
+      module: 'STOCK_ADJUSTMENT',
+      action: 'CANCEL',
+      documentId: id,
+      documentNo: adjustment.doc_full_no,
+      userId: ctx.userId,
+      userName: ctx.userName,
+      ipAddress: ctx.ipAddress,
+      userAgent: ctx.userAgent,
+      details: { previousStatus },
+    });
 
     return this.findOne(id);
   }
 
-  async delete(id: number) {
+  async delete(id: number, ctx: AuditContext) {
     const adjustment = await this.findOne(id);
 
     if (!["DRAFT", "CANCELLED"].includes(adjustment.status)) {
       throw new BadRequestException('Only DRAFT or CANCELLED adjustments can be deleted');
     }
 
+    const docFullNo = adjustment.doc_full_no;
+    const previousStatus = adjustment.status;
+
     await this.dataSource.query('DELETE FROM stock_adjustment_items WHERE stock_adjustment_id = $1', [id]);
     await this.dataSource.query('DELETE FROM stock_adjustments WHERE id = $1', [id]);
+
+    await this.auditLogService.log({
+      module: 'STOCK_ADJUSTMENT',
+      action: 'DELETE',
+      documentId: id,
+      documentNo: docFullNo,
+      userId: ctx.userId,
+      userName: ctx.userName,
+      ipAddress: ctx.ipAddress,
+      userAgent: ctx.userAgent,
+      details: { previousStatus },
+    });
 
     return { deleted: true };
   }
 
-  // Get products for adjustment (with current stock)
   async getProductsForAdjustment(warehouseId: number) {
     const result = await this.dataSource.query(`
       SELECT 
