@@ -120,32 +120,31 @@ export class StockTransferService {
   }
 
   async cancel(id: number, userId: number) {
-    const transfer = await this.findOne(id);
-    if (transfer.status !== 'POSTED') throw new BadRequestException('Only posted transfers can be cancelled');
+    const issue = await this.findOne(id);
+    if (issue.status !== 'POSTED') throw new BadRequestException('Only posted issues can be cancelled');
     
     const queryRunner = this.dataSource.createQueryRunner();
     await queryRunner.connect();
     await queryRunner.startTransaction();
     
     try {
-      for (const item of transfer.items) {
-        // Reverse: Add back to source warehouse
-        await this.fifoService.addFifo(
-          item.productId, transfer.fromWarehouseId, Number(item.qty), Number(item.unitCost),
-          'TRANSFER_CANCEL', transfer.id, item.id, queryRunner
-        );
-        
-        // Reverse: Deduct from destination warehouse
-        await this.fifoService.deductFifo(
-          item.productId, transfer.toWarehouseId, Number(item.qty),
-          'TRANSFER_CANCEL', transfer.id, item.id, queryRunner
-        );
+      // Reverse FIFO - add stock back
+      for (const item of issue.items) {
+        await this.fifoService.createLayer({
+          productId: item.productId,
+          warehouseId: issue.warehouseId,
+          qty: Number(item.qty),
+          unitCost: Number(item.unitCost),
+          referenceType: 'ISSUE_CANCEL',
+          referenceId: issue.id,
+          referenceItemId: item.id,
+        }, queryRunner);
       }
       
-      transfer.status = 'CANCELLED';
-      transfer.cancelledAt = new Date();
-      transfer.cancelledBy = userId;
-      await queryRunner.manager.save(transfer);
+      issue.status = 'CANCELLED';
+      issue.cancelledAt = new Date();
+      issue.cancelledBy = userId;
+      await queryRunner.manager.save(issue);
       
       await queryRunner.commitTransaction();
       return this.findOne(id);

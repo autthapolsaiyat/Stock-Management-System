@@ -118,10 +118,15 @@ export class StockIssueService {
     try {
       // Reverse FIFO - add stock back
       for (const item of issue.items) {
-        await this.fifoService.addFifo(
-          item.productId, issue.warehouseId, Number(item.qty), Number(item.unitCost),
-          'ISSUE_CANCEL', issue.id, item.id, queryRunner
-        );
+        await this.fifoService.createLayer({
+          productId: item.productId,
+          warehouseId: issue.warehouseId,
+          qty: Number(item.qty),
+          unitCost: Number(item.unitCost),
+          referenceType: 'ISSUE_CANCEL',
+          referenceId: issue.id,
+          referenceItemId: item.id,
+        }, queryRunner);
       }
       
       issue.status = 'CANCELLED';
@@ -138,7 +143,6 @@ export class StockIssueService {
       await queryRunner.release();
     }
   }
-
   async delete(id: number) {
     const issue = await this.findOne(id);
     if (!['DRAFT', 'CANCELLED'].includes(issue.status)) {
