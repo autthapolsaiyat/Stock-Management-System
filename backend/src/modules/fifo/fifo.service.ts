@@ -394,4 +394,130 @@ export class FifoService {
       })),
     };
   }
+
+  async getStockMovement(startDate: string, endDate: string, warehouseId?: number, categoryId?: number) {
+    // Get all transactions in date range with product info
+    let query = this.transactionRepository
+      .createQueryBuilder('tx')
+      .innerJoin('fifo_layers', 'layer', 'layer.id = tx.fifo_layer_id')
+      .innerJoin('products', 'p', 'p.id = layer.product_id')
+      .leftJoin('product_categories', 'c', 'c.id = p.category_id')
+      .leftJoin('warehouses', 'w', 'w.id = layer.warehouse_id')
+      .where('tx.created_at >= :startDate', { startDate: new Date(startDate) })
+      .andWhere('tx.created_at <= :endDate', { endDate: new Date(endDate + 'T23:59:59') });
+    
+    if (warehouseId) {
+      query = query.andWhere('layer.warehouse_id = :warehouseId', { warehouseId });
+    }
+    
+    if (categoryId) {
+      query = query.andWhere('p.category_id = :categoryId', { categoryId });
+    }
+    
+    // Aggregate by product
+    const movementQuery = this.transactionRepository
+      .createQueryBuilder('tx')
+      .innerJoin('fifo_layers', 'layer', 'layer.id = tx.fifo_layer_id')
+      .innerJoin('products', 'p', 'p.id = layer.product_id')
+      .leftJoin('product_categories', 'c', 'c.id = p.category_id')
+      .select([
+        'p.id as product_id',
+        'p.code as product_code',
+        'p.name as product_name',
+        'p.unit as unit',
+        'c.name as category_name',
+        'SUM(CASE WHEN tx.transaction_type = \'IN\' THEN tx.qty ELSE 0 END) as qty_in',
+        'SUM(CASE WHEN tx.transaction_type = \'OUT\' THEN tx.qty ELSE 0 END) as qty_out',
+        'SUM(CASE WHEN tx.transaction_type = \'IN\' THEN tx.total_cost ELSE 0 END) as value_in',
+        'SUM(CASE WHEN tx.transaction_type = \'OUT\' THEN tx.total_cost ELSE 0 END) as value_out',
+        'COUNT(tx.id) as transaction_count',
+      ])
+      .where('tx.created_at >= :startDate', { startDate: new Date(startDate) })
+      .andWhere('tx.created_at <= :endDate', { endDate: new Date(endDate + 'T23:59:59') })
+      .groupBy('p.id, p.code, p.name, p.unit, c.name');
+    
+    if (warehouseId) {
+      movementQuery.andWhere('layer.warehouse_id = :warehouseId', { warehouseId });
+    }
+    
+    if (categoryId) {
+      movementQuery.andWhere('p.category_id = :categoryId', { categoryId });
+    }
+    
+    const items = await movementQuery.orderBy('SUM(CASE WHEN tx.transaction_type = \'OUT\' THEN tx.qty ELSE 0 END)', 'DESC').getRawMany();
+    
+    // Calculate totals and classify Fast/Slow moving
+    let totalQtyIn = 0, totalQtyOut = 0, totalValueIn = 0, totalValueOut = 0;
+    
+    const mappedItems = items.map(item => {
+      const qtyIn = parseFloat(item.qty_in) || 0;
+      const qtyOut = parseFloat(item.qty_out) || 0;
+      const valueIn = parseFloat(item.value_in) || 0;
+      const valueOut = parseFloat(item.value_out) || 0;
+      
+      totalQtyIn += qtyIn;
+      totalQtyOut += qtyOut;
+      totalValueIn += valueIn;
+      totalValueOut += valueOut;
+      
+      return {
+        productId: item.product_id,
+        productCode: item.product_code,
+        productName: item.product_name,
+        unit: item.unit,
+        categoryName: item.category_name || 'ไม่ระบุหมวด',
+        qtyIn,
+        qtyOut,
+        qtyNet: qtyIn - qtyOut,
+        valueIn,
+        valueOut,
+        valueNet: valueIn - valueOut,
+        transactionCount: parseInt(item.transaction_count) || 0,
+      };
+    });
+    
+    // Classify items: Fast (top 20%), Medium (middle 60%), Slow (bottom 20%)
+    const sortedByOut = [...mappedItems].sort((a, b) => b.qtyOut - a.qtyOut);
+    const fastThreshold = Math.ceil(sortedByOut.length * 0.2);
+    const slowThreshold = Math.ceil(sortedByOut.length * 0.8);
+    
+    const classifiedItems = mappedItems.map(item => {
+      const rank = sortedByOut.findIndex(i => i.productId === item.productId);
+      let movementClass: 'FAST' | 'MEDIUM' | 'SLOW' | 'NO_MOVEMENT';
+      
+      if (item.qtyOut === 0 && item.qtyIn === 0) {
+        movementClass = 'NO_MOVEMENT';
+      } else if (rank < fastThreshold) {
+        movementClass = 'FAST';
+      } else if (rank >= slowThreshold) {
+        movementClass = 'SLOW';
+      } else {
+        movementClass = 'MEDIUM';
+      }
+      
+      return { ...item, movementClass };
+    });
+    
+    // Summary by movement class
+    const movementSummary = {
+      fast: classifiedItems.filter(i => i.movementClass === 'FAST').length,
+      medium: classifiedItems.filter(i => i.movementClass === 'MEDIUM').length,
+      slow: classifiedItems.filter(i => i.movementClass === 'SLOW').length,
+      noMovement: classifiedItems.filter(i => i.movementClass === 'NO_MOVEMENT').length,
+    };
+    
+    return {
+      startDate,
+      endDate,
+      summary: {
+        totalItems: items.length,
+        totalQtyIn,
+        totalQtyOut,
+        totalValueIn,
+        totalValueOut,
+        ...movementSummary,
+      },
+      items: classifiedItems,
+    };
+  }
 }

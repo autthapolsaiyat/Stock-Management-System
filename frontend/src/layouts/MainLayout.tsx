@@ -102,6 +102,7 @@ const MainLayout: React.FC = () => {
         { key: '/stock-balance', icon: <DatabaseOutlined />, label: 'ยอดคงเหลือ' },
         { key: '/stock-card', icon: <FileTextOutlined />, label: 'Stock Card' },
         { key: '/stock-valuation', icon: <DollarOutlined />, label: 'มูลค่าสต็อก' },
+        { key: '/stock-movement', icon: <SwapOutlined />, label: 'การเคลื่อนไหว' },
         { key: '/stock-issues', icon: <ExportOutlined />, label: 'เบิกสินค้า' },
         { key: '/stock-transfers', icon: <SwapOutlined />, label: 'โอนสินค้า' },
         { key: '/stock-adjustments', icon: <SwapOutlined />, label: 'ปรับปรุงสต็อก' },

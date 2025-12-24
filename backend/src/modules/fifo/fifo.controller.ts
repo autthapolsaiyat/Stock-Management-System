@@ -128,4 +128,41 @@ export class FifoController {
     
     return result;
   }
+
+  @Get('movement')
+  @ApiQuery({ name: 'startDate', required: true })
+  @ApiQuery({ name: 'endDate', required: true })
+  @ApiQuery({ name: 'warehouseId', required: false })
+  @ApiQuery({ name: 'categoryId', required: false })
+  async getStockMovement(
+    @Query('startDate') startDate: string,
+    @Query('endDate') endDate: string,
+    @Query('warehouseId') warehouseId?: number,
+    @Query('categoryId') categoryId?: number,
+    @Request() req?: any,
+  ) {
+    const result = await this.fifoService.getStockMovement(
+      startDate,
+      endDate,
+      warehouseId ? Number(warehouseId) : undefined,
+      categoryId ? Number(categoryId) : undefined,
+    );
+    
+    // Log VIEW action
+    const ctx = getAuditContext(req);
+    await this.auditLogService.log({
+      module: 'STOCK_MOVEMENT',
+      action: 'VIEW',
+      userId: ctx.userId,
+      userName: ctx.userName,
+      ipAddress: ctx.ipAddress,
+      userAgent: ctx.userAgent,
+      details: { 
+        filter: { startDate, endDate, warehouseId, categoryId },
+        totalItems: result.summary?.totalItems || 0,
+      },
+    });
+    
+    return result;
+  }
 }
