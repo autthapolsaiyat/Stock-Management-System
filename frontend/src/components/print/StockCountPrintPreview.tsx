@@ -420,6 +420,7 @@ const StockCountPrintPreview: React.FC<StockCountPrintPreviewProps> = ({
         <Button key="close" onClick={onClose}>ปิด</Button>,
         <Button key="print" type="primary" icon={<PrinterOutlined />} onClick={handlePrint}>พิมพ์</Button>,
       ]}
+      styles={{ body: { maxHeight: '80vh', overflowY: 'auto' } }}
     >
       {loading ? (
         <div style={{ textAlign: 'center', padding: 50 }}><Spin size="large" /></div>
