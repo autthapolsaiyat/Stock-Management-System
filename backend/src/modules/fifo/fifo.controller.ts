@@ -17,7 +17,7 @@ function getAuditContext(req: any): AuditContext {
 @ApiTags('FIFO & Stock')
 @ApiBearerAuth()
 @UseGuards(JwtAuthGuard)
-@Controller('api/stock')
+@Controller('stock')
 export class FifoController {
   constructor(
     private readonly fifoService: FifoService,

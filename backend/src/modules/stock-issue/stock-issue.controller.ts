@@ -16,7 +16,7 @@ function getAuditContext(req: any): AuditContext {
 @ApiTags('Stock Issues')
 @ApiBearerAuth()
 @UseGuards(JwtAuthGuard)
-@Controller('api/stock-issues')
+@Controller('stock-issues')
 export class StockIssueController {
   constructor(private readonly issueService: StockIssueService) {}
 

@@ -12,7 +12,7 @@ function getAuditContext(req: any): AuditContext {
   };
 }
 
-@Controller('api/stock-counts')
+@Controller('stock-counts')
 @UseGuards(JwtAuthGuard)
 export class StockCountController {
   constructor(private readonly stockCountService: StockCountService) {}

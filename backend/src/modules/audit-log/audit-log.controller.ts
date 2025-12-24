@@ -3,7 +3,7 @@ import { Response } from 'express';
 import { AuditLogService } from './audit-log.service';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 
-@Controller('api/audit-logs')
+@Controller('audit-logs')
 @UseGuards(JwtAuthGuard)
 export class AuditLogController {
   constructor(private readonly auditLogService: AuditLogService) {}
