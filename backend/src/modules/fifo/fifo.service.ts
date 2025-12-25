@@ -641,4 +641,106 @@ export class FifoService {
       alerts,
     };
   }
+
+  async getExpiryAlerts(daysAhead: number = 90, warehouseId?: number) {
+    // Get items with expiry dates approaching or past
+    let query = `
+      SELECT 
+        gri.id as item_id,
+        gri.lot_no,
+        gri.expiry_date,
+        gri.qty,
+        gri.item_code,
+        gri.item_name,
+        gr.doc_full_no as gr_doc_no,
+        gr.warehouse_id,
+        w.name as warehouse_name,
+        p.id as product_id,
+        p.code as product_code,
+        p.name as product_name,
+        c.name as category_name
+      FROM goods_receipt_items gri
+      INNER JOIN goods_receipts gr ON gr.id = gri.goods_receipt_id
+      LEFT JOIN products p ON p.id = gri.product_id
+      LEFT JOIN product_categories c ON c.id = p.category_id
+      LEFT JOIN warehouses w ON w.id = gr.warehouse_id
+      WHERE gri.expiry_date IS NOT NULL
+        AND gr.status = 'POSTED'
+        AND gri.qty > 0
+    `;
+    
+    const params: any[] = [];
+    let paramIndex = 1;
+    
+    if (warehouseId) {
+      query += ` AND gr.warehouse_id = $${paramIndex++}`;
+      params.push(warehouseId);
+    }
+    
+    query += ` ORDER BY gri.expiry_date ASC`;
+    
+    const items = await this.balanceRepository.query(query, params);
+    
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    const alertDate = new Date(today);
+    alertDate.setDate(alertDate.getDate() + daysAhead);
+    
+    const alerts: any[] = [];
+    let expiredCount = 0, warningCount = 0, normalCount = 0;
+    
+    items.forEach((item: any) => {
+      const expiryDate = new Date(item.expiry_date);
+      expiryDate.setHours(0, 0, 0, 0);
+      
+      const daysUntilExpiry = Math.ceil((expiryDate.getTime() - today.getTime()) / (1000 * 60 * 60 * 24));
+      
+      let alertLevel: 'EXPIRED' | 'CRITICAL' | 'WARNING' | 'NORMAL';
+      
+      if (daysUntilExpiry < 0) {
+        alertLevel = 'EXPIRED';
+        expiredCount++;
+      } else if (daysUntilExpiry <= 30) {
+        alertLevel = 'CRITICAL';
+        warningCount++;
+      } else if (daysUntilExpiry <= daysAhead) {
+        alertLevel = 'WARNING';
+        warningCount++;
+      } else {
+        alertLevel = 'NORMAL';
+        normalCount++;
+        return; // Don't include normal items in alerts
+      }
+      
+      alerts.push({
+        itemId: item.item_id,
+        productId: item.product_id,
+        productCode: item.product_code || item.item_code,
+        productName: item.product_name || item.item_name,
+        categoryName: item.category_name || 'ไม่ระบุหมวด',
+        warehouseId: item.warehouse_id,
+        warehouseName: item.warehouse_name,
+        lotNo: item.lot_no,
+        expiryDate: item.expiry_date,
+        qty: parseFloat(item.qty) || 0,
+        grDocNo: item.gr_doc_no,
+        daysUntilExpiry,
+        alertLevel,
+      });
+    });
+    
+    // Sort by days until expiry (expired first, then closest to expiry)
+    alerts.sort((a, b) => a.daysUntilExpiry - b.daysUntilExpiry);
+    
+    return {
+      summary: {
+        totalItems: items.length,
+        expired: expiredCount,
+        warning: warningCount,
+        normal: normalCount,
+        totalAlerts: alerts.length,
+      },
+      alerts,
+    };
+  }
 }

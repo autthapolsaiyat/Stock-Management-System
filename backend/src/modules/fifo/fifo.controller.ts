@@ -196,4 +196,35 @@ export class FifoController {
     
     return result;
   }
+
+  @Get('expiry-alerts')
+  @ApiQuery({ name: 'daysAhead', required: false })
+  @ApiQuery({ name: 'warehouseId', required: false })
+  async getExpiryAlerts(
+    @Query('daysAhead') daysAhead?: number,
+    @Query('warehouseId') warehouseId?: number,
+    @Request() req?: any,
+  ) {
+    const result = await this.fifoService.getExpiryAlerts(
+      daysAhead ? Number(daysAhead) : 90,
+      warehouseId ? Number(warehouseId) : undefined,
+    );
+    
+    // Log VIEW action
+    const ctx = getAuditContext(req);
+    await this.auditLogService.log({
+      module: 'EXPIRY_ALERT',
+      action: 'VIEW',
+      userId: ctx.userId,
+      userName: ctx.userName,
+      ipAddress: ctx.ipAddress,
+      userAgent: ctx.userAgent,
+      details: { 
+        filter: { daysAhead, warehouseId },
+        totalAlerts: result.summary?.totalAlerts || 0,
+      },
+    });
+    
+    return result;
+  }
 }

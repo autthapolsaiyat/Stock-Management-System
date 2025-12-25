@@ -33,6 +33,7 @@ import StockCardPage from './pages/StockCardPage';
 import StockValuationPage from './pages/StockValuationPage';
 import StockMovementPage from './pages/StockMovementPage';
 import ReorderAlertPage from './pages/ReorderAlertPage';
+import ExpiryAlertPage from './pages/ExpiryAlertPage';
 import { useAuth } from './contexts/AuthContext';
 
 // Protected Route Component
@@ -126,6 +127,7 @@ const App: React.FC = () => {
         <Route path="stock-valuation" element={<StockValuationPage />} />
         <Route path="stock-movement" element={<StockMovementPage />} />
         <Route path="reorder-alerts" element={<ReorderAlertPage />} />
+        <Route path="expiry-alerts" element={<ExpiryAlertPage />} />
         <Route path="stock-issues" element={<StockIssuesPage />} />
         <Route path="stock-transfers" element={<StockTransfersPage />} />
         <Route path="stock-adjustments" element={<StockAdjustmentsPage />} />
