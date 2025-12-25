@@ -10,7 +10,7 @@ import {
   CheckCircleOutlined, HistoryOutlined, SearchOutlined, EditOutlined, WarningOutlined
 } from '@ant-design/icons';
 import dayjs from 'dayjs';
-import { quotationsApi, customersApi, productsApi, systemSettingsApi } from '../../services/api';
+import { quotationsApi, customersApi, productsApi, systemSettingsApi, unitsApi } from '../../services/api';
 import type { QuotationItem, QuotationImage, SourceType } from '../../types/quotation';
 import { useAuth } from '../../contexts/AuthContext';
 import SettingsModal from '../../components/quotation/SettingsModal';
@@ -40,6 +40,7 @@ const QuotationForm: React.FC = () => {
   const [customers, setCustomers] = useState<any[]>([]);
   const [products, setProducts] = useState<any[]>([]);
   const [categories, setCategories] = useState<any[]>([]);
+  const [units, setUnits] = useState<string[]>([]);
   const [priceHistory, setPriceHistory] = useState<Record<number, any>>({});
   const [settings, setSettings] = useState<any>({});
   const [selectedCustomer, setSelectedCustomer] = useState<any>(null);
@@ -66,6 +67,7 @@ const QuotationForm: React.FC = () => {
   const [editItemModalOpen, setEditItemModalOpen] = useState(false);
   const [editingItemIndex, setEditingItemIndex] = useState<number | null>(null);
   const [editItemForm] = Form.useForm();
+  const [editShowCustomUnit, setEditShowCustomUnit] = useState(false);
 
   // Calculated values
   const [summary, setSummary] = useState({
@@ -119,14 +121,16 @@ const QuotationForm: React.FC = () => {
 
   const loadInitialData = async () => {
     try {
-      const [customersRes, productsRes, categoriesRes] = await Promise.all([
+      const [customersRes, productsRes, categoriesRes, unitsRes] = await Promise.all([
         customersApi.getAll(),
         userQuotationType ? productsApi.getAll(undefined, userQuotationType) : productsApi.getAll(),
         productsApi.getCategories(),
+        unitsApi.getAll(),
       ]);
       setCustomers(customersRes.data || []);
       setProducts(productsRes.data || []);
       setCategories(categoriesRes.data || []);
+      setUnits(unitsRes.data || ['ea', 'set', 'box', 'pack', 'unit']);
       
       // Load price history (non-blocking)
       try {
@@ -393,32 +397,49 @@ const QuotationForm: React.FC = () => {
 
   const handleEditItem = (index: number) => {
     const item = items[index];
+    const isCustomUnit = units.length > 0 && !units.includes(item.unit || '');
+    
     editItemForm.setFieldsValue({
       itemCode: item.itemCode,
       itemName: item.itemName,
       itemDescription: item.itemDescription,
       brand: item.brand,
       qty: item.qty,
-      unit: item.unit,
+      unit: isCustomUnit ? 'other' : item.unit,
+      customUnit: isCustomUnit ? item.unit : undefined,
       unitPrice: item.unitPrice,
       estimatedCost: item.estimatedCost,
     });
+    setEditShowCustomUnit(isCustomUnit);
     setEditingItemIndex(index);
     setEditItemModalOpen(true);
   };
 
-  const handleSaveEditItem = () => {
+  const handleSaveEditItem = async () => {
     if (editingItemIndex === null) return;
     const values = editItemForm.getFieldsValue();
     const newItems = [...items];
     const item = newItems[editingItemIndex];
+    
+    let finalUnit = values.unit;
+    if (values.unit === 'other' && values.customUnit) {
+      finalUnit = values.customUnit;
+      // Create new unit in backend
+      try {
+        await unitsApi.create({ name: values.customUnit });
+        const unitsRes = await unitsApi.getAll();
+        setUnits(unitsRes.data || []);
+      } catch (e) {
+        // Unit might already exist, ignore error
+      }
+    }
     
     item.itemCode = values.itemCode;
     item.itemName = values.itemName;
     item.itemDescription = values.itemDescription;
     item.brand = values.brand;
     item.qty = values.qty || 1;
-    item.unit = values.unit;
+    item.unit = finalUnit;
     item.unitPrice = values.unitPrice || 0;
     item.estimatedCost = values.estimatedCost || 0;
     
@@ -429,8 +450,16 @@ const QuotationForm: React.FC = () => {
     setItems(newItems);
     setEditItemModalOpen(false);
     setEditingItemIndex(null);
+    setEditShowCustomUnit(false);
     editItemForm.resetFields();
     message.success('แก้ไขรายการสำเร็จ');
+  };
+
+  const handleEditUnitChange = (value: string) => {
+    setEditShowCustomUnit(value === 'other');
+    if (value !== 'other') {
+      editItemForm.setFieldValue('customUnit', undefined);
+    }
   };
 
   const handleItemChange = (index: number, field: string, value: any) => {
@@ -594,7 +623,7 @@ const QuotationForm: React.FC = () => {
     {
       title: '',
       width: 90,
-      render: (_: any, __: QuotationItem, index: number) => (
+      render: (_: any, record: QuotationItem, index: number) => (
         <Space size="small">
           <Tooltip title="แก้ไข">
             <Button type="text" icon={<EditOutlined />} onClick={() => handleEditItem(index)} />
@@ -1031,7 +1060,7 @@ const QuotationForm: React.FC = () => {
       <Modal
         title="✏️ แก้ไขรายการสินค้า"
         open={editItemModalOpen}
-        onCancel={() => { setEditItemModalOpen(false); setEditingItemIndex(null); editItemForm.resetFields(); }}
+        onCancel={() => { setEditItemModalOpen(false); setEditingItemIndex(null); setEditShowCustomUnit(false); editItemForm.resetFields(); }}
         onOk={handleSaveEditItem}
         okText="บันทึก"
         cancelText="ยกเลิก"
@@ -1064,11 +1093,23 @@ const QuotationForm: React.FC = () => {
                 <InputNumber min={1} style={{ width: '100%' }} />
               </Form.Item>
             </Col>
-            <Col span={8}>
-              <Form.Item label="หน่วย" name="unit">
-                <Input />
+            <Col span={editShowCustomUnit ? 4 : 8}>
+              <Form.Item label="หน่วย" name="unit" rules={[{ required: true, message: 'กรุณาเลือกหน่วย' }]}>
+                <Select onChange={handleEditUnitChange}>
+                  {units.map(u => (
+                    <Select.Option key={u} value={u}>{u}</Select.Option>
+                  ))}
+                  <Select.Option value="other">+ เพิ่มหน่วยใหม่...</Select.Option>
+                </Select>
               </Form.Item>
             </Col>
+            {editShowCustomUnit && (
+              <Col span={4}>
+                <Form.Item label="ระบุหน่วย" name="customUnit" rules={[{ required: true, message: 'กรุณาระบุ' }]}>
+                  <Input placeholder="เช่น งาน" />
+                </Form.Item>
+              </Col>
+            )}
           </Row>
           <Row gutter={16}>
             <Col span={12}>

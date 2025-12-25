@@ -1,6 +1,7 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Modal, Form, Input, InputNumber, Select, Row, Col, Tag, message } from 'antd';
 import { InfoCircleOutlined } from '@ant-design/icons';
+import { unitsApi } from '../../services/api';
 
 const { TextArea } = Input;
 const { Option } = Select;
@@ -15,6 +16,22 @@ const TempProductModal: React.FC<TempProductModalProps> = ({ open, onClose, onAd
   const [form] = Form.useForm();
   const [saving, setSaving] = useState(false);
   const [marginPreview, setMarginPreview] = useState<number>(0);
+  const [showCustomUnit, setShowCustomUnit] = useState(false);
+  const [units, setUnits] = useState<string[]>([]);
+
+  useEffect(() => {
+    loadUnits();
+  }, []);
+
+  const loadUnits = async () => {
+    try {
+      const res = await unitsApi.getAll();
+      setUnits(res.data || []);
+    } catch (error) {
+      // Use default units if API fails
+      setUnits(['ea', 'set', 'box', 'pack', 'unit']);
+    }
+  };
 
   const handleCostChange = (cost: number | null) => {
     const suggestedPrice = (cost || 0) * 1.3;
@@ -47,14 +64,28 @@ const TempProductModal: React.FC<TempProductModalProps> = ({ open, onClose, onAd
       const values = await form.validateFields();
       setSaving(true);
       
+      let finalUnit = values.unit;
+      if (values.unit === 'other' && values.customUnit) {
+        finalUnit = values.customUnit;
+        // Create new unit in backend
+        try {
+          await unitsApi.create({ name: values.customUnit });
+          loadUnits(); // Reload units list
+        } catch (e) {
+          // Unit might already exist, ignore error
+        }
+      }
+      
       const tempProduct = {
         ...values,
+        unit: finalUnit,
         tempCode: `TEMP-${Date.now()}`,
       };
       
       onAdd(tempProduct);
       form.resetFields();
       setMarginPreview(0);
+      setShowCustomUnit(false);
       message.success('เพิ่มสินค้าชั่วคราวแล้ว');
     } catch (error) {
       // Validation error
@@ -66,7 +97,15 @@ const TempProductModal: React.FC<TempProductModalProps> = ({ open, onClose, onAd
   const handleClose = () => {
     form.resetFields();
     setMarginPreview(0);
+    setShowCustomUnit(false);
     onClose();
+  };
+
+  const handleUnitChange = (value: string) => {
+    setShowCustomUnit(value === 'other');
+    if (value !== 'other') {
+      form.setFieldValue('customUnit', undefined);
+    }
   };
 
   return (
@@ -129,22 +168,32 @@ const TempProductModal: React.FC<TempProductModalProps> = ({ open, onClose, onAd
         </Form.Item>
 
         <Row gutter={16}>
-          <Col span={8}>
+          <Col span={showCustomUnit ? 4 : 8}>
             <Form.Item 
               label="หน่วย" 
               name="unit" 
               rules={[{ required: true, message: 'กรุณาเลือกหน่วย' }]}
               initialValue="ea"
             >
-              <Select>
-                <Option value="ea">ชิ้น (ea)</Option>
-                <Option value="set">ชุด (set)</Option>
-                <Option value="box">กล่อง (box)</Option>
-                <Option value="pack">แพ็ค (pack)</Option>
-                <Option value="unit">หน่วย (unit)</Option>
+              <Select onChange={handleUnitChange}>
+                {units.map(u => (
+                  <Option key={u} value={u}>{u}</Option>
+                ))}
+                <Option value="other">+ เพิ่มหน่วยใหม่...</Option>
               </Select>
             </Form.Item>
           </Col>
+          {showCustomUnit && (
+            <Col span={4}>
+              <Form.Item 
+                label="ระบุหน่วย" 
+                name="customUnit"
+                rules={[{ required: true, message: 'กรุณาระบุหน่วย' }]}
+              >
+                <Input placeholder="เช่น งาน" />
+              </Form.Item>
+            </Col>
+          )}
           <Col span={8}>
             <Form.Item 
               label="ต้นทุนโดยประมาณ" 
