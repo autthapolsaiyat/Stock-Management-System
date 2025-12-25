@@ -1,18 +1,17 @@
 import React, { useState, useEffect } from 'react';
 import {
-  Box, Typography, Paper, Button, Table, TableBody, TableCell,
-  TableContainer, TableHead, TableRow, IconButton, Dialog, DialogTitle,
-  DialogContent, DialogActions, TextField, Select, MenuItem, FormControl,
-  InputLabel, Chip, Alert, Snackbar, Collapse, CircularProgress
-} from '@mui/material';
+  Card, Table, Button, Space, Tag, Modal, Form, Input, Select,
+  message, Popconfirm, Typography, Row, Col, TreeSelect
+} from 'antd';
 import {
-  Add as AddIcon, Edit as EditIcon, Delete as DeleteIcon,
-  ExpandMore as ExpandMoreIcon, ExpandLess as ExpandLessIcon,
-  Refresh as RefreshIcon, AccountBalance as AccountIcon
-} from '@mui/icons-material';
+  PlusOutlined, EditOutlined, DeleteOutlined, ReloadOutlined,
+  BankOutlined
+} from '@ant-design/icons';
 import { chartOfAccountsApi } from '../../services/api';
 
-// Types
+const { Title } = Typography;
+const { Option } = Select;
+
 interface ChartOfAccount {
   id: number;
   code: string;
@@ -31,14 +30,14 @@ interface ChartOfAccount {
 }
 
 const ACCOUNT_TYPES = [
-  { value: 'ASSET', label: 'สินทรัพย์', color: '#4caf50' },
-  { value: 'LIABILITY', label: 'หนี้สิน', color: '#f44336' },
-  { value: 'EQUITY', label: 'ส่วนของผู้ถือหุ้น', color: '#9c27b0' },
-  { value: 'REVENUE', label: 'รายได้', color: '#2196f3' },
-  { value: 'EXPENSE', label: 'ค่าใช้จ่าย', color: '#ff9800' },
+  { value: 'ASSET', label: 'สินทรัพย์', color: 'green' },
+  { value: 'LIABILITY', label: 'หนี้สิน', color: 'red' },
+  { value: 'EQUITY', label: 'ส่วนของผู้ถือหุ้น', color: 'purple' },
+  { value: 'REVENUE', label: 'รายได้', color: 'blue' },
+  { value: 'EXPENSE', label: 'ค่าใช้จ่าย', color: 'orange' },
 ];
 
-const ACCOUNT_GROUPS = {
+const ACCOUNT_GROUPS: Record<string, { value: string; label: string }[]> = {
   ASSET: [
     { value: 'CURRENT_ASSET', label: 'สินทรัพย์หมุนเวียน' },
     { value: 'FIXED_ASSET', label: 'สินทรัพย์ถาวร' },
@@ -66,21 +65,9 @@ const ACCOUNT_GROUPS = {
 const ChartOfAccountsPage: React.FC = () => {
   const [accounts, setAccounts] = useState<ChartOfAccount[]>([]);
   const [loading, setLoading] = useState(true);
-  const [expandedRows, setExpandedRows] = useState<Set<number>>(new Set());
-  const [openDialog, setOpenDialog] = useState(false);
+  const [modalVisible, setModalVisible] = useState(false);
   const [editingAccount, setEditingAccount] = useState<ChartOfAccount | null>(null);
-  const [snackbar, setSnackbar] = useState({ open: false, message: '', severity: 'success' as 'success' | 'error' });
-  
-  const [formData, setFormData] = useState({
-    code: '',
-    name: '',
-    nameEn: '',
-    accountType: 'ASSET',
-    accountGroup: 'CURRENT_ASSET',
-    balanceType: 'DEBIT',
-    description: '',
-    parentId: null as number | null,
-  });
+  const [form] = Form.useForm();
 
   useEffect(() => {
     loadAccounts();
@@ -89,361 +76,288 @@ const ChartOfAccountsPage: React.FC = () => {
   const loadAccounts = async () => {
     try {
       setLoading(true);
-      const response = await chartOfAccountsApi.getTree();
-      setAccounts(response.data);
-      // Expand first level by default
-      const firstLevelIds = new Set(response.data.map((a: ChartOfAccount) => a.id));
-      setExpandedRows(firstLevelIds);
+      const treeRes = await chartOfAccountsApi.getTree();
+      setAccounts(treeRes.data);
     } catch (error) {
-      console.error('Error loading accounts:', error);
-      setSnackbar({ open: true, message: 'เกิดข้อผิดพลาดในการโหลดข้อมูล', severity: 'error' });
+      message.error('เกิดข้อผิดพลาดในการโหลดข้อมูล');
     } finally {
       setLoading(false);
     }
   };
 
-  const toggleExpand = (id: number) => {
-    setExpandedRows(prev => {
-      const newSet = new Set(prev);
-      if (newSet.has(id)) {
-        newSet.delete(id);
-      } else {
-        newSet.add(id);
-      }
-      return newSet;
-    });
-  };
-
-  const handleOpenDialog = (account?: ChartOfAccount) => {
+  const handleOpenModal = (account?: ChartOfAccount) => {
     if (account) {
       setEditingAccount(account);
-      setFormData({
+      form.setFieldsValue({
         code: account.code,
         name: account.name,
-        nameEn: account.nameEn || '',
+        nameEn: account.nameEn,
         accountType: account.accountType,
         accountGroup: account.accountGroup,
         balanceType: account.balanceType,
-        description: '',
-        parentId: account.parentId || null,
+        parentId: account.parentId,
       });
     } else {
       setEditingAccount(null);
-      setFormData({
-        code: '',
-        name: '',
-        nameEn: '',
+      form.resetFields();
+      form.setFieldsValue({
         accountType: 'ASSET',
         accountGroup: 'CURRENT_ASSET',
         balanceType: 'DEBIT',
-        description: '',
-        parentId: null,
       });
     }
-    setOpenDialog(true);
-  };
-
-  const handleCloseDialog = () => {
-    setOpenDialog(false);
-    setEditingAccount(null);
+    setModalVisible(true);
   };
 
   const handleSubmit = async () => {
     try {
+      const values = await form.validateFields();
       if (editingAccount) {
-        await chartOfAccountsApi.update(editingAccount.id, formData);
-        setSnackbar({ open: true, message: 'อัพเดทบัญชีสำเร็จ', severity: 'success' });
+        await chartOfAccountsApi.update(editingAccount.id, values);
+        message.success('อัพเดทบัญชีสำเร็จ');
       } else {
-        await chartOfAccountsApi.create(formData);
-        setSnackbar({ open: true, message: 'สร้างบัญชีสำเร็จ', severity: 'success' });
+        await chartOfAccountsApi.create(values);
+        message.success('สร้างบัญชีสำเร็จ');
       }
-      handleCloseDialog();
+      setModalVisible(false);
       loadAccounts();
     } catch (error: any) {
-      setSnackbar({ 
-        open: true, 
-        message: error.response?.data?.message || 'เกิดข้อผิดพลาด', 
-        severity: 'error' 
-      });
+      message.error(error.response?.data?.message || 'เกิดข้อผิดพลาด');
     }
   };
 
   const handleDelete = async (id: number) => {
-    if (!window.confirm('ต้องการลบบัญชีนี้?')) return;
     try {
       await chartOfAccountsApi.delete(id);
-      setSnackbar({ open: true, message: 'ลบบัญชีสำเร็จ', severity: 'success' });
+      message.success('ลบบัญชีสำเร็จ');
       loadAccounts();
     } catch (error: any) {
-      setSnackbar({ 
-        open: true, 
-        message: error.response?.data?.message || 'ไม่สามารถลบได้', 
-        severity: 'error' 
-      });
+      message.error(error.response?.data?.message || 'ไม่สามารถลบได้');
     }
   };
 
   const handleInitialize = async () => {
-    if (!window.confirm('ต้องการสร้างผังบัญชีมาตรฐาน? (จะไม่ทับบัญชีที่มีอยู่แล้ว)')) return;
     try {
       await chartOfAccountsApi.initialize();
-      setSnackbar({ open: true, message: 'สร้างผังบัญชีมาตรฐานสำเร็จ', severity: 'success' });
+      message.success('สร้างผังบัญชีมาตรฐานสำเร็จ');
       loadAccounts();
     } catch (error) {
-      setSnackbar({ open: true, message: 'เกิดข้อผิดพลาด', severity: 'error' });
+      message.error('เกิดข้อผิดพลาด');
     }
   };
 
-  const renderAccountRow = (account: ChartOfAccount, depth: number = 0) => {
-    const hasChildren = account.children && account.children.length > 0;
-    const isExpanded = expandedRows.has(account.id);
-    const typeInfo = ACCOUNT_TYPES.find(t => t.value === account.accountType);
+  const columns = [
+    {
+      title: 'รหัสบัญชี',
+      dataIndex: 'code',
+      key: 'code',
+      width: 150,
+    },
+    {
+      title: 'ชื่อบัญชี',
+      dataIndex: 'name',
+      key: 'name',
+      render: (text: string, record: ChartOfAccount) => (
+        <div>
+          <div>{text}</div>
+          {record.nameEn && (
+            <div style={{ fontSize: 12, color: '#888' }}>{record.nameEn}</div>
+          )}
+        </div>
+      ),
+    },
+    {
+      title: 'ประเภท',
+      dataIndex: 'accountType',
+      key: 'accountType',
+      width: 130,
+      render: (type: string) => {
+        const typeInfo = ACCOUNT_TYPES.find(t => t.value === type);
+        return <Tag color={typeInfo?.color}>{typeInfo?.label}</Tag>;
+      },
+    },
+    {
+      title: 'ยอดคงเหลือ',
+      dataIndex: 'balanceType',
+      key: 'balanceType',
+      width: 100,
+      render: (type: string) => (
+        <Tag>{type === 'DEBIT' ? 'เดบิต' : 'เครดิต'}</Tag>
+      ),
+    },
+    {
+      title: 'บัญชีคุม',
+      dataIndex: 'controlType',
+      key: 'controlType',
+      width: 100,
+      render: (type: string) => type ? <Tag color="blue">{type}</Tag> : '-',
+    },
+    {
+      title: 'สถานะ',
+      dataIndex: 'isActive',
+      key: 'isActive',
+      width: 100,
+      render: (active: boolean) => (
+        <Tag color={active ? 'success' : 'default'}>
+          {active ? 'ใช้งาน' : 'ปิดใช้งาน'}
+        </Tag>
+      ),
+    },
+    {
+      title: 'จัดการ',
+      key: 'action',
+      width: 120,
+      render: (_: unknown, record: ChartOfAccount) => (
+        <Space>
+          <Button
+            type="text"
+            icon={<EditOutlined />}
+            onClick={() => handleOpenModal(record)}
+            disabled={record.isSystem}
+          />
+          <Popconfirm
+            title="ต้องการลบบัญชีนี้?"
+            onConfirm={() => handleDelete(record.id)}
+            disabled={record.isSystem}
+          >
+            <Button
+              type="text"
+              danger
+              icon={<DeleteOutlined />}
+              disabled={record.isSystem}
+            />
+          </Popconfirm>
+        </Space>
+      ),
+    },
+  ];
 
-    return (
-      <React.Fragment key={account.id}>
-        <TableRow hover sx={{ '&:hover': { bgcolor: 'action.hover' } }}>
-          <TableCell sx={{ pl: depth * 3 + 1 }}>
-            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-              {hasChildren ? (
-                <IconButton size="small" onClick={() => toggleExpand(account.id)}>
-                  {isExpanded ? <ExpandLessIcon /> : <ExpandMoreIcon />}
-                </IconButton>
-              ) : (
-                <Box sx={{ width: 28 }} />
-              )}
-              <Typography fontWeight={depth === 0 ? 'bold' : 'normal'}>
-                {account.code}
-              </Typography>
-            </Box>
-          </TableCell>
-          <TableCell>
-            <Typography fontWeight={depth === 0 ? 'bold' : 'normal'}>
-              {account.name}
-            </Typography>
-            {account.nameEn && (
-              <Typography variant="caption" color="text.secondary">
-                {account.nameEn}
-              </Typography>
-            )}
-          </TableCell>
-          <TableCell>
-            <Chip 
-              label={typeInfo?.label} 
-              size="small" 
-              sx={{ bgcolor: typeInfo?.color, color: 'white' }}
-            />
-          </TableCell>
-          <TableCell>
-            <Chip 
-              label={account.balanceType === 'DEBIT' ? 'เดบิต' : 'เครดิต'} 
-              size="small" 
-              variant="outlined"
-            />
-          </TableCell>
-          <TableCell>
-            {account.isControl && (
-              <Chip label={account.controlType} size="small" color="info" />
-            )}
-          </TableCell>
-          <TableCell>
-            <Chip 
-              label={account.isActive ? 'ใช้งาน' : 'ปิดใช้งาน'} 
-              size="small" 
-              color={account.isActive ? 'success' : 'default'}
-            />
-          </TableCell>
-          <TableCell>
-            <IconButton 
-              size="small" 
-              onClick={() => handleOpenDialog(account)}
-              disabled={account.isSystem}
-            >
-              <EditIcon />
-            </IconButton>
-            <IconButton 
-              size="small" 
-              onClick={() => handleDelete(account.id)}
-              disabled={account.isSystem}
-              color="error"
-            >
-              <DeleteIcon />
-            </IconButton>
-          </TableCell>
-        </TableRow>
-        {hasChildren && isExpanded && account.children!.map(child => 
-          renderAccountRow(child, depth + 1)
-        )}
-      </React.Fragment>
-    );
-  };
+  const accountTypeValue = Form.useWatch('accountType', form);
 
   return (
-    <Box sx={{ p: 3 }}>
-      <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 3 }}>
-        <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
-          <AccountIcon sx={{ fontSize: 32, color: 'primary.main' }} />
-          <Typography variant="h5" fontWeight="bold">ผังบัญชี (Chart of Accounts)</Typography>
-        </Box>
-        <Box sx={{ display: 'flex', gap: 1 }}>
-          <Button 
-            variant="outlined" 
-            startIcon={<RefreshIcon />}
-            onClick={loadAccounts}
-          >
-            รีเฟรช
-          </Button>
-          <Button 
-            variant="outlined" 
-            onClick={handleInitialize}
-          >
-            สร้างผังมาตรฐาน
-          </Button>
-          <Button 
-            variant="contained" 
-            startIcon={<AddIcon />}
-            onClick={() => handleOpenDialog()}
-          >
-            เพิ่มบัญชี
-          </Button>
-        </Box>
-      </Box>
-
-      <Paper elevation={2}>
-        {loading ? (
-          <Box sx={{ display: 'flex', justifyContent: 'center', p: 4 }}>
-            <CircularProgress />
-          </Box>
-        ) : (
-          <TableContainer>
-            <Table size="small">
-              <TableHead>
-                <TableRow sx={{ bgcolor: 'grey.100' }}>
-                  <TableCell width="15%">รหัสบัญชี</TableCell>
-                  <TableCell width="30%">ชื่อบัญชี</TableCell>
-                  <TableCell width="12%">ประเภท</TableCell>
-                  <TableCell width="10%">ยอดคงเหลือ</TableCell>
-                  <TableCell width="10%">บัญชีคุม</TableCell>
-                  <TableCell width="10%">สถานะ</TableCell>
-                  <TableCell width="13%">จัดการ</TableCell>
-                </TableRow>
-              </TableHead>
-              <TableBody>
-                {accounts.map(account => renderAccountRow(account))}
-                {accounts.length === 0 && (
-                  <TableRow>
-                    <TableCell colSpan={7} align="center" sx={{ py: 4 }}>
-                      <Typography color="text.secondary">
-                        ยังไม่มีผังบัญชี กดปุ่ม "สร้างผังมาตรฐาน" เพื่อเริ่มต้น
-                      </Typography>
-                    </TableCell>
-                  </TableRow>
-                )}
-              </TableBody>
-            </Table>
-          </TableContainer>
-        )}
-      </Paper>
-
-      {/* Dialog */}
-      <Dialog open={openDialog} onClose={handleCloseDialog} maxWidth="sm" fullWidth>
-        <DialogTitle>
-          {editingAccount ? 'แก้ไขบัญชี' : 'เพิ่มบัญชีใหม่'}
-        </DialogTitle>
-        <DialogContent dividers>
-          <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2, pt: 1 }}>
-            <TextField
-              label="รหัสบัญชี"
-              value={formData.code}
-              onChange={(e) => setFormData({ ...formData, code: e.target.value })}
-              disabled={!!editingAccount}
-              required
-              size="small"
-            />
-            <TextField
-              label="ชื่อบัญชี (ไทย)"
-              value={formData.name}
-              onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-              required
-              size="small"
-            />
-            <TextField
-              label="ชื่อบัญชี (อังกฤษ)"
-              value={formData.nameEn}
-              onChange={(e) => setFormData({ ...formData, nameEn: e.target.value })}
-              size="small"
-            />
-            <FormControl size="small">
-              <InputLabel>ประเภทบัญชี</InputLabel>
-              <Select
-                value={formData.accountType}
-                label="ประเภทบัญชี"
-                onChange={(e) => {
-                  const type = e.target.value;
-                  const groups = ACCOUNT_GROUPS[type as keyof typeof ACCOUNT_GROUPS] || [];
-                  setFormData({ 
-                    ...formData, 
-                    accountType: type,
-                    accountGroup: groups[0]?.value || '',
-                    balanceType: ['ASSET', 'EXPENSE'].includes(type) ? 'DEBIT' : 'CREDIT'
-                  });
-                }}
+    <div style={{ padding: 24 }}>
+      <Card>
+        <Row justify="space-between" align="middle" style={{ marginBottom: 16 }}>
+          <Col>
+            <Space>
+              <BankOutlined style={{ fontSize: 24 }} />
+              <Title level={4} style={{ margin: 0 }}>ผังบัญชี (Chart of Accounts)</Title>
+            </Space>
+          </Col>
+          <Col>
+            <Space>
+              <Button icon={<ReloadOutlined />} onClick={loadAccounts}>
+                รีเฟรช
+              </Button>
+              <Popconfirm
+                title="สร้างผังบัญชีมาตรฐาน?"
+                description="จะไม่ทับบัญชีที่มีอยู่แล้ว"
+                onConfirm={handleInitialize}
               >
-                {ACCOUNT_TYPES.map(t => (
-                  <MenuItem key={t.value} value={t.value}>{t.label}</MenuItem>
-                ))}
-              </Select>
-            </FormControl>
-            <FormControl size="small">
-              <InputLabel>กลุ่มบัญชี</InputLabel>
-              <Select
-                value={formData.accountGroup}
-                label="กลุ่มบัญชี"
-                onChange={(e) => setFormData({ ...formData, accountGroup: e.target.value })}
-              >
-                {(ACCOUNT_GROUPS[formData.accountType as keyof typeof ACCOUNT_GROUPS] || []).map(g => (
-                  <MenuItem key={g.value} value={g.value}>{g.label}</MenuItem>
-                ))}
-              </Select>
-            </FormControl>
-            <FormControl size="small">
-              <InputLabel>ยอดคงเหลือปกติ</InputLabel>
-              <Select
-                value={formData.balanceType}
-                label="ยอดคงเหลือปกติ"
-                onChange={(e) => setFormData({ ...formData, balanceType: e.target.value })}
-              >
-                <MenuItem value="DEBIT">เดบิต</MenuItem>
-                <MenuItem value="CREDIT">เครดิต</MenuItem>
-              </Select>
-            </FormControl>
-            <TextField
-              label="คำอธิบาย"
-              value={formData.description}
-              onChange={(e) => setFormData({ ...formData, description: e.target.value })}
-              multiline
-              rows={2}
-              size="small"
-            />
-          </Box>
-        </DialogContent>
-        <DialogActions>
-          <Button onClick={handleCloseDialog}>ยกเลิก</Button>
-          <Button variant="contained" onClick={handleSubmit}>
-            {editingAccount ? 'บันทึก' : 'สร้าง'}
-          </Button>
-        </DialogActions>
-      </Dialog>
+                <Button>สร้างผังมาตรฐาน</Button>
+              </Popconfirm>
+              <Button type="primary" icon={<PlusOutlined />} onClick={() => handleOpenModal()}>
+                เพิ่มบัญชี
+              </Button>
+            </Space>
+          </Col>
+        </Row>
 
-      <Snackbar 
-        open={snackbar.open} 
-        autoHideDuration={4000} 
-        onClose={() => setSnackbar({ ...snackbar, open: false })}
+        <Table
+          columns={columns}
+          dataSource={accounts}
+          rowKey="id"
+          loading={loading}
+          pagination={false}
+          expandable={{ defaultExpandAllRows: true }}
+          size="small"
+        />
+      </Card>
+
+      {/* Modal */}
+      <Modal
+        title={editingAccount ? 'แก้ไขบัญชี' : 'เพิ่มบัญชีใหม่'}
+        open={modalVisible}
+        onOk={handleSubmit}
+        onCancel={() => setModalVisible(false)}
+        okText={editingAccount ? 'บันทึก' : 'สร้าง'}
+        cancelText="ยกเลิก"
       >
-        <Alert severity={snackbar.severity} onClose={() => setSnackbar({ ...snackbar, open: false })}>
-          {snackbar.message}
-        </Alert>
-      </Snackbar>
-    </Box>
+        <Form form={form} layout="vertical">
+          <Form.Item
+            name="code"
+            label="รหัสบัญชี"
+            rules={[{ required: true, message: 'กรุณาระบุรหัสบัญชี' }]}
+          >
+            <Input disabled={!!editingAccount} />
+          </Form.Item>
+          <Form.Item
+            name="name"
+            label="ชื่อบัญชี (ไทย)"
+            rules={[{ required: true, message: 'กรุณาระบุชื่อบัญชี' }]}
+          >
+            <Input />
+          </Form.Item>
+          <Form.Item name="nameEn" label="ชื่อบัญชี (อังกฤษ)">
+            <Input />
+          </Form.Item>
+          <Form.Item
+            name="accountType"
+            label="ประเภทบัญชี"
+            rules={[{ required: true }]}
+          >
+            <Select
+              onChange={(value: string) => {
+                const groups = ACCOUNT_GROUPS[value] || [];
+                form.setFieldsValue({
+                  accountGroup: groups[0]?.value,
+                  balanceType: ['ASSET', 'EXPENSE'].includes(value) ? 'DEBIT' : 'CREDIT',
+                });
+              }}
+            >
+              {ACCOUNT_TYPES.map(t => (
+                <Option key={t.value} value={t.value}>{t.label}</Option>
+              ))}
+            </Select>
+          </Form.Item>
+          <Form.Item
+            name="accountGroup"
+            label="กลุ่มบัญชี"
+            rules={[{ required: true }]}
+          >
+            <Select>
+              {(ACCOUNT_GROUPS[accountTypeValue] || []).map(g => (
+                <Option key={g.value} value={g.value}>{g.label}</Option>
+              ))}
+            </Select>
+          </Form.Item>
+          <Form.Item
+            name="balanceType"
+            label="ยอดคงเหลือปกติ"
+            rules={[{ required: true }]}
+          >
+            <Select>
+              <Option value="DEBIT">เดบิต</Option>
+              <Option value="CREDIT">เครดิต</Option>
+            </Select>
+          </Form.Item>
+          <Form.Item name="parentId" label="บัญชีแม่">
+            <TreeSelect
+              allowClear
+              placeholder="เลือกบัญชีแม่ (ถ้ามี)"
+              treeData={accounts.map(a => ({
+                title: `${a.code} - ${a.name}`,
+                value: a.id,
+                children: a.children?.map(c => ({
+                  title: `${c.code} - ${c.name}`,
+                  value: c.id,
+                })),
+              }))}
+            />
+          </Form.Item>
+        </Form>
+      </Modal>
+    </div>
   );
 };
 

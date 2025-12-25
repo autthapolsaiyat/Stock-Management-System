@@ -1,14 +1,14 @@
 import React, { useState, useEffect } from 'react';
 import {
-  Box, Typography, Paper, Grid, Table, TableBody, TableCell,
-  TableContainer, TableHead, TableRow, TextField, Tabs, Tab,
-  CircularProgress, Card, CardContent, Button, Divider
-} from '@mui/material';
+  Card, Table, Typography, Row, Col, DatePicker, Tabs, Button, Space, Divider, Statistic
+} from 'antd';
 import {
-  Assessment as ReportIcon, AccountBalance as BalanceIcon,
-  TrendingUp as ProfitIcon, Print as PrintIcon
-} from '@mui/icons-material';
+  FileTextOutlined, LineChartOutlined, BankOutlined, PrinterOutlined
+} from '@ant-design/icons';
 import { financialReportsApi } from '../../services/api';
+import dayjs from 'dayjs';
+
+const { Title, Text } = Typography;
 
 interface TrialBalanceRow {
   accountId: number;
@@ -40,13 +40,11 @@ interface BalanceSheetData {
 }
 
 const FinancialReportsPage: React.FC = () => {
-  const [tab, setTab] = useState(0);
+  const [activeTab, setActiveTab] = useState('trial-balance');
   const [loading, setLoading] = useState(false);
-  const [filters, setFilters] = useState({
-    startDate: new Date(new Date().getFullYear(), 0, 1).toISOString().split('T')[0],
-    endDate: new Date().toISOString().split('T')[0],
-    asOfDate: new Date().toISOString().split('T')[0],
-  });
+  const [startDate, setStartDate] = useState(dayjs().startOf('year'));
+  const [endDate, setEndDate] = useState(dayjs());
+  const [asOfDate, setAsOfDate] = useState(dayjs());
   
   const [trialBalance, setTrialBalance] = useState<{ details: TrialBalanceRow[]; totals: any } | null>(null);
   const [profitLoss, setProfitLoss] = useState<ProfitLossData | null>(null);
@@ -59,7 +57,10 @@ const FinancialReportsPage: React.FC = () => {
   const loadTrialBalance = async () => {
     try {
       setLoading(true);
-      const res = await financialReportsApi.getTrialBalance(filters.startDate, filters.endDate);
+      const res = await financialReportsApi.getTrialBalance(
+        startDate.format('YYYY-MM-DD'),
+        endDate.format('YYYY-MM-DD')
+      );
       setTrialBalance(res.data);
     } catch (error) {
       console.error('Error loading trial balance:', error);
@@ -71,7 +72,10 @@ const FinancialReportsPage: React.FC = () => {
   const loadProfitLoss = async () => {
     try {
       setLoading(true);
-      const res = await financialReportsApi.getProfitLoss(filters.startDate, filters.endDate);
+      const res = await financialReportsApi.getProfitLoss(
+        startDate.format('YYYY-MM-DD'),
+        endDate.format('YYYY-MM-DD')
+      );
       setProfitLoss(res.data);
     } catch (error) {
       console.error('Error loading P&L:', error);
@@ -83,7 +87,7 @@ const FinancialReportsPage: React.FC = () => {
   const loadBalanceSheet = async () => {
     try {
       setLoading(true);
-      const res = await financialReportsApi.getBalanceSheet(filters.asOfDate);
+      const res = await financialReportsApi.getBalanceSheet(asOfDate.format('YYYY-MM-DD'));
       setBalanceSheet(res.data);
     } catch (error) {
       console.error('Error loading balance sheet:', error);
@@ -93,295 +97,367 @@ const FinancialReportsPage: React.FC = () => {
   };
 
   useEffect(() => {
-    if (tab === 0) loadTrialBalance();
-    else if (tab === 1) loadProfitLoss();
-    else if (tab === 2) loadBalanceSheet();
-  }, [tab]);
+    if (activeTab === 'trial-balance') loadTrialBalance();
+    else if (activeTab === 'profit-loss') loadProfitLoss();
+    else if (activeTab === 'balance-sheet') loadBalanceSheet();
+  }, [activeTab]);
 
   const handleLoadReport = () => {
-    if (tab === 0) loadTrialBalance();
-    else if (tab === 1) loadProfitLoss();
-    else if (tab === 2) loadBalanceSheet();
+    if (activeTab === 'trial-balance') loadTrialBalance();
+    else if (activeTab === 'profit-loss') loadProfitLoss();
+    else if (activeTab === 'balance-sheet') loadBalanceSheet();
   };
 
-  // Trial Balance Component
-  const renderTrialBalance = () => (
-    <TableContainer>
-      <Table size="small">
-        <TableHead>
-          <TableRow sx={{ bgcolor: 'grey.100' }}>
-            <TableCell>รหัสบัญชี</TableCell>
-            <TableCell>ชื่อบัญชี</TableCell>
-            <TableCell align="right">เดบิต</TableCell>
-            <TableCell align="right">เครดิต</TableCell>
-            <TableCell align="right">ยอดเดบิต</TableCell>
-            <TableCell align="right">ยอดเครดิต</TableCell>
-          </TableRow>
-        </TableHead>
-        <TableBody>
-          {trialBalance?.details.map((row) => (
-            <TableRow key={row.accountId} hover>
-              <TableCell>{row.accountCode}</TableCell>
-              <TableCell>{row.accountName}</TableCell>
-              <TableCell align="right">{row.debit > 0 ? formatCurrency(row.debit) : '-'}</TableCell>
-              <TableCell align="right">{row.credit > 0 ? formatCurrency(row.credit) : '-'}</TableCell>
-              <TableCell align="right">{row.debitBalance > 0 ? formatCurrency(row.debitBalance) : '-'}</TableCell>
-              <TableCell align="right">{row.creditBalance > 0 ? formatCurrency(row.creditBalance) : '-'}</TableCell>
-            </TableRow>
-          ))}
-          {trialBalance?.details.length === 0 && (
-            <TableRow>
-              <TableCell colSpan={6} align="center" sx={{ py: 4 }}>
-                <Typography color="text.secondary">ไม่มีรายการ</Typography>
-              </TableCell>
-            </TableRow>
+  // Trial Balance Tab
+  const trialBalanceTab = (
+    <Table
+      columns={[
+        { title: 'รหัสบัญชี', dataIndex: 'accountCode', width: 100 },
+        { title: 'ชื่อบัญชี', dataIndex: 'accountName' },
+        {
+          title: 'เดบิต',
+          dataIndex: 'debit',
+          align: 'right' as const,
+          width: 130,
+          render: (val: number) => val > 0 ? formatCurrency(val) : '-',
+        },
+        {
+          title: 'เครดิต',
+          dataIndex: 'credit',
+          align: 'right' as const,
+          width: 130,
+          render: (val: number) => val > 0 ? formatCurrency(val) : '-',
+        },
+        {
+          title: 'ยอดเดบิต',
+          dataIndex: 'debitBalance',
+          align: 'right' as const,
+          width: 130,
+          render: (val: number) => val > 0 ? formatCurrency(val) : '-',
+        },
+        {
+          title: 'ยอดเครดิต',
+          dataIndex: 'creditBalance',
+          align: 'right' as const,
+          width: 130,
+          render: (val: number) => val > 0 ? formatCurrency(val) : '-',
+        },
+      ]}
+      dataSource={trialBalance?.details || []}
+      rowKey="accountId"
+      loading={loading}
+      pagination={false}
+      size="small"
+      summary={() => trialBalance?.totals ? (
+        <Table.Summary.Row style={{ background: '#e6f7ff' }}>
+          <Table.Summary.Cell index={0} colSpan={2}>
+            <Text strong>รวม</Text>
+          </Table.Summary.Cell>
+          <Table.Summary.Cell index={1} align="right">-</Table.Summary.Cell>
+          <Table.Summary.Cell index={2} align="right">-</Table.Summary.Cell>
+          <Table.Summary.Cell index={3} align="right">
+            <Text strong>{formatCurrency(trialBalance.totals.totalDebit)}</Text>
+          </Table.Summary.Cell>
+          <Table.Summary.Cell index={4} align="right">
+            <Text strong>{formatCurrency(trialBalance.totals.totalCredit)}</Text>
+          </Table.Summary.Cell>
+        </Table.Summary.Row>
+      ) : null}
+    />
+  );
+
+  // Profit & Loss Tab
+  const profitLossTab = profitLoss && (
+    <div>
+      <Card title="รายได้" size="small" style={{ marginBottom: 16, background: '#f6ffed' }}>
+        <Table
+          columns={[
+            { title: 'รหัส', dataIndex: 'accountCode', width: 100 },
+            { title: 'ชื่อบัญชี', dataIndex: 'accountName' },
+            {
+              title: 'จำนวนเงิน',
+              dataIndex: 'balance',
+              align: 'right' as const,
+              width: 150,
+              render: (val: number) => formatCurrency(val),
+            },
+          ]}
+          dataSource={profitLoss.revenue.details}
+          rowKey="accountId"
+          pagination={false}
+          size="small"
+          summary={() => (
+            <Table.Summary.Row style={{ background: '#d9f7be' }}>
+              <Table.Summary.Cell index={0} colSpan={2}>
+                <Text strong>รวมรายได้</Text>
+              </Table.Summary.Cell>
+              <Table.Summary.Cell index={1} align="right">
+                <Text strong>{formatCurrency(profitLoss.revenue.total)}</Text>
+              </Table.Summary.Cell>
+            </Table.Summary.Row>
           )}
-          <TableRow sx={{ bgcolor: 'primary.50' }}>
-            <TableCell colSpan={2} sx={{ fontWeight: 'bold' }}>รวม</TableCell>
-            <TableCell align="right" sx={{ fontWeight: 'bold' }}>-</TableCell>
-            <TableCell align="right" sx={{ fontWeight: 'bold' }}>-</TableCell>
-            <TableCell align="right" sx={{ fontWeight: 'bold' }}>{formatCurrency(trialBalance?.totals?.totalDebit || 0)}</TableCell>
-            <TableCell align="right" sx={{ fontWeight: 'bold' }}>{formatCurrency(trialBalance?.totals?.totalCredit || 0)}</TableCell>
-          </TableRow>
-        </TableBody>
-      </Table>
-    </TableContainer>
-  );
-
-  // Profit & Loss Component
-  const renderProfitLoss = () => (
-    <Box>
-      <Typography variant="h6" gutterBottom sx={{ bgcolor: 'success.100', p: 1 }}>
-        รายได้
-      </Typography>
-      <Table size="small" sx={{ mb: 2 }}>
-        <TableBody>
-          {profitLoss?.revenue.details.map((item) => (
-            <TableRow key={item.accountId}>
-              <TableCell sx={{ pl: 4 }}>{item.accountCode} - {item.accountName}</TableCell>
-              <TableCell align="right">{formatCurrency(item.balance)}</TableCell>
-            </TableRow>
-          ))}
-          <TableRow sx={{ bgcolor: 'success.50' }}>
-            <TableCell sx={{ fontWeight: 'bold' }}>รวมรายได้</TableCell>
-            <TableCell align="right" sx={{ fontWeight: 'bold' }}>
-              {formatCurrency(profitLoss?.revenue.total || 0)}
-            </TableCell>
-          </TableRow>
-        </TableBody>
-      </Table>
-
-      <Typography variant="h6" gutterBottom sx={{ bgcolor: 'error.100', p: 1 }}>
-        ค่าใช้จ่าย
-      </Typography>
-      <Table size="small" sx={{ mb: 2 }}>
-        <TableBody>
-          {profitLoss?.expense.details.map((item) => (
-            <TableRow key={item.accountId}>
-              <TableCell sx={{ pl: 4 }}>{item.accountCode} - {item.accountName}</TableCell>
-              <TableCell align="right">{formatCurrency(item.balance)}</TableCell>
-            </TableRow>
-          ))}
-          <TableRow sx={{ bgcolor: 'error.50' }}>
-            <TableCell sx={{ fontWeight: 'bold' }}>รวมค่าใช้จ่าย</TableCell>
-            <TableCell align="right" sx={{ fontWeight: 'bold' }}>
-              {formatCurrency(profitLoss?.expense.total || 0)}
-            </TableCell>
-          </TableRow>
-        </TableBody>
-      </Table>
-
-      <Divider sx={{ my: 2 }} />
-
-      <Card sx={{ bgcolor: (profitLoss?.netProfit || 0) >= 0 ? 'success.100' : 'error.100' }}>
-        <CardContent>
-          <Grid container>
-            <Grid item xs={6}>
-              <Typography variant="h6">กำไร(ขาดทุน)สุทธิ</Typography>
-            </Grid>
-            <Grid item xs={6}>
-              <Typography variant="h5" align="right" fontWeight="bold">
-                {formatCurrency(profitLoss?.netProfit || 0)}
-              </Typography>
-              <Typography variant="body2" align="right" color="text.secondary">
-                ({(profitLoss?.netProfitPercent || 0).toFixed(2)}% ของรายได้)
-              </Typography>
-            </Grid>
-          </Grid>
-        </CardContent>
+        />
       </Card>
-    </Box>
+
+      <Card title="ค่าใช้จ่าย" size="small" style={{ marginBottom: 16, background: '#fff2f0' }}>
+        <Table
+          columns={[
+            { title: 'รหัส', dataIndex: 'accountCode', width: 100 },
+            { title: 'ชื่อบัญชี', dataIndex: 'accountName' },
+            {
+              title: 'จำนวนเงิน',
+              dataIndex: 'balance',
+              align: 'right' as const,
+              width: 150,
+              render: (val: number) => formatCurrency(val),
+            },
+          ]}
+          dataSource={profitLoss.expense.details}
+          rowKey="accountId"
+          pagination={false}
+          size="small"
+          summary={() => (
+            <Table.Summary.Row style={{ background: '#ffccc7' }}>
+              <Table.Summary.Cell index={0} colSpan={2}>
+                <Text strong>รวมค่าใช้จ่าย</Text>
+              </Table.Summary.Cell>
+              <Table.Summary.Cell index={1} align="right">
+                <Text strong>{formatCurrency(profitLoss.expense.total)}</Text>
+              </Table.Summary.Cell>
+            </Table.Summary.Row>
+          )}
+        />
+      </Card>
+
+      <Card style={{ background: profitLoss.netProfit >= 0 ? '#f6ffed' : '#fff2f0' }}>
+        <Row gutter={16}>
+          <Col span={12}>
+            <Statistic
+              title="กำไร(ขาดทุน)สุทธิ"
+              value={profitLoss.netProfit}
+              precision={2}
+              prefix="฿"
+              valueStyle={{ color: profitLoss.netProfit >= 0 ? '#3f8600' : '#cf1322', fontSize: 28 }}
+            />
+          </Col>
+          <Col span={12}>
+            <Statistic
+              title="อัตรากำไรสุทธิ"
+              value={profitLoss.netProfitPercent}
+              precision={2}
+              suffix="%"
+              valueStyle={{ color: profitLoss.netProfit >= 0 ? '#3f8600' : '#cf1322' }}
+            />
+          </Col>
+        </Row>
+      </Card>
+    </div>
   );
 
-  // Balance Sheet Component
-  const renderBalanceSheet = () => (
-    <Grid container spacing={3}>
-      {/* Assets */}
-      <Grid item xs={12} md={6}>
-        <Typography variant="h6" sx={{ bgcolor: 'primary.100', p: 1 }}>สินทรัพย์</Typography>
-        <Table size="small">
-          <TableBody>
-            {balanceSheet?.assets.details.map((item) => (
-              <TableRow key={item.accountId}>
-                <TableCell sx={{ pl: 2 }}>{item.accountCode} - {item.accountName}</TableCell>
-                <TableCell align="right">{formatCurrency(item.balance)}</TableCell>
-              </TableRow>
-            ))}
-            <TableRow sx={{ bgcolor: 'primary.50' }}>
-              <TableCell sx={{ fontWeight: 'bold' }}>รวมสินทรัพย์</TableCell>
-              <TableCell align="right" sx={{ fontWeight: 'bold', fontSize: '1.1rem' }}>
-                {formatCurrency(balanceSheet?.assets.total || 0)}
-              </TableCell>
-            </TableRow>
-          </TableBody>
-        </Table>
-      </Grid>
-
-      {/* Liabilities & Equity */}
-      <Grid item xs={12} md={6}>
-        <Typography variant="h6" sx={{ bgcolor: 'error.100', p: 1 }}>หนี้สิน</Typography>
-        <Table size="small">
-          <TableBody>
-            {balanceSheet?.liabilities.details.map((item) => (
-              <TableRow key={item.accountId}>
-                <TableCell sx={{ pl: 2 }}>{item.accountCode} - {item.accountName}</TableCell>
-                <TableCell align="right">{formatCurrency(Math.abs(item.balance))}</TableCell>
-              </TableRow>
-            ))}
-            <TableRow sx={{ bgcolor: 'error.50' }}>
-              <TableCell sx={{ fontWeight: 'bold' }}>รวมหนี้สิน</TableCell>
-              <TableCell align="right" sx={{ fontWeight: 'bold' }}>
-                {formatCurrency(balanceSheet?.liabilities.total || 0)}
-              </TableCell>
-            </TableRow>
-          </TableBody>
-        </Table>
-
-        <Typography variant="h6" sx={{ bgcolor: 'secondary.100', p: 1, mt: 2 }}>ส่วนของผู้ถือหุ้น</Typography>
-        <Table size="small">
-          <TableBody>
-            {balanceSheet?.equity.details.map((item) => (
-              <TableRow key={item.accountId}>
-                <TableCell sx={{ pl: 2 }}>{item.accountCode} - {item.accountName}</TableCell>
-                <TableCell align="right">{formatCurrency(Math.abs(item.balance))}</TableCell>
-              </TableRow>
-            ))}
-            <TableRow>
-              <TableCell sx={{ pl: 2 }}>กำไรสะสมปีปัจจุบัน</TableCell>
-              <TableCell align="right">{formatCurrency(balanceSheet?.equity.retainedEarnings || 0)}</TableCell>
-            </TableRow>
-            <TableRow sx={{ bgcolor: 'secondary.50' }}>
-              <TableCell sx={{ fontWeight: 'bold' }}>รวมส่วนของผู้ถือหุ้น</TableCell>
-              <TableCell align="right" sx={{ fontWeight: 'bold' }}>
-                {formatCurrency(balanceSheet?.equity.total || 0)}
-              </TableCell>
-            </TableRow>
-          </TableBody>
-        </Table>
-
-        <Card sx={{ mt: 2, bgcolor: balanceSheet?.isBalanced ? 'success.100' : 'error.100' }}>
-          <CardContent sx={{ py: 1 }}>
-            <Grid container>
-              <Grid item xs={6}>
-                <Typography fontWeight="bold">รวมหนี้สินและส่วนของผู้ถือหุ้น</Typography>
-              </Grid>
-              <Grid item xs={6}>
-                <Typography variant="h6" align="right" fontWeight="bold">
-                  {formatCurrency(balanceSheet?.totalLiabilitiesAndEquity || 0)}
-                </Typography>
-              </Grid>
-            </Grid>
-          </CardContent>
+  // Balance Sheet Tab
+  const balanceSheetTab = balanceSheet && (
+    <Row gutter={24}>
+      <Col span={12}>
+        <Card title="สินทรัพย์" size="small" style={{ background: '#e6f7ff' }}>
+          <Table
+            columns={[
+              { title: 'รหัส', dataIndex: 'accountCode', width: 80 },
+              { title: 'ชื่อบัญชี', dataIndex: 'accountName' },
+              {
+                title: 'จำนวนเงิน',
+                dataIndex: 'balance',
+                align: 'right' as const,
+                width: 130,
+                render: (val: number) => formatCurrency(val),
+              },
+            ]}
+            dataSource={balanceSheet.assets.details}
+            rowKey="accountId"
+            pagination={false}
+            size="small"
+            summary={() => (
+              <Table.Summary.Row style={{ background: '#bae7ff' }}>
+                <Table.Summary.Cell index={0} colSpan={2}>
+                  <Text strong>รวมสินทรัพย์</Text>
+                </Table.Summary.Cell>
+                <Table.Summary.Cell index={1} align="right">
+                  <Text strong style={{ fontSize: 16 }}>{formatCurrency(balanceSheet.assets.total)}</Text>
+                </Table.Summary.Cell>
+              </Table.Summary.Row>
+            )}
+          />
         </Card>
-      </Grid>
-    </Grid>
+      </Col>
+      <Col span={12}>
+        <Card title="หนี้สิน" size="small" style={{ background: '#fff2f0', marginBottom: 16 }}>
+          <Table
+            columns={[
+              { title: 'รหัส', dataIndex: 'accountCode', width: 80 },
+              { title: 'ชื่อบัญชี', dataIndex: 'accountName' },
+              {
+                title: 'จำนวนเงิน',
+                dataIndex: 'balance',
+                align: 'right' as const,
+                width: 130,
+                render: (val: number) => formatCurrency(Math.abs(val)),
+              },
+            ]}
+            dataSource={balanceSheet.liabilities.details}
+            rowKey="accountId"
+            pagination={false}
+            size="small"
+            summary={() => (
+              <Table.Summary.Row style={{ background: '#ffccc7' }}>
+                <Table.Summary.Cell index={0} colSpan={2}>
+                  <Text strong>รวมหนี้สิน</Text>
+                </Table.Summary.Cell>
+                <Table.Summary.Cell index={1} align="right">
+                  <Text strong>{formatCurrency(balanceSheet.liabilities.total)}</Text>
+                </Table.Summary.Cell>
+              </Table.Summary.Row>
+            )}
+          />
+        </Card>
+
+        <Card title="ส่วนของผู้ถือหุ้น" size="small" style={{ background: '#f9f0ff' }}>
+          <Table
+            columns={[
+              { title: 'รหัส', dataIndex: 'accountCode', width: 80 },
+              { title: 'ชื่อบัญชี', dataIndex: 'accountName' },
+              {
+                title: 'จำนวนเงิน',
+                dataIndex: 'balance',
+                align: 'right' as const,
+                width: 130,
+                render: (val: number) => formatCurrency(Math.abs(val)),
+              },
+            ]}
+            dataSource={[
+              ...balanceSheet.equity.details,
+              { accountId: 0, accountCode: '', accountName: 'กำไรสะสมปีปัจจุบัน', balance: balanceSheet.equity.retainedEarnings },
+            ]}
+            rowKey="accountId"
+            pagination={false}
+            size="small"
+            summary={() => (
+              <Table.Summary.Row style={{ background: '#efdbff' }}>
+                <Table.Summary.Cell index={0} colSpan={2}>
+                  <Text strong>รวมส่วนของผู้ถือหุ้น</Text>
+                </Table.Summary.Cell>
+                <Table.Summary.Cell index={1} align="right">
+                  <Text strong>{formatCurrency(balanceSheet.equity.total)}</Text>
+                </Table.Summary.Cell>
+              </Table.Summary.Row>
+            )}
+          />
+        </Card>
+
+        <Card style={{ marginTop: 16, background: balanceSheet.isBalanced ? '#f6ffed' : '#fff2f0' }}>
+          <Row justify="space-between" align="middle">
+            <Col>
+              <Text strong>รวมหนี้สินและส่วนของผู้ถือหุ้น</Text>
+            </Col>
+            <Col>
+              <Text strong style={{ fontSize: 18 }}>
+                {formatCurrency(balanceSheet.totalLiabilitiesAndEquity)}
+              </Text>
+            </Col>
+          </Row>
+        </Card>
+      </Col>
+    </Row>
   );
+
+  const tabItems = [
+    {
+      key: 'trial-balance',
+      label: (
+        <Space>
+          <FileTextOutlined />
+          งบทดลอง
+        </Space>
+      ),
+      children: trialBalanceTab,
+    },
+    {
+      key: 'profit-loss',
+      label: (
+        <Space>
+          <LineChartOutlined />
+          งบกำไรขาดทุน
+        </Space>
+      ),
+      children: profitLossTab,
+    },
+    {
+      key: 'balance-sheet',
+      label: (
+        <Space>
+          <BankOutlined />
+          งบดุล
+        </Space>
+      ),
+      children: balanceSheetTab,
+    },
+  ];
 
   return (
-    <Box sx={{ p: 3 }}>
-      <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 3 }}>
-        <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
-          <ReportIcon sx={{ fontSize: 32, color: 'primary.main' }} />
-          <Typography variant="h5" fontWeight="bold">รายงานการเงิน</Typography>
-        </Box>
-        <Button variant="outlined" startIcon={<PrintIcon />} onClick={() => window.print()}>
-          พิมพ์
-        </Button>
-      </Box>
+    <div style={{ padding: 24 }}>
+      <Row justify="space-between" align="middle" style={{ marginBottom: 16 }}>
+        <Col>
+          <Title level={4} style={{ margin: 0 }}>รายงานการเงิน</Title>
+        </Col>
+        <Col>
+          <Button icon={<PrinterOutlined />} onClick={() => window.print()}>
+            พิมพ์
+          </Button>
+        </Col>
+      </Row>
 
       {/* Filters */}
-      <Paper sx={{ p: 2, mb: 2 }}>
-        <Grid container spacing={2} alignItems="center">
-          {tab !== 2 ? (
+      <Card style={{ marginBottom: 16 }}>
+        <Space size="large">
+          {activeTab !== 'balance-sheet' ? (
             <>
-              <Grid item xs={12} sm={3}>
-                <TextField
-                  label="วันที่เริ่มต้น"
-                  type="date"
-                  value={filters.startDate}
-                  onChange={(e) => setFilters({ ...filters, startDate: e.target.value })}
-                  fullWidth
-                  size="small"
-                  InputLabelProps={{ shrink: true }}
+              <Space>
+                <Text>วันที่เริ่มต้น:</Text>
+                <DatePicker
+                  value={startDate}
+                  onChange={(date) => date && setStartDate(date)}
                 />
-              </Grid>
-              <Grid item xs={12} sm={3}>
-                <TextField
-                  label="วันที่สิ้นสุด"
-                  type="date"
-                  value={filters.endDate}
-                  onChange={(e) => setFilters({ ...filters, endDate: e.target.value })}
-                  fullWidth
-                  size="small"
-                  InputLabelProps={{ shrink: true }}
+              </Space>
+              <Space>
+                <Text>วันที่สิ้นสุด:</Text>
+                <DatePicker
+                  value={endDate}
+                  onChange={(date) => date && setEndDate(date)}
                 />
-              </Grid>
+              </Space>
             </>
           ) : (
-            <Grid item xs={12} sm={3}>
-              <TextField
-                label="ณ วันที่"
-                type="date"
-                value={filters.asOfDate}
-                onChange={(e) => setFilters({ ...filters, asOfDate: e.target.value })}
-                fullWidth
-                size="small"
-                InputLabelProps={{ shrink: true }}
+            <Space>
+              <Text>ณ วันที่:</Text>
+              <DatePicker
+                value={asOfDate}
+                onChange={(date) => date && setAsOfDate(date)}
               />
-            </Grid>
+            </Space>
           )}
-          <Grid item>
-            <Button variant="contained" onClick={handleLoadReport}>
-              แสดงรายงาน
-            </Button>
-          </Grid>
-        </Grid>
-      </Paper>
+          <Button type="primary" onClick={handleLoadReport}>
+            แสดงรายงาน
+          </Button>
+        </Space>
+      </Card>
 
       {/* Tabs */}
-      <Paper sx={{ mb: 2 }}>
-        <Tabs value={tab} onChange={(_, v) => setTab(v)}>
-          <Tab label="งบทดลอง" icon={<ReportIcon />} iconPosition="start" />
-          <Tab label="งบกำไรขาดทุน" icon={<ProfitIcon />} iconPosition="start" />
-          <Tab label="งบดุล" icon={<BalanceIcon />} iconPosition="start" />
-        </Tabs>
-      </Paper>
-
-      {/* Content */}
-      <Paper elevation={2} sx={{ p: 2 }}>
-        {loading ? (
-          <Box sx={{ display: 'flex', justifyContent: 'center', p: 4 }}>
-            <CircularProgress />
-          </Box>
-        ) : (
-          <>
-            {tab === 0 && renderTrialBalance()}
-            {tab === 1 && renderProfitLoss()}
-            {tab === 2 && renderBalanceSheet()}
-          </>
-        )}
-      </Paper>
-    </Box>
+      <Card>
+        <Tabs
+          activeKey={activeTab}
+          onChange={setActiveTab}
+          items={tabItems}
+        />
+      </Card>
+    </div>
   );
 };
 

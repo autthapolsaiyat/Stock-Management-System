@@ -1,17 +1,17 @@
 import React, { useState, useEffect } from 'react';
 import {
-  Box, Typography, Paper, Button, Table, TableBody, TableCell,
-  TableContainer, TableHead, TableRow, IconButton, Dialog, DialogTitle,
-  DialogContent, DialogActions, TextField, Select, MenuItem, FormControl,
-  InputLabel, Chip, Alert, Snackbar, Grid, Divider, CircularProgress,
-  Card, CardContent
-} from '@mui/material';
+  Card, Table, Button, Space, Tag, Modal, Form, Input, Select, DatePicker,
+  message, Popconfirm, Typography, Row, Col, Divider, InputNumber, Alert
+} from 'antd';
 import {
-  Add as AddIcon, Edit as EditIcon, Delete as DeleteIcon,
-  Visibility as ViewIcon, Check as PostIcon, Close as CancelIcon,
-  Undo as ReverseIcon, Book as JournalIcon
-} from '@mui/icons-material';
+  PlusOutlined, DeleteOutlined, EyeOutlined, CheckOutlined,
+  CloseOutlined, UndoOutlined, BookOutlined
+} from '@ant-design/icons';
 import { journalEntriesApi, chartOfAccountsApi } from '../../services/api';
+import dayjs from 'dayjs';
+
+const { Title, Text } = Typography;
+const { Option } = Select;
 
 interface JournalEntry {
   id: number;
@@ -45,7 +45,6 @@ interface Account {
   id: number;
   code: string;
   name: string;
-  accountType: string;
 }
 
 const JOURNAL_TYPES = [
@@ -57,7 +56,7 @@ const JOURNAL_TYPES = [
   { value: 'ADJUSTMENT', label: 'รายการปรับปรุง' },
 ];
 
-const STATUS_CONFIG: Record<string, { label: string; color: 'default' | 'warning' | 'success' | 'error' }> = {
+const STATUS_CONFIG: Record<string, { label: string; color: string }> = {
   DRAFT: { label: 'ฉบับร่าง', color: 'warning' },
   POSTED: { label: 'บันทึกแล้ว', color: 'success' },
   CANCELLED: { label: 'ยกเลิก', color: 'error' },
@@ -67,25 +66,19 @@ const JournalEntriesPage: React.FC = () => {
   const [entries, setEntries] = useState<JournalEntry[]>([]);
   const [accounts, setAccounts] = useState<Account[]>([]);
   const [loading, setLoading] = useState(true);
-  const [openDialog, setOpenDialog] = useState(false);
-  const [viewDialog, setViewDialog] = useState(false);
+  const [modalVisible, setModalVisible] = useState(false);
+  const [viewModalVisible, setViewModalVisible] = useState(false);
   const [selectedEntry, setSelectedEntry] = useState<JournalEntry | null>(null);
-  const [snackbar, setSnackbar] = useState({ open: false, message: '', severity: 'success' as 'success' | 'error' });
+  const [form] = Form.useForm();
+  const [lines, setLines] = useState<any[]>([
+    { lineNo: 1, accountId: undefined, description: '', debitAmount: 0, creditAmount: 0 },
+    { lineNo: 2, accountId: undefined, description: '', debitAmount: 0, creditAmount: 0 },
+  ]);
 
   const [filters, setFilters] = useState({
-    startDate: new Date(new Date().getFullYear(), new Date().getMonth(), 1).toISOString().split('T')[0],
-    endDate: new Date().toISOString().split('T')[0],
+    startDate: dayjs().startOf('month').format('YYYY-MM-DD'),
+    endDate: dayjs().format('YYYY-MM-DD'),
     status: '',
-  });
-
-  const [formData, setFormData] = useState({
-    docDate: new Date().toISOString().split('T')[0],
-    journalType: 'GENERAL',
-    description: '',
-    lines: [
-      { lineNo: 1, accountId: 0, description: '', debitAmount: 0, creditAmount: 0 },
-      { lineNo: 2, accountId: 0, description: '', debitAmount: 0, creditAmount: 0 },
-    ] as any[],
   });
 
   useEffect(() => {
@@ -100,95 +93,97 @@ const JournalEntriesPage: React.FC = () => {
         chartOfAccountsApi.getAll(),
       ]);
       setEntries(entriesRes.data);
-      setAccounts(accountsRes.data.filter((a: Account) => a.accountType)); // Filter valid accounts
+      setAccounts(accountsRes.data);
     } catch (error) {
-      console.error('Error loading data:', error);
-      setSnackbar({ open: true, message: 'เกิดข้อผิดพลาดในการโหลดข้อมูล', severity: 'error' });
+      message.error('เกิดข้อผิดพลาดในการโหลดข้อมูล');
     } finally {
       setLoading(false);
     }
   };
 
-  const handleOpenCreate = () => {
-    setSelectedEntry(null);
-    setFormData({
-      docDate: new Date().toISOString().split('T')[0],
+  const handleOpenModal = () => {
+    form.resetFields();
+    form.setFieldsValue({
+      docDate: dayjs(),
       journalType: 'GENERAL',
-      description: '',
-      lines: [
-        { lineNo: 1, accountId: 0, description: '', debitAmount: 0, creditAmount: 0 },
-        { lineNo: 2, accountId: 0, description: '', debitAmount: 0, creditAmount: 0 },
-      ],
     });
-    setOpenDialog(true);
+    setLines([
+      { lineNo: 1, accountId: undefined, description: '', debitAmount: 0, creditAmount: 0 },
+      { lineNo: 2, accountId: undefined, description: '', debitAmount: 0, creditAmount: 0 },
+    ]);
+    setModalVisible(true);
   };
 
   const handleView = async (entry: JournalEntry) => {
     try {
       const res = await journalEntriesApi.getById(entry.id);
       setSelectedEntry(res.data);
-      setViewDialog(true);
+      setViewModalVisible(true);
     } catch (error) {
-      setSnackbar({ open: true, message: 'เกิดข้อผิดพลาด', severity: 'error' });
+      message.error('เกิดข้อผิดพลาด');
     }
   };
 
   const handleAddLine = () => {
-    setFormData({
-      ...formData,
-      lines: [...formData.lines, {
-        lineNo: formData.lines.length + 1,
-        accountId: 0,
-        description: '',
-        debitAmount: 0,
-        creditAmount: 0,
-      }],
-    });
+    setLines([...lines, {
+      lineNo: lines.length + 1,
+      accountId: undefined,
+      description: '',
+      debitAmount: 0,
+      creditAmount: 0,
+    }]);
   };
 
   const handleRemoveLine = (index: number) => {
-    if (formData.lines.length <= 2) return;
-    const newLines = formData.lines.filter((_, i) => i !== index).map((l, i) => ({ ...l, lineNo: i + 1 }));
-    setFormData({ ...formData, lines: newLines });
+    if (lines.length <= 2) return;
+    const newLines = lines.filter((_, i) => i !== index).map((l, i) => ({ ...l, lineNo: i + 1 }));
+    setLines(newLines);
   };
 
   const handleLineChange = (index: number, field: string, value: any) => {
-    const newLines = [...formData.lines];
+    const newLines = [...lines];
     newLines[index] = { ...newLines[index], [field]: value };
-    setFormData({ ...formData, lines: newLines });
+    setLines(newLines);
   };
 
   const calculateTotals = () => {
-    const totalDebit = formData.lines.reduce((sum, l) => sum + (Number(l.debitAmount) || 0), 0);
-    const totalCredit = formData.lines.reduce((sum, l) => sum + (Number(l.creditAmount) || 0), 0);
+    const totalDebit = lines.reduce((sum, l) => sum + (Number(l.debitAmount) || 0), 0);
+    const totalCredit = lines.reduce((sum, l) => sum + (Number(l.creditAmount) || 0), 0);
     return { totalDebit, totalCredit, isBalanced: Math.abs(totalDebit - totalCredit) < 0.01 };
   };
 
   const handleSubmit = async () => {
-    const { isBalanced } = calculateTotals();
-    if (!isBalanced) {
-      setSnackbar({ open: true, message: 'ยอดเดบิตและเครดิตต้องเท่ากัน', severity: 'error' });
-      return;
-    }
-
     try {
-      await journalEntriesApi.create(formData);
-      setSnackbar({ open: true, message: 'สร้างรายการสำเร็จ', severity: 'success' });
-      setOpenDialog(false);
+      const values = await form.validateFields();
+      const { isBalanced } = calculateTotals();
+      
+      if (!isBalanced) {
+        message.error('ยอดเดบิตและเครดิตต้องเท่ากัน');
+        return;
+      }
+
+      const data = {
+        ...values,
+        docDate: values.docDate.format('YYYY-MM-DD'),
+        lines: lines.filter(l => l.accountId),
+      };
+
+      await journalEntriesApi.create(data);
+      message.success('สร้างรายการสำเร็จ');
+      setModalVisible(false);
       loadData();
     } catch (error: any) {
-      setSnackbar({ open: true, message: error.response?.data?.message || 'เกิดข้อผิดพลาด', severity: 'error' });
+      message.error(error.response?.data?.message || 'เกิดข้อผิดพลาด');
     }
   };
 
   const handlePost = async (id: number) => {
-    if (!window.confirm('ต้องการบันทึกรายการนี้?')) return;
     try {
       await journalEntriesApi.post(id);
-      setSnackbar({ open: true, message: 'บันทึกสำเร็จ', severity: 'success' });
+      message.success('บันทึกสำเร็จ');
       loadData();
     } catch (error: any) {
-      setSnackbar({ open: true, message: error.response?.data?.message || 'เกิดข้อผิดพลาด', severity: 'error' });
+      message.error(error.response?.data?.message || 'เกิดข้อผิดพลาด');
     }
   };
 
@@ -197,433 +192,415 @@ const JournalEntriesPage: React.FC = () => {
     if (!reason) return;
     try {
       await journalEntriesApi.cancel(id, reason);
-      setSnackbar({ open: true, message: 'ยกเลิกสำเร็จ', severity: 'success' });
+      message.success('ยกเลิกสำเร็จ');
       loadData();
     } catch (error: any) {
-      setSnackbar({ open: true, message: error.response?.data?.message || 'เกิดข้อผิดพลาด', severity: 'error' });
+      message.error(error.response?.data?.message || 'เกิดข้อผิดพลาด');
     }
   };
 
   const handleReverse = async (id: number) => {
-    if (!window.confirm('ต้องการกลับรายการนี้?')) return;
     try {
       await journalEntriesApi.reverse(id);
-      setSnackbar({ open: true, message: 'กลับรายการสำเร็จ', severity: 'success' });
+      message.success('กลับรายการสำเร็จ');
       loadData();
     } catch (error: any) {
-      setSnackbar({ open: true, message: error.response?.data?.message || 'เกิดข้อผิดพลาด', severity: 'error' });
+      message.error(error.response?.data?.message || 'เกิดข้อผิดพลาด');
     }
   };
 
   const handleDelete = async (id: number) => {
-    if (!window.confirm('ต้องการลบรายการนี้?')) return;
     try {
       await journalEntriesApi.delete(id);
-      setSnackbar({ open: true, message: 'ลบสำเร็จ', severity: 'success' });
+      message.success('ลบสำเร็จ');
       loadData();
     } catch (error: any) {
-      setSnackbar({ open: true, message: error.response?.data?.message || 'เกิดข้อผิดพลาด', severity: 'error' });
+      message.error(error.response?.data?.message || 'เกิดข้อผิดพลาด');
     }
   };
 
   const { totalDebit, totalCredit, isBalanced } = calculateTotals();
 
-  return (
-    <Box sx={{ p: 3 }}>
-      <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 3 }}>
-        <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
-          <JournalIcon sx={{ fontSize: 32, color: 'primary.main' }} />
-          <Typography variant="h5" fontWeight="bold">สมุดรายวัน (Journal Entries)</Typography>
-        </Box>
-        <Button variant="contained" startIcon={<AddIcon />} onClick={handleOpenCreate}>
-          สร้างรายการใหม่
-        </Button>
-      </Box>
-
-      {/* Filters */}
-      <Paper sx={{ p: 2, mb: 2 }}>
-        <Grid container spacing={2} alignItems="center">
-          <Grid item xs={12} sm={3}>
-            <TextField
-              label="วันที่เริ่มต้น"
-              type="date"
-              value={filters.startDate}
-              onChange={(e) => setFilters({ ...filters, startDate: e.target.value })}
-              fullWidth
-              size="small"
-              InputLabelProps={{ shrink: true }}
-            />
-          </Grid>
-          <Grid item xs={12} sm={3}>
-            <TextField
-              label="วันที่สิ้นสุด"
-              type="date"
-              value={filters.endDate}
-              onChange={(e) => setFilters({ ...filters, endDate: e.target.value })}
-              fullWidth
-              size="small"
-              InputLabelProps={{ shrink: true }}
-            />
-          </Grid>
-          <Grid item xs={12} sm={3}>
-            <FormControl fullWidth size="small">
-              <InputLabel>สถานะ</InputLabel>
-              <Select
-                value={filters.status}
-                label="สถานะ"
-                onChange={(e) => setFilters({ ...filters, status: e.target.value })}
-              >
-                <MenuItem value="">ทั้งหมด</MenuItem>
-                <MenuItem value="DRAFT">ฉบับร่าง</MenuItem>
-                <MenuItem value="POSTED">บันทึกแล้ว</MenuItem>
-                <MenuItem value="CANCELLED">ยกเลิก</MenuItem>
-              </Select>
-            </FormControl>
-          </Grid>
-        </Grid>
-      </Paper>
-
-      {/* Table */}
-      <Paper elevation={2}>
-        {loading ? (
-          <Box sx={{ display: 'flex', justifyContent: 'center', p: 4 }}>
-            <CircularProgress />
-          </Box>
-        ) : (
-          <TableContainer>
-            <Table size="small">
-              <TableHead>
-                <TableRow sx={{ bgcolor: 'grey.100' }}>
-                  <TableCell>เลขที่เอกสาร</TableCell>
-                  <TableCell>วันที่</TableCell>
-                  <TableCell>ประเภท</TableCell>
-                  <TableCell>คำอธิบาย</TableCell>
-                  <TableCell align="right">เดบิต</TableCell>
-                  <TableCell align="right">เครดิต</TableCell>
-                  <TableCell>สถานะ</TableCell>
-                  <TableCell>จัดการ</TableCell>
-                </TableRow>
-              </TableHead>
-              <TableBody>
-                {entries.map((entry) => {
-                  const statusInfo = STATUS_CONFIG[entry.status] || { label: entry.status, color: 'default' };
-                  return (
-                    <TableRow key={entry.id} hover>
-                      <TableCell>
-                        <Typography fontWeight="medium">{entry.docNo}</Typography>
-                        {entry.referenceDocNo && (
-                          <Typography variant="caption" color="text.secondary">
-                            Ref: {entry.referenceDocNo}
-                          </Typography>
-                        )}
-                      </TableCell>
-                      <TableCell>{new Date(entry.docDate).toLocaleDateString('th-TH')}</TableCell>
-                      <TableCell>
-                        <Chip 
-                          label={JOURNAL_TYPES.find(t => t.value === entry.journalType)?.label || entry.journalType}
-                          size="small"
-                          variant="outlined"
-                        />
-                      </TableCell>
-                      <TableCell>
-                        {entry.description}
-                        {entry.isAutoGenerated && (
-                          <Chip label="Auto" size="small" sx={{ ml: 1 }} />
-                        )}
-                      </TableCell>
-                      <TableCell align="right">
-                        {Number(entry.totalDebit).toLocaleString('th-TH', { minimumFractionDigits: 2 })}
-                      </TableCell>
-                      <TableCell align="right">
-                        {Number(entry.totalCredit).toLocaleString('th-TH', { minimumFractionDigits: 2 })}
-                      </TableCell>
-                      <TableCell>
-                        <Chip label={statusInfo.label} size="small" color={statusInfo.color} />
-                      </TableCell>
-                      <TableCell>
-                        <IconButton size="small" onClick={() => handleView(entry)}>
-                          <ViewIcon />
-                        </IconButton>
-                        {entry.status === 'DRAFT' && (
-                          <>
-                            <IconButton size="small" color="success" onClick={() => handlePost(entry.id)}>
-                              <PostIcon />
-                            </IconButton>
-                            <IconButton size="small" color="error" onClick={() => handleDelete(entry.id)}>
-                              <DeleteIcon />
-                            </IconButton>
-                          </>
-                        )}
-                        {entry.status === 'POSTED' && (
-                          <>
-                            <IconButton size="small" color="warning" onClick={() => handleReverse(entry.id)}>
-                              <ReverseIcon />
-                            </IconButton>
-                            <IconButton size="small" color="error" onClick={() => handleCancel(entry.id)}>
-                              <CancelIcon />
-                            </IconButton>
-                          </>
-                        )}
-                      </TableCell>
-                    </TableRow>
-                  );
-                })}
-                {entries.length === 0 && (
-                  <TableRow>
-                    <TableCell colSpan={8} align="center" sx={{ py: 4 }}>
-                      <Typography color="text.secondary">ไม่พบรายการ</Typography>
-                    </TableCell>
-                  </TableRow>
-                )}
-              </TableBody>
-            </Table>
-          </TableContainer>
-        )}
-      </Paper>
-
-      {/* Create Dialog */}
-      <Dialog open={openDialog} onClose={() => setOpenDialog(false)} maxWidth="lg" fullWidth>
-        <DialogTitle>สร้างสมุดรายวัน</DialogTitle>
-        <DialogContent dividers>
-          <Grid container spacing={2} sx={{ mb: 2 }}>
-            <Grid item xs={12} sm={4}>
-              <TextField
-                label="วันที่"
-                type="date"
-                value={formData.docDate}
-                onChange={(e) => setFormData({ ...formData, docDate: e.target.value })}
-                fullWidth
-                size="small"
-                InputLabelProps={{ shrink: true }}
-              />
-            </Grid>
-            <Grid item xs={12} sm={4}>
-              <FormControl fullWidth size="small">
-                <InputLabel>ประเภท</InputLabel>
-                <Select
-                  value={formData.journalType}
-                  label="ประเภท"
-                  onChange={(e) => setFormData({ ...formData, journalType: e.target.value })}
-                >
-                  {JOURNAL_TYPES.map(t => (
-                    <MenuItem key={t.value} value={t.value}>{t.label}</MenuItem>
-                  ))}
-                </Select>
-              </FormControl>
-            </Grid>
-            <Grid item xs={12}>
-              <TextField
-                label="คำอธิบาย"
-                value={formData.description}
-                onChange={(e) => setFormData({ ...formData, description: e.target.value })}
-                fullWidth
-                size="small"
-              />
-            </Grid>
-          </Grid>
-
-          <Divider sx={{ my: 2 }} />
-
-          <Typography variant="subtitle2" gutterBottom>รายการบัญชี</Typography>
-          <Table size="small">
-            <TableHead>
-              <TableRow>
-                <TableCell width="5%">#</TableCell>
-                <TableCell width="35%">บัญชี</TableCell>
-                <TableCell width="25%">คำอธิบาย</TableCell>
-                <TableCell width="15%" align="right">เดบิต</TableCell>
-                <TableCell width="15%" align="right">เครดิต</TableCell>
-                <TableCell width="5%"></TableCell>
-              </TableRow>
-            </TableHead>
-            <TableBody>
-              {formData.lines.map((line, index) => (
-                <TableRow key={index}>
-                  <TableCell>{line.lineNo}</TableCell>
-                  <TableCell>
-                    <FormControl fullWidth size="small">
-                      <Select
-                        value={line.accountId || ''}
-                        onChange={(e) => handleLineChange(index, 'accountId', e.target.value)}
-                        displayEmpty
-                      >
-                        <MenuItem value="">-- เลือกบัญชี --</MenuItem>
-                        {accounts.map(a => (
-                          <MenuItem key={a.id} value={a.id}>
-                            {a.code} - {a.name}
-                          </MenuItem>
-                        ))}
-                      </Select>
-                    </FormControl>
-                  </TableCell>
-                  <TableCell>
-                    <TextField
-                      value={line.description || ''}
-                      onChange={(e) => handleLineChange(index, 'description', e.target.value)}
-                      fullWidth
-                      size="small"
-                    />
-                  </TableCell>
-                  <TableCell>
-                    <TextField
-                      type="number"
-                      value={line.debitAmount || ''}
-                      onChange={(e) => handleLineChange(index, 'debitAmount', Number(e.target.value) || 0)}
-                      fullWidth
-                      size="small"
-                      inputProps={{ style: { textAlign: 'right' } }}
-                    />
-                  </TableCell>
-                  <TableCell>
-                    <TextField
-                      type="number"
-                      value={line.creditAmount || ''}
-                      onChange={(e) => handleLineChange(index, 'creditAmount', Number(e.target.value) || 0)}
-                      fullWidth
-                      size="small"
-                      inputProps={{ style: { textAlign: 'right' } }}
-                    />
-                  </TableCell>
-                  <TableCell>
-                    <IconButton size="small" onClick={() => handleRemoveLine(index)} disabled={formData.lines.length <= 2}>
-                      <DeleteIcon />
-                    </IconButton>
-                  </TableCell>
-                </TableRow>
-              ))}
-              <TableRow>
-                <TableCell colSpan={3} align="right">
-                  <Button size="small" startIcon={<AddIcon />} onClick={handleAddLine}>
-                    เพิ่มบรรทัด
-                  </Button>
-                </TableCell>
-                <TableCell align="right">
-                  <Typography fontWeight="bold" color={isBalanced ? 'success.main' : 'error.main'}>
-                    {totalDebit.toLocaleString('th-TH', { minimumFractionDigits: 2 })}
-                  </Typography>
-                </TableCell>
-                <TableCell align="right">
-                  <Typography fontWeight="bold" color={isBalanced ? 'success.main' : 'error.main'}>
-                    {totalCredit.toLocaleString('th-TH', { minimumFractionDigits: 2 })}
-                  </Typography>
-                </TableCell>
-                <TableCell />
-              </TableRow>
-            </TableBody>
-          </Table>
-
-          {!isBalanced && (
-            <Alert severity="error" sx={{ mt: 2 }}>
-              ยอดเดบิตและเครดิตไม่เท่ากัน (ต่าง {Math.abs(totalDebit - totalCredit).toLocaleString('th-TH', { minimumFractionDigits: 2 })})
-            </Alert>
+  const columns = [
+    {
+      title: 'เลขที่เอกสาร',
+      dataIndex: 'docNo',
+      key: 'docNo',
+      render: (text: string, record: JournalEntry) => (
+        <div>
+          <div style={{ fontWeight: 500 }}>{text}</div>
+          {record.referenceDocNo && (
+            <Text type="secondary" style={{ fontSize: 12 }}>Ref: {record.referenceDocNo}</Text>
           )}
-        </DialogContent>
-        <DialogActions>
-          <Button onClick={() => setOpenDialog(false)}>ยกเลิก</Button>
-          <Button variant="contained" onClick={handleSubmit} disabled={!isBalanced}>
-            บันทึก
-          </Button>
-        </DialogActions>
-      </Dialog>
-
-      {/* View Dialog */}
-      <Dialog open={viewDialog} onClose={() => setViewDialog(false)} maxWidth="md" fullWidth>
-        <DialogTitle>
-          รายละเอียดสมุดรายวัน - {selectedEntry?.docNo}
-        </DialogTitle>
-        <DialogContent dividers>
-          {selectedEntry && (
+        </div>
+      ),
+    },
+    {
+      title: 'วันที่',
+      dataIndex: 'docDate',
+      key: 'docDate',
+      width: 110,
+      render: (date: string) => dayjs(date).format('DD/MM/YYYY'),
+    },
+    {
+      title: 'ประเภท',
+      dataIndex: 'journalType',
+      key: 'journalType',
+      width: 150,
+      render: (type: string) => {
+        const typeInfo = JOURNAL_TYPES.find(t => t.value === type);
+        return <Tag>{typeInfo?.label || type}</Tag>;
+      },
+    },
+    {
+      title: 'คำอธิบาย',
+      dataIndex: 'description',
+      key: 'description',
+      render: (text: string, record: JournalEntry) => (
+        <Space>
+          {text}
+          {record.isAutoGenerated && <Tag color="blue">Auto</Tag>}
+        </Space>
+      ),
+    },
+    {
+      title: 'เดบิต',
+      dataIndex: 'totalDebit',
+      key: 'totalDebit',
+      width: 120,
+      align: 'right' as const,
+      render: (val: number) => Number(val).toLocaleString('th-TH', { minimumFractionDigits: 2 }),
+    },
+    {
+      title: 'เครดิต',
+      dataIndex: 'totalCredit',
+      key: 'totalCredit',
+      width: 120,
+      align: 'right' as const,
+      render: (val: number) => Number(val).toLocaleString('th-TH', { minimumFractionDigits: 2 }),
+    },
+    {
+      title: 'สถานะ',
+      dataIndex: 'status',
+      key: 'status',
+      width: 100,
+      render: (status: string) => {
+        const config = STATUS_CONFIG[status];
+        return <Tag color={config?.color}>{config?.label || status}</Tag>;
+      },
+    },
+    {
+      title: 'จัดการ',
+      key: 'action',
+      width: 150,
+      render: (_: unknown, record: JournalEntry) => (
+        <Space>
+          <Button type="text" icon={<EyeOutlined />} onClick={() => handleView(record)} />
+          {record.status === 'DRAFT' && (
             <>
-              <Grid container spacing={2} sx={{ mb: 2 }}>
-                <Grid item xs={6} sm={3}>
-                  <Typography variant="caption" color="text.secondary">วันที่เอกสาร</Typography>
-                  <Typography>{new Date(selectedEntry.docDate).toLocaleDateString('th-TH')}</Typography>
-                </Grid>
-                <Grid item xs={6} sm={3}>
-                  <Typography variant="caption" color="text.secondary">ประเภท</Typography>
-                  <Typography>
-                    {JOURNAL_TYPES.find(t => t.value === selectedEntry.journalType)?.label}
-                  </Typography>
-                </Grid>
-                <Grid item xs={6} sm={3}>
-                  <Typography variant="caption" color="text.secondary">สถานะ</Typography>
-                  <Box>
-                    <Chip 
-                      label={STATUS_CONFIG[selectedEntry.status]?.label} 
-                      size="small" 
-                      color={STATUS_CONFIG[selectedEntry.status]?.color}
-                    />
-                  </Box>
-                </Grid>
-                <Grid item xs={12}>
-                  <Typography variant="caption" color="text.secondary">คำอธิบาย</Typography>
-                  <Typography>{selectedEntry.description || '-'}</Typography>
-                </Grid>
-              </Grid>
-
-              <Table size="small">
-                <TableHead>
-                  <TableRow sx={{ bgcolor: 'grey.100' }}>
-                    <TableCell>รหัสบัญชี</TableCell>
-                    <TableCell>ชื่อบัญชี</TableCell>
-                    <TableCell>คำอธิบาย</TableCell>
-                    <TableCell align="right">เดบิต</TableCell>
-                    <TableCell align="right">เครดิต</TableCell>
-                  </TableRow>
-                </TableHead>
-                <TableBody>
-                  {selectedEntry.lines?.map((line) => (
-                    <TableRow key={line.id}>
-                      <TableCell>{line.accountCode}</TableCell>
-                      <TableCell>{line.accountName}</TableCell>
-                      <TableCell>{line.description || '-'}</TableCell>
-                      <TableCell align="right">
-                        {Number(line.debitAmount) > 0 
-                          ? Number(line.debitAmount).toLocaleString('th-TH', { minimumFractionDigits: 2 }) 
-                          : '-'}
-                      </TableCell>
-                      <TableCell align="right">
-                        {Number(line.creditAmount) > 0 
-                          ? Number(line.creditAmount).toLocaleString('th-TH', { minimumFractionDigits: 2 }) 
-                          : '-'}
-                      </TableCell>
-                    </TableRow>
-                  ))}
-                  <TableRow sx={{ bgcolor: 'grey.50' }}>
-                    <TableCell colSpan={3} align="right">
-                      <Typography fontWeight="bold">รวม</Typography>
-                    </TableCell>
-                    <TableCell align="right">
-                      <Typography fontWeight="bold">
-                        {Number(selectedEntry.totalDebit).toLocaleString('th-TH', { minimumFractionDigits: 2 })}
-                      </Typography>
-                    </TableCell>
-                    <TableCell align="right">
-                      <Typography fontWeight="bold">
-                        {Number(selectedEntry.totalCredit).toLocaleString('th-TH', { minimumFractionDigits: 2 })}
-                      </Typography>
-                    </TableCell>
-                  </TableRow>
-                </TableBody>
-              </Table>
+              <Popconfirm title="ต้องการบันทึกรายการนี้?" onConfirm={() => handlePost(record.id)}>
+                <Button type="text" icon={<CheckOutlined />} style={{ color: 'green' }} />
+              </Popconfirm>
+              <Popconfirm title="ต้องการลบรายการนี้?" onConfirm={() => handleDelete(record.id)}>
+                <Button type="text" danger icon={<DeleteOutlined />} />
+              </Popconfirm>
             </>
           )}
-        </DialogContent>
-        <DialogActions>
-          <Button onClick={() => setViewDialog(false)}>ปิด</Button>
-        </DialogActions>
-      </Dialog>
+          {record.status === 'POSTED' && (
+            <>
+              <Popconfirm title="ต้องการกลับรายการนี้?" onConfirm={() => handleReverse(record.id)}>
+                <Button type="text" icon={<UndoOutlined />} style={{ color: 'orange' }} />
+              </Popconfirm>
+              <Button type="text" danger icon={<CloseOutlined />} onClick={() => handleCancel(record.id)} />
+            </>
+          )}
+        </Space>
+      ),
+    },
+  ];
 
-      <Snackbar 
-        open={snackbar.open} 
-        autoHideDuration={4000} 
-        onClose={() => setSnackbar({ ...snackbar, open: false })}
+  return (
+    <div style={{ padding: 24 }}>
+      <Card>
+        <Row justify="space-between" align="middle" style={{ marginBottom: 16 }}>
+          <Col>
+            <Space>
+              <BookOutlined style={{ fontSize: 24 }} />
+              <Title level={4} style={{ margin: 0 }}>สมุดรายวัน (Journal Entries)</Title>
+            </Space>
+          </Col>
+          <Col>
+            <Button type="primary" icon={<PlusOutlined />} onClick={handleOpenModal}>
+              สร้างรายการใหม่
+            </Button>
+          </Col>
+        </Row>
+
+        {/* Filters */}
+        <Row gutter={16} style={{ marginBottom: 16 }}>
+          <Col span={6}>
+            <DatePicker
+              placeholder="วันที่เริ่มต้น"
+              value={dayjs(filters.startDate)}
+              onChange={(date) => setFilters({ ...filters, startDate: date?.format('YYYY-MM-DD') || '' })}
+              style={{ width: '100%' }}
+            />
+          </Col>
+          <Col span={6}>
+            <DatePicker
+              placeholder="วันที่สิ้นสุด"
+              value={dayjs(filters.endDate)}
+              onChange={(date) => setFilters({ ...filters, endDate: date?.format('YYYY-MM-DD') || '' })}
+              style={{ width: '100%' }}
+            />
+          </Col>
+          <Col span={6}>
+            <Select
+              placeholder="สถานะ"
+              value={filters.status || undefined}
+              onChange={(value) => setFilters({ ...filters, status: value || '' })}
+              style={{ width: '100%' }}
+              allowClear
+            >
+              <Option value="DRAFT">ฉบับร่าง</Option>
+              <Option value="POSTED">บันทึกแล้ว</Option>
+              <Option value="CANCELLED">ยกเลิก</Option>
+            </Select>
+          </Col>
+        </Row>
+
+        <Table
+          columns={columns}
+          dataSource={entries}
+          rowKey="id"
+          loading={loading}
+          size="small"
+        />
+      </Card>
+
+      {/* Create Modal */}
+      <Modal
+        title="สร้างสมุดรายวัน"
+        open={modalVisible}
+        onOk={handleSubmit}
+        onCancel={() => setModalVisible(false)}
+        width={900}
+        okText="บันทึก"
+        cancelText="ยกเลิก"
       >
-        <Alert severity={snackbar.severity} onClose={() => setSnackbar({ ...snackbar, open: false })}>
-          {snackbar.message}
-        </Alert>
-      </Snackbar>
-    </Box>
+        <Form form={form} layout="vertical">
+          <Row gutter={16}>
+            <Col span={8}>
+              <Form.Item name="docDate" label="วันที่" rules={[{ required: true }]}>
+                <DatePicker style={{ width: '100%' }} />
+              </Form.Item>
+            </Col>
+            <Col span={8}>
+              <Form.Item name="journalType" label="ประเภท" rules={[{ required: true }]}>
+                <Select>
+                  {JOURNAL_TYPES.map(t => (
+                    <Option key={t.value} value={t.value}>{t.label}</Option>
+                  ))}
+                </Select>
+              </Form.Item>
+            </Col>
+            <Col span={8}>
+              <Form.Item name="description" label="คำอธิบาย">
+                <Input />
+              </Form.Item>
+            </Col>
+          </Row>
+        </Form>
+
+        <Divider>รายการบัญชี</Divider>
+
+        <Table
+          dataSource={lines}
+          rowKey="lineNo"
+          pagination={false}
+          size="small"
+          columns={[
+            {
+              title: '#',
+              dataIndex: 'lineNo',
+              width: 50,
+            },
+            {
+              title: 'บัญชี',
+              dataIndex: 'accountId',
+              render: (_: unknown, record: any, index: number) => (
+                <Select
+                  style={{ width: '100%' }}
+                  value={record.accountId}
+                  onChange={(value) => handleLineChange(index, 'accountId', value)}
+                  showSearch
+                  optionFilterProp="children"
+                  placeholder="เลือกบัญชี"
+                >
+                  {accounts.map(a => (
+                    <Option key={a.id} value={a.id}>{a.code} - {a.name}</Option>
+                  ))}
+                </Select>
+              ),
+            },
+            {
+              title: 'คำอธิบาย',
+              dataIndex: 'description',
+              width: 150,
+              render: (_: unknown, record: any, index: number) => (
+                <Input
+                  value={record.description}
+                  onChange={(e) => handleLineChange(index, 'description', e.target.value)}
+                />
+              ),
+            },
+            {
+              title: 'เดบิต',
+              dataIndex: 'debitAmount',
+              width: 120,
+              render: (_: unknown, record: any, index: number) => (
+                <InputNumber
+                  value={record.debitAmount}
+                  onChange={(value) => handleLineChange(index, 'debitAmount', value || 0)}
+                  style={{ width: '100%' }}
+                  min={0}
+                  formatter={(value) => `${value}`.replace(/\B(?=(\d{3})+(?!\d))/g, ',')}
+                />
+              ),
+            },
+            {
+              title: 'เครดิต',
+              dataIndex: 'creditAmount',
+              width: 120,
+              render: (_: unknown, record: any, index: number) => (
+                <InputNumber
+                  value={record.creditAmount}
+                  onChange={(value) => handleLineChange(index, 'creditAmount', value || 0)}
+                  style={{ width: '100%' }}
+                  min={0}
+                  formatter={(value) => `${value}`.replace(/\B(?=(\d{3})+(?!\d))/g, ',')}
+                />
+              ),
+            },
+            {
+              title: '',
+              width: 50,
+              render: (_: unknown, __: any, index: number) => (
+                <Button
+                  type="text"
+                  danger
+                  icon={<DeleteOutlined />}
+                  onClick={() => handleRemoveLine(index)}
+                  disabled={lines.length <= 2}
+                />
+              ),
+            },
+          ]}
+          footer={() => (
+            <Row justify="space-between">
+              <Col>
+                <Button type="dashed" icon={<PlusOutlined />} onClick={handleAddLine}>
+                  เพิ่มบรรทัด
+                </Button>
+              </Col>
+              <Col>
+                <Space size="large">
+                  <Text strong style={{ color: isBalanced ? 'green' : 'red' }}>
+                    เดบิต: {totalDebit.toLocaleString('th-TH', { minimumFractionDigits: 2 })}
+                  </Text>
+                  <Text strong style={{ color: isBalanced ? 'green' : 'red' }}>
+                    เครดิต: {totalCredit.toLocaleString('th-TH', { minimumFractionDigits: 2 })}
+                  </Text>
+                </Space>
+              </Col>
+            </Row>
+          )}
+        />
+
+        {!isBalanced && (
+          <Alert
+            type="error"
+            message={`ยอดเดบิตและเครดิตไม่เท่ากัน (ต่าง ${Math.abs(totalDebit - totalCredit).toLocaleString('th-TH', { minimumFractionDigits: 2 })})`}
+            style={{ marginTop: 16 }}
+          />
+        )}
+      </Modal>
+
+      {/* View Modal */}
+      <Modal
+        title={`รายละเอียดสมุดรายวัน - ${selectedEntry?.docNo}`}
+        open={viewModalVisible}
+        onCancel={() => setViewModalVisible(false)}
+        footer={null}
+        width={800}
+      >
+        {selectedEntry && (
+          <>
+            <Row gutter={16} style={{ marginBottom: 16 }}>
+              <Col span={8}>
+                <Text type="secondary">วันที่เอกสาร</Text>
+                <div>{dayjs(selectedEntry.docDate).format('DD/MM/YYYY')}</div>
+              </Col>
+              <Col span={8}>
+                <Text type="secondary">ประเภท</Text>
+                <div>{JOURNAL_TYPES.find(t => t.value === selectedEntry.journalType)?.label}</div>
+              </Col>
+              <Col span={8}>
+                <Text type="secondary">สถานะ</Text>
+                <div>
+                  <Tag color={STATUS_CONFIG[selectedEntry.status]?.color}>
+                    {STATUS_CONFIG[selectedEntry.status]?.label}
+                  </Tag>
+                </div>
+              </Col>
+              <Col span={24} style={{ marginTop: 8 }}>
+                <Text type="secondary">คำอธิบาย</Text>
+                <div>{selectedEntry.description || '-'}</div>
+              </Col>
+            </Row>
+
+            <Table
+              dataSource={selectedEntry.lines}
+              rowKey="id"
+              pagination={false}
+              size="small"
+              columns={[
+                { title: 'รหัสบัญชี', dataIndex: 'accountCode', width: 100 },
+                { title: 'ชื่อบัญชี', dataIndex: 'accountName' },
+                { title: 'คำอธิบาย', dataIndex: 'description', render: (t: string) => t || '-' },
+                {
+                  title: 'เดบิต',
+                  dataIndex: 'debitAmount',
+                  width: 120,
+                  align: 'right',
+                  render: (val: number) => val > 0 ? Number(val).toLocaleString('th-TH', { minimumFractionDigits: 2 }) : '-',
+                },
+                {
+                  title: 'เครดิต',
+                  dataIndex: 'creditAmount',
+                  width: 120,
+                  align: 'right',
+                  render: (val: number) => val > 0 ? Number(val).toLocaleString('th-TH', { minimumFractionDigits: 2 }) : '-',
+                },
+              ]}
+              summary={() => (
+                <Table.Summary.Row style={{ background: '#fafafa' }}>
+                  <Table.Summary.Cell index={0} colSpan={3}>
+                    <Text strong>รวม</Text>
+                  </Table.Summary.Cell>
+                  <Table.Summary.Cell index={1} align="right">
+                    <Text strong>{Number(selectedEntry.totalDebit).toLocaleString('th-TH', { minimumFractionDigits: 2 })}</Text>
+                  </Table.Summary.Cell>
+                  <Table.Summary.Cell index={2} align="right">
+                    <Text strong>{Number(selectedEntry.totalCredit).toLocaleString('th-TH', { minimumFractionDigits: 2 })}</Text>
+                  </Table.Summary.Cell>
+                </Table.Summary.Row>
+              )}
+            />
+          </>
+        )}
+      </Modal>
+    </div>
   );
 };
 
