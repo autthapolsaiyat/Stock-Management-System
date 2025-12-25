@@ -55,7 +55,7 @@ export const productsApi = {
   createCategory: (data: any) => api.post('/api/categories', data),
   updateCategory: (id: number, data: any) => api.put(`/api/categories/${id}`, data),
   deleteCategory: (id: number) => api.delete(`/api/categories/${id}`),
-  getUnits: () => api.get('/api/units'),
+  getUnits: () => api.get('/api/products/units'),
   // NEW: Price History API
   getPriceHistory: () => api.get('/api/products/price-history'),
   getProductPriceHistory: (id: number) => api.get(`/api/products/${id}/price-history`),
@@ -72,8 +72,8 @@ export const categoriesApi = {
 
 // Units API
 export const unitsApi = {
-  getAll: () => api.get('/api/units'),
-  create: (data: any) => api.post('/api/units', data),
+  getAll: () => api.get('/api/products/units'),
+  create: (data: any) => api.post('/api/products/units', data),
 };
 
 // Customers API
