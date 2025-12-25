@@ -368,6 +368,335 @@ const ProfilePage = () => {
     </div>
   );
 
+  // ===== NEW GUIDES =====
+  
+  const purchasingGuide = (
+    <div>
+      <h4 style={{ color: '#3b82f6', marginBottom: 16 }}>🛒 คู่มือจัดซื้อ (Purchasing)</h4>
+      
+      <Steps
+        direction="vertical"
+        size="small"
+        current={-1}
+        items={[
+          {
+            title: '1. สร้างใบสั่งซื้อ (PO)',
+            description: (
+              <div style={{ fontSize: 13, color: '#9ca3af' }}>
+                <p>• ไปที่เมนู <Tag color="blue">ใบสั่งซื้อ</Tag></p>
+                <p>• กดปุ่ม "+ สร้างใบสั่งซื้อ"</p>
+                <p>• เลือก Supplier, เพิ่มสินค้าที่ต้องการสั่งซื้อ</p>
+                <p>• ระบุราคา จำนวน และวันที่ต้องการ</p>
+                <p>• กดบันทึก (สถานะ: ร่าง)</p>
+              </div>
+            ),
+            icon: <ShoppingCartOutlined style={{ color: '#3b82f6' }} />,
+          },
+          {
+            title: '2. ส่งขออนุมัติ',
+            description: (
+              <div style={{ fontSize: 13, color: '#9ca3af' }}>
+                <p>• ตรวจสอบข้อมูลให้ถูกต้อง</p>
+                <p>• กดปุ่ม "ส่งขออนุมัติ"</p>
+                <p>• รอ Manager อนุมัติ</p>
+              </div>
+            ),
+            icon: <FileTextOutlined style={{ color: '#f59e0b' }} />,
+          },
+          {
+            title: '3. ส่ง PO ให้ Supplier',
+            description: (
+              <div style={{ fontSize: 13, color: '#9ca3af' }}>
+                <p>• หลังจากได้รับการอนุมัติ</p>
+                <p>• กดปุ่ม "ส่ง PO"</p>
+                <p>• พิมพ์ PO ส่งให้ Supplier</p>
+              </div>
+            ),
+            icon: <CheckCircleOutlined style={{ color: '#10b981' }} />,
+          },
+          {
+            title: '4. รอรับสินค้า',
+            description: (
+              <div style={{ fontSize: 13, color: '#9ca3af' }}>
+                <p>• ติดตาม PO ที่รอรับสินค้า</p>
+                <p>• เมื่อสินค้ามาถึง ให้ Stock ทำ Goods Receipt (GR)</p>
+              </div>
+            ),
+            icon: <InboxOutlined style={{ color: '#06b6d4' }} />,
+          },
+        ]}
+      />
+
+      <Divider />
+      
+      <h4 style={{ marginBottom: 12 }}>📊 สถานะ PO</h4>
+      <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8, marginBottom: 16 }}>
+        <Tag color="default">ร่าง (Draft)</Tag>
+        <Tag color="orange">รออนุมัติ</Tag>
+        <Tag color="green">อนุมัติแล้ว</Tag>
+        <Tag color="blue">ส่งแล้ว</Tag>
+        <Tag color="cyan">รับสินค้าบางส่วน</Tag>
+        <Tag color="purple">รับสินค้าครบ</Tag>
+        <Tag color="red">ยกเลิก</Tag>
+      </div>
+
+      <h4 style={{ marginBottom: 12 }}>💡 Tips</h4>
+      <ul style={{ fontSize: 13, color: '#9ca3af', paddingLeft: 20 }}>
+        <li>สามารถสร้าง PO จากใบเสนอราคาได้โดยตรง</li>
+        <li>ตรวจสอบราคาและเงื่อนไขก่อนส่งขออนุมัติ</li>
+        <li>PO ที่ส่งแล้วไม่สามารถแก้ไขได้ ต้องยกเลิกและสร้างใหม่</li>
+      </ul>
+    </div>
+  );
+
+  const stockReportsGuide = (
+    <div>
+      <h4 style={{ color: '#8b5cf6', marginBottom: 16 }}>📊 คู่มือรายงานสต็อก</h4>
+      
+      <div style={{ marginBottom: 24 }}>
+        <h5 style={{ marginBottom: 12, color: '#06b6d4' }}>📦 ยอดคงเหลือ (Stock Balance)</h5>
+        <div style={{ fontSize: 13, color: '#9ca3af', paddingLeft: 16 }}>
+          <p>• แสดงยอดสินค้าคงเหลือแต่ละคลัง</p>
+          <p>• ดูต้นทุนเฉลี่ย (Average Cost)</p>
+          <p>• <span style={{ color: '#ef4444' }}>สีแดง</span> = สินค้าใกล้หมด (ต่ำกว่า Safety Stock)</p>
+          <p>• <span style={{ color: '#f59e0b' }}>สีส้ม</span> = สินค้าถึงจุดสั่งซื้อ (Reorder Point)</p>
+        </div>
+      </div>
+
+      <div style={{ marginBottom: 24 }}>
+        <h5 style={{ marginBottom: 12, color: '#10b981' }}>📋 Stock Card</h5>
+        <div style={{ fontSize: 13, color: '#9ca3af', paddingLeft: 16 }}>
+          <p>• แสดงประวัติการเคลื่อนไหวสินค้า</p>
+          <p>• เลือกสินค้าและช่วงวันที่</p>
+          <p>• ดูรายการ รับเข้า/จ่ายออก พร้อมยอดคงเหลือ</p>
+          <p>• Export เป็น Excel ได้</p>
+        </div>
+      </div>
+
+      <div style={{ marginBottom: 24 }}>
+        <h5 style={{ marginBottom: 12, color: '#f59e0b' }}>💰 Stock Valuation</h5>
+        <div style={{ fontSize: 13, color: '#9ca3af', paddingLeft: 16 }}>
+          <p>• คำนวณมูลค่าสินค้าคงคลัง</p>
+          <p>• ใช้วิธี FIFO (First In First Out)</p>
+          <p>• แสดงต้นทุนต่อหน่วย และมูลค่ารวม</p>
+          <p>• ใช้สำหรับปิดบัญชีสิ้นเดือน/ปี</p>
+        </div>
+      </div>
+
+      <div style={{ marginBottom: 24 }}>
+        <h5 style={{ marginBottom: 12, color: '#ef4444' }}>📅 Expiry Alert</h5>
+        <div style={{ fontSize: 13, color: '#9ca3af', paddingLeft: 16 }}>
+          <p>• แสดงสินค้าที่ใกล้หมดอายุ</p>
+          <p>• ตั้งค่าจำนวนวันแจ้งเตือนล่วงหน้าได้</p>
+          <p>• แสดง Lot/Batch Number</p>
+        </div>
+      </div>
+
+      <div style={{ marginBottom: 24 }}>
+        <h5 style={{ marginBottom: 12, color: '#3b82f6' }}>🔄 Stock Movement</h5>
+        <div style={{ fontSize: 13, color: '#9ca3af', paddingLeft: 16 }}>
+          <p>• รายงานการเคลื่อนไหวสินค้าทั้งหมด</p>
+          <p>• กรองตามประเภท: รับเข้า, เบิกออก, โอน, ปรับปรุง</p>
+          <p>• กรองตามคลัง และช่วงเวลา</p>
+        </div>
+      </div>
+
+      <Divider />
+      
+      <h4 style={{ marginBottom: 12 }}>💡 Tips</h4>
+      <ul style={{ fontSize: 13, color: '#9ca3af', paddingLeft: 20 }}>
+        <li>ตรวจสอบ Stock Balance เป็นประจำ</li>
+        <li>Export รายงานสำหรับ Auditor ได้</li>
+        <li>ใช้ Barcode Scanner เพื่อค้นหาสินค้าเร็วขึ้น</li>
+      </ul>
+    </div>
+  );
+
+  const settingsGuide = (
+    <div>
+      <h4 style={{ color: '#f59e0b', marginBottom: 16 }}>⚙️ คู่มือการตั้งค่า</h4>
+      
+      <div style={{ marginBottom: 24 }}>
+        <h5 style={{ marginBottom: 12, color: '#3b82f6' }}>👤 ตั้งค่าส่วนตัว</h5>
+        <div style={{ fontSize: 13, color: '#9ca3af', paddingLeft: 16 }}>
+          <p>• <strong>ข้อมูลผู้ขาย:</strong> ชื่อ, เบอร์โทร, อีเมล, ลายเซ็น</p>
+          <p>• <strong>ค่าเริ่มต้นใบเสนอราคา:</strong> วันยืนราคา, วันส่งมอบ, เครดิต</p>
+          <p>• ไปที่ <Tag color="blue">ตั้งค่า → ตั้งค่าส่วนตัว</Tag></p>
+        </div>
+      </div>
+
+      <div style={{ marginBottom: 24 }}>
+        <h5 style={{ marginBottom: 12, color: '#10b981' }}>🏢 ตั้งค่าบริษัท (Admin เท่านั้น)</h5>
+        <div style={{ fontSize: 13, color: '#9ca3af', paddingLeft: 16 }}>
+          <p>• ชื่อบริษัท, ที่อยู่, เลขประจำตัวผู้เสียภาษี</p>
+          <p>• โลโก้บริษัท</p>
+          <p>• ข้อมูลธนาคาร</p>
+          <p>• ไปที่ <Tag color="green">ตั้งค่า → ตั้งค่าบริษัท</Tag></p>
+        </div>
+      </div>
+
+      <div style={{ marginBottom: 24 }}>
+        <h5 style={{ marginBottom: 12, color: '#8b5cf6' }}>📁 Master Data</h5>
+        <div style={{ fontSize: 13, color: '#9ca3af', paddingLeft: 16 }}>
+          <p>• <strong>หมวดหมู่สินค้า:</strong> จัดกลุ่มสินค้า</p>
+          <p>• <strong>หน่วยสินค้า:</strong> ชิ้น, กล่อง, ลัง, etc.</p>
+          <p>• <strong>คลังสินค้า:</strong> เพิ่ม/แก้ไขคลัง</p>
+          <p>• ไปที่ <Tag color="purple">ตั้งค่า → หน้าหลัก</Tag></p>
+        </div>
+      </div>
+
+      <div style={{ marginBottom: 24 }}>
+        <h5 style={{ marginBottom: 12, color: '#ef4444' }}>🔔 ตั้งค่าการแจ้งเตือน</h5>
+        <div style={{ fontSize: 13, color: '#9ca3af', paddingLeft: 16 }}>
+          <p>• แจ้งเตือนสินค้าใกล้หมด (Reorder Point)</p>
+          <p>• แจ้งเตือนสินค้าหมดอายุ (Expiry Alert)</p>
+          <p>• กำหนดจำนวนวันแจ้งเตือนล่วงหน้า</p>
+        </div>
+      </div>
+
+      <div style={{ marginBottom: 24 }}>
+        <h5 style={{ marginBottom: 12, color: '#06b6d4' }}>📄 รูปแบบเลขที่เอกสาร</h5>
+        <div style={{ fontSize: 13, color: '#9ca3af', paddingLeft: 16 }}>
+          <p>• ตั้งค่า Prefix: QT, PO, GR, INV, SI</p>
+          <p>• รูปแบบ: PREFIX-YYMMDD-XXX</p>
+          <p>• ตัวอย่าง: QT-251225-001</p>
+        </div>
+      </div>
+
+      <Divider />
+      
+      <h4 style={{ marginBottom: 12 }}>💡 Tips</h4>
+      <ul style={{ fontSize: 13, color: '#9ca3af', paddingLeft: 20 }}>
+        <li>ตั้งค่าข้อมูลผู้ขายก่อนสร้างใบเสนอราคา</li>
+        <li>อัพโหลดลายเซ็นโดยการ Paste รูปภาพ (Ctrl+V)</li>
+        <li>ตรวจสอบเลขประจำตัวผู้เสียภาษีให้ถูกต้อง</li>
+      </ul>
+    </div>
+  );
+
+  const masterDataGuide = (
+    <div>
+      <h4 style={{ color: '#06b6d4', marginBottom: 16 }}>📚 คู่มือจัดการข้อมูลหลัก</h4>
+      
+      <div style={{ marginBottom: 24 }}>
+        <h5 style={{ marginBottom: 12, color: '#3b82f6' }}>📦 สินค้า (Products)</h5>
+        <div style={{ fontSize: 13, color: '#9ca3af', paddingLeft: 16 }}>
+          <p>• เพิ่ม/แก้ไข/ลบ สินค้า</p>
+          <p>• กำหนด: รหัส, ชื่อ, หมวดหมู่, หน่วย</p>
+          <p>• ตั้งราคาขาย, ต้นทุน, Safety Stock</p>
+          <p>• อัพโหลดรูปภาพสินค้า</p>
+          <p>• ไปที่ <Tag color="blue">สินค้า</Tag></p>
+        </div>
+      </div>
+
+      <div style={{ marginBottom: 24 }}>
+        <h5 style={{ marginBottom: 12, color: '#10b981' }}>👥 ลูกค้า (Customers)</h5>
+        <div style={{ fontSize: 13, color: '#9ca3af', paddingLeft: 16 }}>
+          <p>• เพิ่ม/แก้ไข/ลบ ลูกค้า</p>
+          <p>• กำหนด: รหัส, ชื่อ, ที่อยู่, เลขประจำตัวผู้เสียภาษี</p>
+          <p>• ข้อมูลติดต่อ: เบอร์โทร, อีเมล, ผู้ติดต่อ</p>
+          <p>• วงเงินเครดิต และจำนวนวันเครดิต</p>
+          <p>• ไปที่ <Tag color="green">ลูกค้า</Tag></p>
+        </div>
+      </div>
+
+      <div style={{ marginBottom: 24 }}>
+        <h5 style={{ marginBottom: 12, color: '#f59e0b' }}>🏭 Supplier</h5>
+        <div style={{ fontSize: 13, color: '#9ca3af', paddingLeft: 16 }}>
+          <p>• เพิ่ม/แก้ไข/ลบ Supplier</p>
+          <p>• กำหนด: รหัส, ชื่อ, ที่อยู่, เลขประจำตัวผู้เสียภาษี</p>
+          <p>• ข้อมูลติดต่อ และเงื่อนไขการค้า</p>
+          <p>• ไปที่ <Tag color="orange">Supplier</Tag></p>
+        </div>
+      </div>
+
+      <div style={{ marginBottom: 24 }}>
+        <h5 style={{ marginBottom: 12, color: '#8b5cf6' }}>🏪 คลังสินค้า (Warehouse)</h5>
+        <div style={{ fontSize: 13, color: '#9ca3af', paddingLeft: 16 }}>
+          <p>• เพิ่ม/แก้ไข คลังสินค้า</p>
+          <p>• กำหนด: รหัส, ชื่อ, ที่ตั้ง</p>
+          <p>• เปิด/ปิด การใช้งานคลัง</p>
+          <p>• ไปที่ <Tag color="purple">คลังสินค้า</Tag></p>
+        </div>
+      </div>
+
+      <Divider />
+      
+      <h4 style={{ marginBottom: 12 }}>💡 Tips</h4>
+      <ul style={{ fontSize: 13, color: '#9ca3af', paddingLeft: 20 }}>
+        <li>รหัสสินค้า/ลูกค้า/Supplier ไม่สามารถแก้ไขได้หลังบันทึก</li>
+        <li>ลบข้อมูลที่ถูกใช้งานแล้วไม่ได้ (มีการอ้างอิง)</li>
+        <li>ใช้ Import Excel เพื่อเพิ่มข้อมูลจำนวนมาก</li>
+      </ul>
+    </div>
+  );
+
+  const auditLogGuide = (
+    <div>
+      <h4 style={{ color: '#ef4444', marginBottom: 16 }}>📝 คู่มือ Audit Log (ISO Compliance)</h4>
+      
+      <div style={{ fontSize: 13, color: '#9ca3af', marginBottom: 16 }}>
+        <p>ระบบบันทึก Log ทุกการกระทำเพื่อความปลอดภัยและตรวจสอบย้อนหลังตามมาตรฐาน ISO</p>
+      </div>
+
+      <div style={{ marginBottom: 24 }}>
+        <h5 style={{ marginBottom: 12, color: '#3b82f6' }}>📋 ข้อมูลที่บันทึก</h5>
+        <div style={{ fontSize: 13, color: '#9ca3af', paddingLeft: 16 }}>
+          <p>• วันเวลาที่กระทำ</p>
+          <p>• ผู้ใช้งาน (User)</p>
+          <p>• IP Address</p>
+          <p>• Module (เช่น QUOTATION, PRODUCT)</p>
+          <p>• Action (เช่น CREATE, UPDATE, DELETE)</p>
+          <p>• รายละเอียดการเปลี่ยนแปลง</p>
+        </div>
+      </div>
+
+      <div style={{ marginBottom: 24 }}>
+        <h5 style={{ marginBottom: 12, color: '#10b981' }}>✅ Module ที่บันทึก</h5>
+        <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8 }}>
+          <Tag color="blue">PRODUCT</Tag>
+          <Tag color="green">CUSTOMER</Tag>
+          <Tag color="orange">SUPPLIER</Tag>
+          <Tag color="gold">QUOTATION</Tag>
+          <Tag color="cyan">PURCHASE_ORDER</Tag>
+          <Tag color="purple">GOODS_RECEIPT</Tag>
+          <Tag color="magenta">STOCK_ADJUSTMENT</Tag>
+          <Tag color="lime">STOCK_TRANSFER</Tag>
+          <Tag color="red">USER</Tag>
+          <Tag color="geekblue">SECURITY</Tag>
+        </div>
+      </div>
+
+      <div style={{ marginBottom: 24 }}>
+        <h5 style={{ marginBottom: 12, color: '#f59e0b' }}>🔍 การค้นหา Log</h5>
+        <div style={{ fontSize: 13, color: '#9ca3af', paddingLeft: 16 }}>
+          <p>• ไปที่ <Tag color="red">Super Admin → Activity Logs</Tag></p>
+          <p>• กรองตาม Module, Action, User</p>
+          <p>• กรองตามช่วงเวลา</p>
+          <p>• Export เป็น CSV สำหรับ Auditor</p>
+        </div>
+      </div>
+
+      <Divider />
+
+      <h4 style={{ marginBottom: 12 }}>🔐 Security Events</h4>
+      <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8, marginBottom: 16 }}>
+        <Tag color="green">LOGIN_SUCCESS</Tag>
+        <Tag color="orange">LOGIN_FAILED</Tag>
+        <Tag color="red">ACCOUNT_LOCKED</Tag>
+        <Tag color="purple">PASSWORD_CHANGED</Tag>
+        <Tag color="magenta">PERMISSION_DENIED</Tag>
+      </div>
+      
+      <h4 style={{ marginBottom: 12 }}>💡 หมายเหตุ</h4>
+      <ul style={{ fontSize: 13, color: '#9ca3af', paddingLeft: 20 }}>
+        <li>Log จะถูกเก็บไว้ 90 วัน แล้วลบอัตโนมัติ</li>
+        <li>ไม่สามารถแก้ไขหรือลบ Log ได้</li>
+        <li>ใช้สำหรับตรวจสอบความปลอดภัยและ Compliance</li>
+      </ul>
+    </div>
+  );
+
   const generalGuide = (
     <div>
       <h4 style={{ color: '#22c55e', marginBottom: 16 }}>🏠 การใช้งานทั่วไป</h4>
@@ -474,6 +803,44 @@ const ProfilePage = () => {
             </Panel>
           )}
 
+          {/* Purchasing Guide - for PURCHASING role or Admin */}
+          <Panel 
+            header={<span style={{ fontWeight: 600 }}>🛒 คู่มือจัดซื้อ - ใบสั่งซื้อ (PO)</span>} 
+            key="purchasing"
+            style={{ marginBottom: 8, borderRadius: 8, overflow: 'hidden' }}
+          >
+            {purchasingGuide}
+          </Panel>
+
+          {/* Stock Reports Guide */}
+          {(isStock || isManager || isAdmin) && (
+            <Panel 
+              header={<span style={{ fontWeight: 600 }}>📊 คู่มือรายงานสต็อก</span>} 
+              key="stockReports"
+              style={{ marginBottom: 8, borderRadius: 8, overflow: 'hidden' }}
+            >
+              {stockReportsGuide}
+            </Panel>
+          )}
+
+          {/* Master Data Guide */}
+          <Panel 
+            header={<span style={{ fontWeight: 600 }}>📚 คู่มือข้อมูลหลัก (Master Data)</span>} 
+            key="masterData"
+            style={{ marginBottom: 8, borderRadius: 8, overflow: 'hidden' }}
+          >
+            {masterDataGuide}
+          </Panel>
+
+          {/* Settings Guide */}
+          <Panel 
+            header={<span style={{ fontWeight: 600 }}>⚙️ คู่มือการตั้งค่า</span>} 
+            key="settings"
+            style={{ marginBottom: 8, borderRadius: 8, overflow: 'hidden' }}
+          >
+            {settingsGuide}
+          </Panel>
+
           {isAdmin && (
             <Panel 
               header={<span style={{ fontWeight: 600 }}>🛡️ คู่มือ Admin</span>} 
@@ -481,6 +848,17 @@ const ProfilePage = () => {
               style={{ marginBottom: 8, borderRadius: 8, overflow: 'hidden' }}
             >
               {adminGuide}
+            </Panel>
+          )}
+
+          {/* Audit Log Guide - Admin only */}
+          {isAdmin && (
+            <Panel 
+              header={<span style={{ fontWeight: 600 }}>📝 คู่มือ Audit Log (ISO)</span>} 
+              key="auditLog"
+              style={{ marginBottom: 8, borderRadius: 8, overflow: 'hidden' }}
+            >
+              {auditLogGuide}
             </Panel>
           )}
         </Collapse>
