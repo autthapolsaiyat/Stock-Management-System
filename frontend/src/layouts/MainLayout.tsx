@@ -92,8 +92,9 @@ const MainLayout: React.FC = () => {
       icon: <SettingOutlined />,
       label: 'ตั้งค่า',
       children: [
-        { key: '/settings', icon: <SettingOutlined />, label: 'ตั้งค่าส่วนตัว' },
-        { key: '/settings/company', icon: <SettingOutlined />, label: 'ตั้งค่าบริษัท' },
+        { key: '/settings', icon: <SettingOutlined />, label: 'ตั้งค่าระบบ' },
+        { key: '/settings/user', icon: <UserOutlined />, label: 'ตั้งค่าส่วนตัว' },
+        { key: '/settings/company', icon: <TeamOutlined />, label: 'ตั้งค่าบริษัท' },
         { key: '/admin/activity-logs', icon: <HistoryOutlined />, label: 'บันทึกกิจกรรม' },
       ],
     },
@@ -121,7 +122,7 @@ const MainLayout: React.FC = () => {
   // Limited menu for sales users
   const salesMenuItems = [
     {
-      key: '/settings',
+      key: '/settings/user',
       icon: <SettingOutlined />,
       label: 'ตั้งค่าส่วนตัว',
     },

@@ -74,6 +74,8 @@ export const categoriesApi = {
 export const unitsApi = {
   getAll: () => api.get('/api/products/units'),
   create: (data: any) => api.post('/api/products/units', data),
+  update: (id: number, data: any) => api.put(`/api/products/units/${id}`, data),
+  delete: (id: number) => api.delete(`/api/products/units/${id}`),
 };
 
 // Customers API

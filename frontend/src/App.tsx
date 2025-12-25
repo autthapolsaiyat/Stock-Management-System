@@ -36,6 +36,7 @@ import ReorderAlertPage from './pages/ReorderAlertPage';
 import ExpiryAlertPage from './pages/ExpiryAlertPage';
 import SerialNumberPage from './pages/SerialNumberPage';
 import BarcodeScannerPage from './pages/BarcodeScannerPage';
+import SettingsPage from './pages/SettingsPage';
 import { useAuth } from './contexts/AuthContext';
 
 // Protected Route Component
@@ -138,7 +139,8 @@ const App: React.FC = () => {
         <Route path="stock-counts" element={<StockCountsPage />} />
         
         {/* Settings */}
-        <Route path="settings" element={<UserSettingsPage />} />
+        <Route path="settings" element={<SettingsPage />} />
+        <Route path="settings/user" element={<UserSettingsPage />} />
         <Route path="settings/company" element={<CompanySettingsPage />} />
         <Route path="admin/users" element={<UserManagementPage />} />
         <Route path="admin/activity-logs" element={<ActivityLogPage />} />
