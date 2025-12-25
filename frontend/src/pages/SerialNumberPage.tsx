@@ -46,13 +46,13 @@ const SerialNumberPage: React.FC = () => {
   const [warehouses, setWarehouses] = useState<Warehouse[]>([]);
   const [serials, setSerials] = useState<SerialNumber[]>([]);
   const [selectedProduct, setSelectedProduct] = useState<number | null>(null);
-  const [selectedWarehouse, setSelectedWarehouse] = useState<number | null>(null);
+  const [selectedWarehouse] = useState<number | null>(null);
   const [selectedStatus, setSelectedStatus] = useState<string | null>(null);
   const [searchText, setSearchText] = useState('');
   const [modalVisible, setModalVisible] = useState(false);
   const [bulkMode, setBulkMode] = useState(false);
   const [form] = Form.useForm();
-  const [darkMode] = useState(() => localStorage.getItem('darkMode') === 'true');
+  const [] = useState(() => localStorage.getItem('darkMode') === 'true');
 
   useEffect(() => {
     loadMasterData();
