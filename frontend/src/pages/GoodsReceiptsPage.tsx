@@ -19,7 +19,7 @@ const GoodsReceiptsPage: React.FC = () => {
   const [detailVisible, setDetailVisible] = useState(false);
   const [selectedReceipt, setSelectedReceipt] = useState<GoodsReceipt | null>(null);
   const [editingReceipt, setEditingReceipt] = useState<GoodsReceipt | null>(null);
-  const [items, setItems] = useState<any[]>([{ productId: undefined, qty: 1, unitCost: 0 }]);
+  const [items, setItems] = useState<any[]>([{ productId: undefined, qty: 1, unitCost: 0, lotNo: '', expiryDate: null }]);
   const [form] = Form.useForm();
 
   useEffect(() => { loadData(); }, []);
@@ -50,7 +50,7 @@ const GoodsReceiptsPage: React.FC = () => {
   const handleCreate = () => {
     setEditingReceipt(null);
     form.resetFields();
-    setItems([{ productId: undefined, qty: 1, unitCost: 0 }]);
+    setItems([{ productId: undefined, qty: 1, unitCost: 0, lotNo: '', expiryDate: null }]);
     setModalVisible(true);
   };
 
@@ -180,7 +180,7 @@ const GoodsReceiptsPage: React.FC = () => {
     }
   };
 
-  const addItem = () => setItems([...items, { productId: undefined, qty: 1, unitCost: 0 }]);
+  const addItem = () => setItems([...items, { productId: undefined, qty: 1, unitCost: 0, lotNo: '', expiryDate: null }]);
   const removeItem = (index: number) => setItems(items.filter((_, i) => i !== index));
   const updateItem = (index: number, field: string, value: any) => {
     const newItems = [...items];
@@ -282,18 +282,32 @@ const GoodsReceiptsPage: React.FC = () => {
           <div style={{ marginBottom: 16 }}>
             <label style={{ color: '#e5e7eb', display: 'block', marginBottom: 8 }}>รายการสินค้า</label>
             {items.map((item, idx) => (
-              <Space key={idx} style={{ width: '100%', marginBottom: 8 }} align="center">
-                <Select
-                  placeholder="เลือกสินค้า" style={{ width: 250 }} value={item.productId}
-                  onChange={(v) => updateItem(idx, 'productId', v)}
-                  options={products.map(p => ({ value: p.id, label: `${p.code} - ${p.name}` }))}
-                  showSearch filterOption={(input, opt) => (opt?.label ?? '').toLowerCase().includes(input.toLowerCase())}
-                />
-                <InputNumber min={1} value={item.qty} onChange={(v) => updateItem(idx, 'qty', v)} placeholder="จำนวน" style={{ width: 100 }} />
-                <InputNumber min={0} value={item.unitCost} onChange={(v) => updateItem(idx, 'unitCost', v)} placeholder="ต้นทุน" style={{ width: 120 }} />
-                <span style={{ color: '#9ca3af', width: 100 }}>= ฿{((item.qty || 0) * (item.unitCost || 0)).toLocaleString()}</span>
-                {items.length > 1 && <Button type="text" danger onClick={() => removeItem(idx)}>ลบ</Button>}
-              </Space>
+              <div key={idx} style={{ marginBottom: 12, padding: 12, background: 'rgba(255,255,255,0.03)', borderRadius: 8 }}>
+                <Space style={{ width: '100%', marginBottom: 8 }} align="center" wrap>
+                  <Select
+                    placeholder="เลือกสินค้า" style={{ width: 220 }} value={item.productId}
+                    onChange={(v) => updateItem(idx, 'productId', v)}
+                    options={products.map(p => ({ value: p.id, label: `${p.code} - ${p.name}` }))}
+                    showSearch filterOption={(input, opt) => (opt?.label ?? '').toLowerCase().includes(input.toLowerCase())}
+                  />
+                  <InputNumber min={1} value={item.qty} onChange={(v) => updateItem(idx, 'qty', v)} placeholder="จำนวน" style={{ width: 90 }} />
+                  <InputNumber min={0} value={item.unitCost} onChange={(v) => updateItem(idx, 'unitCost', v)} placeholder="ต้นทุน" style={{ width: 110 }} />
+                  <Input 
+                    placeholder="Lot/Batch No" 
+                    value={item.lotNo} 
+                    onChange={(e) => updateItem(idx, 'lotNo', e.target.value)} 
+                    style={{ width: 120 }} 
+                  />
+                  <DatePicker 
+                    placeholder="วันหมดอายุ" 
+                    value={item.expiryDate ? dayjs(item.expiryDate) : null}
+                    onChange={(d) => updateItem(idx, 'expiryDate', d?.format('YYYY-MM-DD'))}
+                    style={{ width: 130 }} 
+                  />
+                  <span style={{ color: '#9ca3af', width: 90 }}>= ฿{((item.qty || 0) * (item.unitCost || 0)).toLocaleString()}</span>
+                  {items.length > 1 && <Button type="text" danger onClick={() => removeItem(idx)}>ลบ</Button>}
+                </Space>
+              </div>
             ))}
             <Button type="dashed" onClick={addItem} style={{ width: '100%' }}>+ เพิ่มรายการ</Button>
           </div>
@@ -318,7 +332,7 @@ const GoodsReceiptsPage: React.FC = () => {
       </Modal>
 
       {/* Detail Modal */}
-      <Modal title={`ใบรับสินค้า: ${selectedReceipt?.docFullNo || selectedReceipt?.docNo || ''}`} open={detailVisible} onCancel={() => setDetailVisible(false)} footer={null} width={700}>
+      <Modal title={`ใบรับสินค้า: ${selectedReceipt?.docFullNo || selectedReceipt?.docNo || ''}`} open={detailVisible} onCancel={() => setDetailVisible(false)} footer={null} width={900}>
         {selectedReceipt && (
           <div>
             <p><strong>ผู้จำหน่าย:</strong> {suppliers.find(s => s.id === selectedReceipt.supplierId)?.name}</p>
@@ -327,10 +341,12 @@ const GoodsReceiptsPage: React.FC = () => {
             <p><strong>สถานะ:</strong> <Tag color={statusColors[selectedReceipt.status]}>{statusLabels[selectedReceipt.status]}</Tag></p>
             <Table
               columns={[
-                { title: 'สินค้า', key: 'product', render: (_: any, r: any) => products.find(p => p.id === r.productId)?.name || '-' },
-                { title: 'จำนวน', dataIndex: 'qty', key: 'qty', align: 'right' as const },
-                { title: 'ต้นทุน', dataIndex: 'unitCost', key: 'unitCost', align: 'right' as const, render: (v: number) => `฿${(v || 0).toLocaleString()}` },
-                { title: 'รวม', dataIndex: 'lineTotal', key: 'lineTotal', align: 'right' as const, render: (v: number) => `฿${(v || 0).toLocaleString()}` },
+                { title: 'สินค้า', key: 'product', render: (_: any, r: any) => products.find(p => p.id === r.productId)?.name || r.itemName || '-' },
+                { title: 'จำนวน', dataIndex: 'qty', key: 'qty', align: 'right' as const, width: 80 },
+                { title: 'ต้นทุน', dataIndex: 'unitCost', key: 'unitCost', align: 'right' as const, width: 100, render: (v: number) => `฿${(v || 0).toLocaleString()}` },
+                { title: 'Lot/Batch', dataIndex: 'lotNo', key: 'lotNo', width: 100, render: (v: string) => v || '-' },
+                { title: 'วันหมดอายุ', dataIndex: 'expiryDate', key: 'expiryDate', width: 110, render: (v: string) => v ? dayjs(v).format('DD/MM/YYYY') : '-' },
+                { title: 'รวม', dataIndex: 'lineTotal', key: 'lineTotal', align: 'right' as const, width: 110, render: (v: number) => `฿${(v || 0).toLocaleString()}` },
               ]}
               dataSource={selectedReceipt.items || []}
               rowKey="id"
@@ -339,7 +355,7 @@ const GoodsReceiptsPage: React.FC = () => {
               summary={() => (
                 <Table.Summary>
                   <Table.Summary.Row>
-                    <Table.Summary.Cell index={0} colSpan={3} align="right"><strong>ยอดรวม</strong></Table.Summary.Cell>
+                    <Table.Summary.Cell index={0} colSpan={5} align="right"><strong>ยอดรวม</strong></Table.Summary.Cell>
                     <Table.Summary.Cell index={1} align="right"><strong style={{ color: '#10b981' }}>฿{(selectedReceipt.totalAmount || 0).toLocaleString()}</strong></Table.Summary.Cell>
                   </Table.Summary.Row>
                 </Table.Summary>
