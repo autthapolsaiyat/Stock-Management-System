@@ -109,6 +109,7 @@ const MainLayout: React.FC = () => {
         { key: '/reorder-alerts', icon: <AlertOutlined />, label: 'แจ้งเตือนสั่งซื้อ' },
         { key: '/expiry-alerts', icon: <ClockCircleOutlined />, label: 'แจ้งเตือนหมดอายุ' },
         { key: '/serial-numbers', icon: <BarcodeOutlined />, label: 'Serial Number' },
+        { key: '/barcode-scanner', icon: <BarcodeOutlined />, label: 'สแกน Barcode' },
         { key: '/stock-issues', icon: <ExportOutlined />, label: 'เบิกสินค้า' },
         { key: '/stock-transfers', icon: <SwapOutlined />, label: 'โอนสินค้า' },
         { key: '/stock-adjustments', icon: <SwapOutlined />, label: 'ปรับปรุงสต็อก' },

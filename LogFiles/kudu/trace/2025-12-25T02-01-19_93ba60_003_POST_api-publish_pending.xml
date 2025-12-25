@@ -1,0 +1,18 @@
+<step title="Incoming Request" date="2025-12-25T02:01:19.300" instance="93ba60" url="/api/publish?async=true&amp;deployer=GITHUB_ONE_DEPLOY&amp;type=zip&amp;message=%7B%22type%22%3A%22deployment%22%2C%22sha%22%3A%222ce90c3df3967229118a37dad1428cf22fb7c045%22%2C%22repoName%22%3A%22autthapolsaiyat%2FStock-Management-System%22%2C%22actor%22%3A%22autthapolsaiyat%22%2C%22slotName%22%3A%22production%22%2C%22commitMessage%22%3A%22feat%3A%20add%20Serial%20Number%20Tracking%20with%20CRUD%20and%20status%20management%22%7D" method="POST" type="request" pid="839,1,18" Host="svs-stock-api.scm.azurewebsites.net" User-Agent="GITHUBACTIONS_DeployWebAppToAzure_9c77270b4dc11c65de193eb13ad2e59e3b6f8f2f23b9c7b3dc72a9e29892decc" Authorization="Bea..." Content-Type="application/octet-stream" Cookie="ARRAffinity=93ba60693efd27c98d25ac695a6ef440c44ba4652104de2a3ed78f5e62ba7f13;Path=/;HttpOnly;Secure;Domain=svs-stock-api.scm.azurewebsites.net; ARRAffinitySameSite=93ba60693efd27c98d25ac695a6ef440c44ba4652104de2a3ed78f5e62ba7f13;Path=/;HttpOnly;SameSite=None;Secure;Domain=svs-stock-api.scm.azurewebsites.net" Transfer-Encoding="chunked" X-ARR-LOG-ID="67f0150d-71ea-457e-b9b9-e1f6a3cf54be" CLIENT-IP="64.236.134.234:4136" X-SITE-DEPLOYMENT-ID="svs-stock-api" WAS-DEFAULT-HOSTNAME="svs-stock-api.scm.azurewebsites.net" X-Forwarded-Proto="https" X-AppService-Proto="https" X-Forwarded-TlsVersion="1.3" X-WAWS-Unencoded-URL="/api/publish?async=true&amp;deployer=GITHUB_ONE_DEPLOY&amp;type=zip&amp;message=%7B%22type%22%3A%22deployment%22%2C%22sha%22%3A%222ce90c3df3967229118a37dad1428cf22fb7c045%22%2C%22repoName%22%3A%22autthapolsaiyat%2FStock-Management-System%22%2C%22actor%22%3A%22autthapolsaiyat%22%2C%22slotName%22%3A%22production%22%2C%22commitMessage%22%3A%22feat%3A%20add%20Serial%20Number%20Tracking%20with%20CRUD%20and%20status%20management%22%7D" X-Client-IP="64.236.134.234" X-Client-Port="4136" >
+  <step title="OneDeploy" date="2025-12-25T02:01:19.409" >
+    <step title="None repository commit" date="2025-12-25T02:01:19.452" >
+      <step title="Commit id: a332b465-8766-4f26-b67c-5a1af9b56972" date="2025-12-25T02:01:19.458" Message="N/A" AuthorName="N/A" AuthorEmail="N/A" /><!-- duration: 5ms -->
+    </step><!-- duration: 17ms -->
+    <step title="Starting PushDeployAsync" date="2025-12-25T02:01:19.474" /><!-- duration: 5ms -->
+    <step title="Removing node_modules symlink" date="2025-12-25T02:01:19.512" >
+      <step title="Removing _del_node_modules symlink" date="2025-12-25T02:01:19.610" >
+        <step title="Writing artifact to /tmp/zipdeploy/c0c1810a-a606-4bd5-aaa4-cded595c93f9.zip" date="2025-12-25T02:01:19.682" >
+          <step title="Writing multipart request body to /tmp/zipdeploy/c0c1810a-a606-4bd5-aaa4-cded595c93f9.zip" date="2025-12-25T02:01:19.694" /><!-- duration: 12ms -->
+        </step><!-- duration: 4054ms -->
+        <step title="Start deployment in the background" date="2025-12-25T02:01:23.765" >
+          <step title="Acquiring Deployment Lock" date="2025-12-25T02:01:23.903" /><!-- duration: 6ms -->
+          <step title="Acquired Deployment Lock" date="2025-12-25T02:01:23.952" /><!-- duration: 5ms -->
+        </step><!-- duration: 325ms -->
+      </step><!-- duration: 4494ms -->
+      <step title="Outgoing response" date="2025-12-25T02:01:24.117" type="response" statusCode="202" statusText="Accepted" /><!-- duration: 10ms -->
+    </step><!-- duration: 4621ms -->
