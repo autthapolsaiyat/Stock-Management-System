@@ -1,10 +1,11 @@
 import { useState, useEffect } from 'react';
-import { Card, Form, Input, Button, message, Avatar, Divider, Space, Tag, Spin, Collapse, Steps } from 'antd';
+import { Card, Form, Input, Button, message, Avatar, Divider, Space, Tag, Spin, Collapse, Steps, Progress } from 'antd';
 import { 
   UserOutlined, KeyOutlined, SaveOutlined, 
   BookOutlined, FileTextOutlined, ShoppingCartOutlined, 
   InboxOutlined, DollarOutlined, TeamOutlined,
-  SafetyOutlined, DatabaseOutlined, CheckCircleOutlined
+  SafetyOutlined, DatabaseOutlined, CheckCircleOutlined,
+  CheckOutlined, CloseOutlined
 } from '@ant-design/icons';
 import { useAuth } from '../contexts/AuthContext';
 import api from '../services/api';
@@ -12,12 +13,38 @@ import api from '../services/api';
 const { TextArea } = Input;
 const { Panel } = Collapse;
 
+// Password Strength Configuration
+const PASSWORD_RULES = [
+  { key: 'length', label: 'อย่างน้อย 8 ตัวอักษร', test: (p: string) => p.length >= 8 },
+  { key: 'lowercase', label: 'มีตัวพิมพ์เล็ก (a-z)', test: (p: string) => /[a-z]/.test(p) },
+  { key: 'uppercase', label: 'มีตัวพิมพ์ใหญ่ (A-Z)', test: (p: string) => /[A-Z]/.test(p) },
+  { key: 'number', label: 'มีตัวเลข (0-9)', test: (p: string) => /[0-9]/.test(p) },
+  { key: 'special', label: 'มีอักขระพิเศษ (!@#$%^&*)', test: (p: string) => /[!@#$%^&*()_+\-=\[\]{};':"\\|,.<>\/?]/.test(p) },
+];
+
+const getPasswordStrength = (password: string): { score: number; label: string; color: string; status: 'exception' | 'active' | 'success' | 'normal' } => {
+  if (!password) return { score: 0, label: '', color: '#d9d9d9', status: 'normal' };
+  
+  let passedRules = 0;
+  PASSWORD_RULES.forEach(rule => {
+    if (rule.test(password)) passedRules++;
+  });
+  
+  if (passedRules <= 1) return { score: 20, label: 'อ่อนมาก', color: '#ff4d4f', status: 'exception' };
+  if (passedRules === 2) return { score: 40, label: 'อ่อน', color: '#fa8c16', status: 'exception' };
+  if (passedRules === 3) return { score: 60, label: 'ปานกลาง', color: '#fadb14', status: 'active' };
+  if (passedRules === 4) return { score: 80, label: 'แข็งแรง', color: '#52c41a', status: 'success' };
+  return { score: 100, label: 'แข็งแรงมาก', color: '#1890ff', status: 'success' };
+};
+
 const ProfilePage = () => {
   const { user } = useAuth();
   const [loading, setLoading] = useState(false);
   const [saving, setSaving] = useState(false);
   const [profileForm] = Form.useForm();
   const [passwordForm] = Form.useForm();
+  const [newPassword, setNewPassword] = useState('');
+  const [passwordStrength, setPasswordStrength] = useState({ score: 0, label: '', color: '#d9d9d9', status: 'normal' as const });
 
   useEffect(() => {
     fetchProfile();
@@ -52,6 +79,12 @@ const ProfilePage = () => {
   };
 
   const handleChangePassword = async (values: any) => {
+    // Check password strength before submit
+    if (passwordStrength.score < 60) {
+      message.error('รหัสผ่านไม่แข็งแรงพอ กรุณาใช้รหัสผ่านที่ปลอดภัยกว่านี้');
+      return;
+    }
+    
     setLoading(true);
     try {
       await api.put('/api/auth/change-password', {
@@ -60,10 +93,17 @@ const ProfilePage = () => {
       });
       message.success('เปลี่ยนรหัสผ่านสำเร็จ');
       passwordForm.resetFields();
+      setNewPassword('');
+      setPasswordStrength({ score: 0, label: '', color: '#d9d9d9', status: 'normal' });
     } catch (error: any) {
       message.error(error.response?.data?.message || 'รหัสผ่านปัจจุบันไม่ถูกต้อง');
     }
     setLoading(false);
+  };
+
+  const handlePasswordChange = (value: string) => {
+    setNewPassword(value);
+    setPasswordStrength(getPasswordStrength(value));
   };
 
   const roleColors: Record<string, string> = {
@@ -535,11 +575,60 @@ const ProfilePage = () => {
                 label="รหัสผ่านใหม่"
                 rules={[
                   { required: true, message: 'กรุณาระบุรหัสผ่านใหม่' },
-                  { min: 6, message: 'รหัสผ่านต้องมีอย่างน้อย 6 ตัวอักษร' },
+                  { min: 8, message: 'รหัสผ่านต้องมีอย่างน้อย 8 ตัวอักษร' },
                 ]}
               >
-                <Input.Password placeholder="รหัสผ่านใหม่ (อย่างน้อย 6 ตัวอักษร)" />
+                <Input.Password 
+                  placeholder="รหัสผ่านใหม่ (อย่างน้อย 8 ตัวอักษร)" 
+                  onChange={(e) => handlePasswordChange(e.target.value)}
+                />
               </Form.Item>
+
+              {/* Password Strength Meter */}
+              {newPassword && (
+                <div style={{ marginBottom: 24 }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 8 }}>
+                    <span style={{ fontSize: 13 }}>ความแข็งแรง:</span>
+                    <span style={{ color: passwordStrength.color, fontWeight: 600 }}>
+                      {passwordStrength.label}
+                    </span>
+                  </div>
+                  <Progress 
+                    percent={passwordStrength.score} 
+                    showInfo={false}
+                    strokeColor={passwordStrength.color}
+                    size="small"
+                  />
+                  
+                  {/* Password Rules Checklist */}
+                  <div style={{ 
+                    marginTop: 12, 
+                    padding: 12, 
+                    background: 'rgba(255,255,255,0.05)', 
+                    borderRadius: 8,
+                    fontSize: 13 
+                  }}>
+                    {PASSWORD_RULES.map(rule => {
+                      const passed = rule.test(newPassword);
+                      return (
+                        <div 
+                          key={rule.key} 
+                          style={{ 
+                            display: 'flex', 
+                            alignItems: 'center', 
+                            gap: 8,
+                            marginBottom: 4,
+                            color: passed ? '#52c41a' : '#ff4d4f'
+                          }}
+                        >
+                          {passed ? <CheckOutlined /> : <CloseOutlined />}
+                          <span>{rule.label}</span>
+                        </div>
+                      );
+                    })}
+                  </div>
+                </div>
+              )}
 
               <Form.Item
                 name="confirmPassword"
@@ -566,9 +655,15 @@ const ProfilePage = () => {
                   htmlType="submit" 
                   loading={loading}
                   icon={<SaveOutlined />}
+                  disabled={passwordStrength.score < 60}
                 >
                   เปลี่ยนรหัสผ่าน
                 </Button>
+                {passwordStrength.score > 0 && passwordStrength.score < 60 && (
+                  <span style={{ marginLeft: 12, color: '#fa8c16', fontSize: 13 }}>
+                    ⚠️ รหัสผ่านต้องมีความแข็งแรงระดับ "ปานกลาง" ขึ้นไป
+                  </span>
+                )}
               </Form.Item>
             </Form>
           </Card>
