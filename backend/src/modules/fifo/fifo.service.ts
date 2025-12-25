@@ -528,7 +528,7 @@ export class FifoService {
         p.id as product_id,
         p.code as product_code,
         p.name as product_name,
-        p.unit,
+        u.name as unit,
         p.min_stock,
         p.max_stock,
         p.reorder_point,
@@ -541,6 +541,7 @@ export class FifoService {
         COALESCE(sb.avg_cost, 0) as avg_cost
       FROM products p
       LEFT JOIN product_categories c ON c.id = p.category_id
+      LEFT JOIN units u ON u.id = p.unit_id
       CROSS JOIN warehouses w
       LEFT JOIN stock_balance sb ON sb.product_id = p.id AND sb.warehouse_id = w.id
       WHERE p.is_active = true
