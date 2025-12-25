@@ -175,8 +175,8 @@ const QuotationPrintPreview: React.FC<QuotationPrintPreviewProps> = ({
     return parts.length > 0 ? parts.join(' ') : '-';
   };
 
-  // Check if discount should be hidden
-  const hideDiscount = quotation.discountDisplayMode === 'HIDE';
+  // Check if discount should be hidden (when HIDE mode or discount = 0)
+  const hideDiscount = quotation.discountDisplayMode === 'HIDE' || quotation.discountAmount === 0;
 
   return (
     <Modal
@@ -245,12 +245,12 @@ const QuotationPrintPreview: React.FC<QuotationPrintPreviewProps> = ({
                   <div><strong>ที่อยู่</strong> {customer?.name || quotation.customerName || '-'}</div>
                   <div style={{ paddingLeft: 30 }}>{customer?.address || quotation.customerAddress || '-'}</div>
                   <div style={{ marginTop: 5 }}>
-                    <strong>E-mail :</strong> {customer?.contactEmail || quotation.contactEmail || '-'}
+                    <strong>E-mail :</strong> {customer?.email || customer?.contactEmail || quotation.contactEmail || '-'}
                   </div>
                   <div>
-                    <strong>โทร/Tel :</strong> {customer?.contactPhone || quotation.contactPhone || '-'}
+                    <strong>โทร/Tel :</strong> {customer?.phone || customer?.contactPhone || quotation.contactPhone || '-'}
                     &nbsp;&nbsp;&nbsp;
-                    <strong>แฟกซ์/Fax :</strong> -
+                    <strong>แฟกซ์/Fax :</strong> {customer?.fax || '-'}
                   </div>
                 </td>
                 <td style={{ width: '40%', verticalAlign: 'top', border: '1px solid #000', padding: 8 }}>
