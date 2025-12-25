@@ -280,3 +280,171 @@
 2025-12-24T07:08:07.8117391Z Starting metrics collection.
 2025-12-24T07:08:07.8185870Z Container is running.
 2025-12-24T07:08:07.9748616Z Container start method finished after 3720 ms.
+2025-12-24T07:09:53.0975108Z Site startup probe succeeded after 105.1110129 seconds.
+2025-12-24T07:09:53.6638640Z Site is running with deployment version: a2f4743a-f1d7-46f8-8b28-8e98a1dfb03f
+2025-12-24T07:09:53.6660804Z Site started.
+2025-12-24T07:09:53.7346527Z Site is running with patch version NODE 20.19.5
+2025-12-24T07:39:18.6853181Z Container start method called.
+2025-12-24T07:39:18.6940238Z Establishing network.
+2025-12-24T07:39:18.7053027Z Pulling image: appsvc/node:20-lts_20251016.4.tuxprod.
+2025-12-24T07:39:19.9233992Z Container is starting.
+2025-12-24T07:39:19.9243653Z Establishing user namespace if not established already.
+2025-12-24T07:39:19.9244938Z Establishing network if not established already.
+2025-12-24T07:39:19.9246004Z Mounting volumes.
+2025-12-24T07:39:19.9333014Z Nested mountpoint 
+2025-12-24T07:39:20.0316798Z Nested mountpoint volatile/logs
+2025-12-24T07:39:20.1148405Z Nested mountpoint 
+2025-12-24T07:39:20.1562304Z Nested mountpoint 
+2025-12-24T07:39:20.2062718Z Nested mountpoint 
+2025-12-24T07:39:21.6245088Z Creating container.
+2025-12-24T07:39:21.6246446Z Creating pipes for streaming container io.
+2025-12-24T07:39:21.6553775Z Creating stdout named pipe at /podr/container/pipe/b9a9143fd19d_svs-stock-api/stdout_97ba3f89e81c49b68d0db034202e7341.
+2025-12-24T07:39:21.6650674Z Successfully created stdout named pipe at: /podr/container/pipe/b9a9143fd19d_svs-stock-api/stdout_97ba3f89e81c49b68d0db034202e7341.
+2025-12-24T07:39:21.6742285Z Opening named pipe /podr/container/pipe/b9a9143fd19d_svs-stock-api/stdout_97ba3f89e81c49b68d0db034202e7341 for reading in non-blocking mode.
+2025-12-24T07:39:21.6760805Z Successfully opened named pipe: /podr/container/pipe/b9a9143fd19d_svs-stock-api/stdout_97ba3f89e81c49b68d0db034202e7341.
+2025-12-24T07:39:21.6853237Z Successfully removed non-blocking flag from /podr/container/pipe/b9a9143fd19d_svs-stock-api/stdout_97ba3f89e81c49b68d0db034202e7341.
+2025-12-24T07:39:21.6856257Z Creating stderr named pipe at /podr/container/pipe/b9a9143fd19d_svs-stock-api/stderr_0bb1048b29804b5da8c6fa4788b10082.
+2025-12-24T07:39:21.6923749Z Successfully created stderr named pipe at: /podr/container/pipe/b9a9143fd19d_svs-stock-api/stderr_0bb1048b29804b5da8c6fa4788b10082.
+2025-12-24T07:39:21.6941671Z Opening named pipe /podr/container/pipe/b9a9143fd19d_svs-stock-api/stderr_0bb1048b29804b5da8c6fa4788b10082 for reading in non-blocking mode.
+2025-12-24T07:39:21.7122196Z Successfully opened named pipe: /podr/container/pipe/b9a9143fd19d_svs-stock-api/stderr_0bb1048b29804b5da8c6fa4788b10082.
+2025-12-24T07:39:21.7124548Z Successfully removed non-blocking flag from /podr/container/pipe/b9a9143fd19d_svs-stock-api/stderr_0bb1048b29804b5da8c6fa4788b10082.
+2025-12-24T07:39:21.7144479Z Creating container with image: appsvc/node:20-lts_20251016.4.tuxprod from registry: 10.1.0.5:13209 and fully qualified image name: 10.1.0.5:13209/appsvc/node:20-lts_20251016.4.tuxprod
+2025-12-24T07:39:22.9784822Z Starting container: b9a9143fd19d_svs-stock-api.
+2025-12-24T07:39:23.3051863Z Starting watchers and probes.
+2025-12-24T07:39:23.3235744Z Starting metrics collection.
+2025-12-24T07:39:23.3320138Z Container is running.
+2025-12-24T07:39:23.5762903Z Container start method finished after 4890 ms.
+2025-12-24T07:40:48.8174529Z Site startup probe succeeded after 85.1451647 seconds.
+2025-12-24T07:40:49.6708148Z Site is running with deployment version: 7132a399-c395-4371-8f67-e72534439479
+2025-12-24T07:40:49.6921960Z Site started.
+2025-12-24T07:40:49.7061562Z Site is running with patch version NODE 20.19.5
+2025-12-24T07:41:09.9050855Z Container is terminating. Grace period: 5 seconds.
+2025-12-24T07:41:10.0266948Z Stop and delete container. Retry count = 0
+2025-12-24T07:41:10.0282400Z Stopping container: 787b65bef2bb_svs-stock-api.
+2025-12-24T07:41:16.1492882Z Deleting container: 787b65bef2bb_svs-stock-api. Retry count = 0
+2025-12-24T07:41:20.2651157Z Container spec TerminationMessagePolicy  path 
+2025-12-24T07:41:20.2774823Z Container is terminated. Total time elapsed: 10368 ms.
+2025-12-24T07:41:20.2836965Z Site: svs-stock-api stopped.
+2025-12-24T08:04:52.6170327Z Container start method called.
+2025-12-24T08:04:52.6207417Z Establishing network.
+2025-12-24T08:04:52.6216995Z Pulling image: appsvc/node:20-lts_20251016.4.tuxprod.
+2025-12-24T08:04:54.0198947Z Container is starting.
+2025-12-24T08:04:54.0215526Z Establishing user namespace if not established already.
+2025-12-24T08:04:54.0281470Z Establishing network if not established already.
+2025-12-24T08:04:54.0286710Z Mounting volumes.
+2025-12-24T08:04:54.0387176Z Nested mountpoint 
+2025-12-24T08:04:54.1269001Z Nested mountpoint volatile/logs
+2025-12-24T08:04:54.1598805Z Nested mountpoint 
+2025-12-24T08:04:54.2681414Z Nested mountpoint 
+2025-12-24T08:04:54.3482010Z Nested mountpoint 
+2025-12-24T08:04:55.3600565Z Creating container.
+2025-12-24T08:04:55.3615951Z Creating pipes for streaming container io.
+2025-12-24T08:04:55.3766593Z Creating stdout named pipe at /podr/container/pipe/e9bfc95d2f1f_svs-stock-api/stdout_2a9c58e6dba9489d821f53d4a5dd23b4.
+2025-12-24T08:04:55.3780610Z Successfully created stdout named pipe at: /podr/container/pipe/e9bfc95d2f1f_svs-stock-api/stdout_2a9c58e6dba9489d821f53d4a5dd23b4.
+2025-12-24T08:04:55.3858978Z Opening named pipe /podr/container/pipe/e9bfc95d2f1f_svs-stock-api/stdout_2a9c58e6dba9489d821f53d4a5dd23b4 for reading in non-blocking mode.
+2025-12-24T08:04:55.3871208Z Successfully opened named pipe: /podr/container/pipe/e9bfc95d2f1f_svs-stock-api/stdout_2a9c58e6dba9489d821f53d4a5dd23b4.
+2025-12-24T08:04:55.3876388Z Successfully removed non-blocking flag from /podr/container/pipe/e9bfc95d2f1f_svs-stock-api/stdout_2a9c58e6dba9489d821f53d4a5dd23b4.
+2025-12-24T08:04:55.3883775Z Creating stderr named pipe at /podr/container/pipe/e9bfc95d2f1f_svs-stock-api/stderr_b5365142a7fa4c41af5237e2c3254b13.
+2025-12-24T08:04:55.3949761Z Successfully created stderr named pipe at: /podr/container/pipe/e9bfc95d2f1f_svs-stock-api/stderr_b5365142a7fa4c41af5237e2c3254b13.
+2025-12-24T08:04:55.3974613Z Opening named pipe /podr/container/pipe/e9bfc95d2f1f_svs-stock-api/stderr_b5365142a7fa4c41af5237e2c3254b13 for reading in non-blocking mode.
+2025-12-24T08:04:55.4047892Z Successfully opened named pipe: /podr/container/pipe/e9bfc95d2f1f_svs-stock-api/stderr_b5365142a7fa4c41af5237e2c3254b13.
+2025-12-24T08:04:55.4053237Z Successfully removed non-blocking flag from /podr/container/pipe/e9bfc95d2f1f_svs-stock-api/stderr_b5365142a7fa4c41af5237e2c3254b13.
+2025-12-24T08:04:55.4073428Z Creating container with image: appsvc/node:20-lts_20251016.4.tuxprod from registry: 10.1.0.5:13209 and fully qualified image name: 10.1.0.5:13209/appsvc/node:20-lts_20251016.4.tuxprod
+2025-12-24T08:04:56.6665089Z Starting container: e9bfc95d2f1f_svs-stock-api.
+2025-12-24T08:04:56.8660727Z Starting watchers and probes.
+2025-12-24T08:04:56.8724591Z Starting metrics collection.
+2025-12-24T08:04:56.8813208Z Container is running.
+2025-12-24T08:04:57.6406426Z Container start method finished after 5023 ms.
+2025-12-24T08:06:17.1125534Z Site startup probe succeeded after 79.2701433 seconds.
+2025-12-24T08:06:17.9683822Z Site is running with deployment version: 8d99364e-ab0c-4b05-b8bc-0340589fc812
+2025-12-24T08:06:17.9713896Z Site started.
+2025-12-24T08:06:17.9790750Z Site is running with patch version NODE 20.19.5
+2025-12-24T08:06:38.2246372Z Container is terminating. Grace period: 5 seconds.
+2025-12-24T08:06:38.3648503Z Stop and delete container. Retry count = 0
+2025-12-24T08:06:38.3778528Z Stopping container: b9a9143fd19d_svs-stock-api.
+2025-12-24T08:06:43.5030971Z Deleting container: b9a9143fd19d_svs-stock-api. Retry count = 0
+2025-12-24T08:06:47.6111369Z Container spec TerminationMessagePolicy  path 
+2025-12-24T08:06:47.6207961Z Container is terminated. Total time elapsed: 9388 ms.
+2025-12-24T08:06:47.6322274Z Site: svs-stock-api stopped.
+2025-12-24T08:07:00.6965405Z Container start method called.
+2025-12-24T08:07:00.6966975Z Establishing network.
+2025-12-24T08:07:00.6968004Z Pulling image: appsvc/node:20-lts_20251016.4.tuxprod.
+2025-12-24T08:07:02.8473729Z Container is starting.
+2025-12-24T08:07:02.8487242Z Establishing user namespace if not established already.
+2025-12-24T08:07:02.8663909Z Establishing network if not established already.
+2025-12-24T08:07:02.8667328Z Mounting volumes.
+2025-12-24T08:07:02.8672630Z Nested mountpoint 
+2025-12-24T08:07:03.0951052Z Nested mountpoint volatile/logs
+2025-12-24T08:07:03.1379739Z Nested mountpoint 
+2025-12-24T08:07:03.1708445Z Nested mountpoint 
+2025-12-24T08:07:03.2919276Z Nested mountpoint 
+2025-12-24T08:07:05.2645537Z Creating container.
+2025-12-24T08:07:05.2656556Z Creating pipes for streaming container io.
+2025-12-24T08:07:05.2657675Z Creating stdout named pipe at /podr/container/pipe/3d0c23fc64c2_svs-stock-api/stdout_751ec3083e6a4bd1821262d63a3e89bc.
+2025-12-24T08:07:05.2660120Z Successfully created stdout named pipe at: /podr/container/pipe/3d0c23fc64c2_svs-stock-api/stdout_751ec3083e6a4bd1821262d63a3e89bc.
+2025-12-24T08:07:05.2661067Z Opening named pipe /podr/container/pipe/3d0c23fc64c2_svs-stock-api/stdout_751ec3083e6a4bd1821262d63a3e89bc for reading in non-blocking mode.
+2025-12-24T08:07:05.2662255Z Successfully opened named pipe: /podr/container/pipe/3d0c23fc64c2_svs-stock-api/stdout_751ec3083e6a4bd1821262d63a3e89bc.
+2025-12-24T08:07:05.2663292Z Successfully removed non-blocking flag from /podr/container/pipe/3d0c23fc64c2_svs-stock-api/stdout_751ec3083e6a4bd1821262d63a3e89bc.
+2025-12-24T08:07:05.2664299Z Creating stderr named pipe at /podr/container/pipe/3d0c23fc64c2_svs-stock-api/stderr_e380fe6768b049d18e56481665d29761.
+2025-12-24T08:07:05.2665679Z Successfully created stderr named pipe at: /podr/container/pipe/3d0c23fc64c2_svs-stock-api/stderr_e380fe6768b049d18e56481665d29761.
+2025-12-24T08:07:05.2666668Z Opening named pipe /podr/container/pipe/3d0c23fc64c2_svs-stock-api/stderr_e380fe6768b049d18e56481665d29761 for reading in non-blocking mode.
+2025-12-24T08:07:05.2667829Z Successfully opened named pipe: /podr/container/pipe/3d0c23fc64c2_svs-stock-api/stderr_e380fe6768b049d18e56481665d29761.
+2025-12-24T08:07:05.2668765Z Successfully removed non-blocking flag from /podr/container/pipe/3d0c23fc64c2_svs-stock-api/stderr_e380fe6768b049d18e56481665d29761.
+2025-12-24T08:07:05.2669788Z Creating container with image: appsvc/node:20-lts_20251016.4.tuxprod from registry: 10.1.0.5:13209 and fully qualified image name: 10.1.0.5:13209/appsvc/node:20-lts_20251016.4.tuxprod
+2025-12-24T08:07:07.0020349Z Starting container: 3d0c23fc64c2_svs-stock-api.
+2025-12-24T08:07:08.0175036Z Starting watchers and probes.
+2025-12-24T08:07:08.0183039Z Starting metrics collection.
+2025-12-24T08:07:08.0184454Z Container is running.
+2025-12-24T08:07:08.9054772Z Container start method finished after 8207 ms.
+2025-12-24T08:09:46.2548728Z Site startup probe succeeded after 157.1989674 seconds.
+2025-12-24T08:09:46.8744952Z Site is running with deployment version: 8d99364e-ab0c-4b05-b8bc-0340589fc812
+2025-12-24T08:09:46.8843916Z Site started.
+2025-12-24T08:09:46.9041784Z Site is running with patch version NODE 20.19.5
+2025-12-24T08:10:07.0359899Z Container is terminating. Grace period: 5 seconds.
+2025-12-24T08:10:07.0781289Z Stop and delete container. Retry count = 0
+2025-12-24T08:10:07.0790552Z Stopping container: e9bfc95d2f1f_svs-stock-api.
+2025-12-24T08:10:12.4327407Z Deleting container: e9bfc95d2f1f_svs-stock-api. Retry count = 0
+2025-12-24T08:10:16.3496793Z Container spec TerminationMessagePolicy  path 
+2025-12-24T08:10:16.3515148Z Container is terminated. Total time elapsed: 9314 ms.
+2025-12-24T08:10:16.3595396Z Site: svs-stock-api stopped.
+2025-12-24T10:33:55.0419757Z Container start method called.
+2025-12-24T10:33:55.0504860Z Establishing network.
+2025-12-24T10:33:55.0526730Z Pulling image: appsvc/node:20-lts_20251016.4.tuxprod.
+2025-12-24T10:33:55.7962713Z Container is starting.
+2025-12-24T10:33:55.8033227Z Establishing user namespace if not established already.
+2025-12-24T10:33:55.8106810Z Establishing network if not established already.
+2025-12-24T10:33:55.8121658Z Mounting volumes.
+2025-12-24T10:33:55.8228209Z Nested mountpoint 
+2025-12-24T10:33:55.9136740Z Nested mountpoint volatile/logs
+2025-12-24T10:33:55.9306989Z Nested mountpoint 
+2025-12-24T10:33:55.9583457Z Nested mountpoint 
+2025-12-24T10:33:56.0373042Z Nested mountpoint 
+2025-12-24T10:33:57.6474976Z Creating container.
+2025-12-24T10:33:57.6508190Z Creating pipes for streaming container io.
+2025-12-24T10:33:57.6882832Z Creating stdout named pipe at /podr/container/pipe/2541870acc92_svs-stock-api/stdout_9161df89b4304ca9bfe004d51d1e8e98.
+2025-12-24T10:33:57.6898118Z Successfully created stdout named pipe at: /podr/container/pipe/2541870acc92_svs-stock-api/stdout_9161df89b4304ca9bfe004d51d1e8e98.
+2025-12-24T10:33:57.6901400Z Opening named pipe /podr/container/pipe/2541870acc92_svs-stock-api/stdout_9161df89b4304ca9bfe004d51d1e8e98 for reading in non-blocking mode.
+2025-12-24T10:33:57.6902582Z Successfully opened named pipe: /podr/container/pipe/2541870acc92_svs-stock-api/stdout_9161df89b4304ca9bfe004d51d1e8e98.
+2025-12-24T10:33:57.6903483Z Successfully removed non-blocking flag from /podr/container/pipe/2541870acc92_svs-stock-api/stdout_9161df89b4304ca9bfe004d51d1e8e98.
+2025-12-24T10:33:57.6904463Z Creating stderr named pipe at /podr/container/pipe/2541870acc92_svs-stock-api/stderr_489273dac201466e9439e7d53a51c467.
+2025-12-24T10:33:57.7194126Z Successfully created stderr named pipe at: /podr/container/pipe/2541870acc92_svs-stock-api/stderr_489273dac201466e9439e7d53a51c467.
+2025-12-24T10:33:57.7275352Z Opening named pipe /podr/container/pipe/2541870acc92_svs-stock-api/stderr_489273dac201466e9439e7d53a51c467 for reading in non-blocking mode.
+2025-12-24T10:33:57.7277914Z Successfully opened named pipe: /podr/container/pipe/2541870acc92_svs-stock-api/stderr_489273dac201466e9439e7d53a51c467.
+2025-12-24T10:33:57.7278875Z Successfully removed non-blocking flag from /podr/container/pipe/2541870acc92_svs-stock-api/stderr_489273dac201466e9439e7d53a51c467.
+2025-12-24T10:33:57.7377556Z Creating container with image: appsvc/node:20-lts_20251016.4.tuxprod from registry: 10.1.0.6:13209 and fully qualified image name: 10.1.0.6:13209/appsvc/node:20-lts_20251016.4.tuxprod
+2025-12-24T10:33:59.0482259Z Starting container: 2541870acc92_svs-stock-api.
+2025-12-24T10:33:59.1572336Z Starting watchers and probes.
+2025-12-24T10:33:59.1683621Z Starting metrics collection.
+2025-12-24T10:33:59.1803070Z Container is running.
+2025-12-24T10:33:59.6603622Z Container start method finished after 4586 ms.
+2025-12-24T10:35:25.8468375Z Site startup probe succeeded after 86.0866173 seconds.
+2025-12-24T10:35:26.5119726Z Site is running with deployment version: 4acdcedd-2073-4a25-bda3-99d035322fd6
+2025-12-24T10:35:26.5328296Z Site started.
+2025-12-24T10:35:26.5427288Z Site is running with patch version NODE 20.19.5
+2025-12-24T10:35:46.7760181Z Container is terminating. Grace period: 5 seconds.
+2025-12-24T10:35:46.8905853Z Stop and delete container. Retry count = 0
+2025-12-24T10:35:46.8993016Z Stopping container: 3d0c23fc64c2_svs-stock-api.
+2025-12-24T10:35:52.2203828Z Deleting container: 3d0c23fc64c2_svs-stock-api. Retry count = 0
+2025-12-24T10:35:56.2933670Z Container spec TerminationMessagePolicy  path 
+2025-12-24T10:35:56.3023293Z Container is terminated. Total time elapsed: 9519 ms.
+2025-12-24T10:35:56.3063701Z Site: svs-stock-api stopped.

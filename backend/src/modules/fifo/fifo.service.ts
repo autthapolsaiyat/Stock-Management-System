@@ -543,7 +543,7 @@ export class FifoService {
       LEFT JOIN product_categories c ON c.id = p.category_id
       LEFT JOIN units u ON u.id = p.unit_id
       CROSS JOIN warehouses w
-      LEFT JOIN stock_balance sb ON sb.product_id = p.id AND sb.warehouse_id = w.id
+      LEFT JOIN stock_balances sb ON sb.product_id = p.id AND sb.warehouse_id = w.id
       WHERE p.is_active = true
         AND (p.reorder_point > 0 OR p.min_stock > 0)
     `;
