@@ -10,7 +10,7 @@ import {
   CheckCircleOutlined, HistoryOutlined, SearchOutlined, EditOutlined, WarningOutlined
 } from '@ant-design/icons';
 import dayjs from 'dayjs';
-import { quotationsApi, customersApi, productsApi, systemSettingsApi, unitsApi } from '../../services/api';
+import { quotationsApi, customersApi, productsApi, systemSettingsApi } from '../../services/api';
 import type { QuotationItem, QuotationImage, SourceType } from '../../types/quotation';
 import { useAuth } from '../../contexts/AuthContext';
 import SettingsModal from '../../components/quotation/SettingsModal';
@@ -40,7 +40,6 @@ const QuotationForm: React.FC = () => {
   const [customers, setCustomers] = useState<any[]>([]);
   const [products, setProducts] = useState<any[]>([]);
   const [categories, setCategories] = useState<any[]>([]);
-  const [units, setUnits] = useState<string[]>([]);
   const [priceHistory, setPriceHistory] = useState<Record<number, any>>({});
   const [settings, setSettings] = useState<any>({});
   const [selectedCustomer, setSelectedCustomer] = useState<any>(null);
@@ -64,10 +63,6 @@ const QuotationForm: React.FC = () => {
   const [tempProductModalOpen, setTempProductModalOpen] = useState(false);
   const [calculatorOpen, setCalculatorOpen] = useState(false);
   const [previewOpen, setPreviewOpen] = useState(false);
-  const [editItemModalOpen, setEditItemModalOpen] = useState(false);
-  const [editingItemIndex, setEditingItemIndex] = useState<number | null>(null);
-  const [editItemForm] = Form.useForm();
-  const [editShowCustomUnit, setEditShowCustomUnit] = useState(false);
 
   // Calculated values
   const [summary, setSummary] = useState({
@@ -129,15 +124,6 @@ const QuotationForm: React.FC = () => {
       setCustomers(customersRes.data || []);
       setProducts(productsRes.data || []);
       setCategories(categoriesRes.data || []);
-      
-      // Load units (non-blocking)
-      try {
-        const unitsRes = await unitsApi.getAll();
-        setUnits(unitsRes.data || ['ea', 'set', 'box', 'pack', 'unit', 'งาน', 'รายการ']);
-      } catch (e) {
-        console.log('Units API not available, using defaults');
-        setUnits(['ea', 'set', 'box', 'pack', 'unit', 'งาน', 'รายการ']);
-      }
       
       // Load price history (non-blocking)
       try {
@@ -402,73 +388,6 @@ const QuotationForm: React.FC = () => {
     setTempProductModalOpen(false);
   };
 
-  const handleEditItem = (index: number) => {
-    const item = items[index];
-    const isCustomUnit = units.length > 0 && !units.includes(item.unit || '');
-    
-    editItemForm.setFieldsValue({
-      itemCode: item.itemCode,
-      itemName: item.itemName,
-      itemDescription: item.itemDescription,
-      brand: item.brand,
-      qty: item.qty,
-      unit: isCustomUnit ? 'other' : item.unit,
-      customUnit: isCustomUnit ? item.unit : undefined,
-      unitPrice: item.unitPrice,
-      estimatedCost: item.estimatedCost,
-    });
-    setEditShowCustomUnit(isCustomUnit);
-    setEditingItemIndex(index);
-    setEditItemModalOpen(true);
-  };
-
-  const handleSaveEditItem = async () => {
-    if (editingItemIndex === null) return;
-    const values = editItemForm.getFieldsValue();
-    const newItems = [...items];
-    const item = newItems[editingItemIndex];
-    
-    let finalUnit = values.unit;
-    if (values.unit === 'other' && values.customUnit) {
-      finalUnit = values.customUnit;
-      // Create new unit in backend
-      try {
-        await unitsApi.create({ name: values.customUnit });
-        const unitsRes = await unitsApi.getAll();
-        setUnits(unitsRes.data || []);
-      } catch (e) {
-        // Unit might already exist, ignore error
-      }
-    }
-    
-    item.itemCode = values.itemCode;
-    item.itemName = values.itemName;
-    item.itemDescription = values.itemDescription;
-    item.brand = values.brand;
-    item.qty = values.qty || 1;
-    item.unit = finalUnit;
-    item.unitPrice = values.unitPrice || 0;
-    item.estimatedCost = values.estimatedCost || 0;
-    
-    const netPrice = item.unitPrice - (item.discountAmount || 0);
-    item.lineTotal = item.qty * netPrice;
-    item.expectedMarginPercent = netPrice > 0 ? ((netPrice - item.estimatedCost) / netPrice) * 100 : 0;
-    
-    setItems(newItems);
-    setEditItemModalOpen(false);
-    setEditingItemIndex(null);
-    setEditShowCustomUnit(false);
-    editItemForm.resetFields();
-    message.success('แก้ไขรายการสำเร็จ');
-  };
-
-  const handleEditUnitChange = (value: string) => {
-    setEditShowCustomUnit(value === 'other');
-    if (value !== 'other') {
-      editItemForm.setFieldValue('customUnit', undefined);
-    }
-  };
-
   const handleItemChange = (index: number, field: string, value: any) => {
     const newItems = [...items];
     (newItems[index] as any)[field] = value;
@@ -629,16 +548,11 @@ const QuotationForm: React.FC = () => {
     },
     {
       title: '',
-      width: 90,
-      render: (_: any, __: QuotationItem, index: number) => (
-        <Space size="small">
-          <Tooltip title="แก้ไข">
-            <Button type="text" icon={<EditOutlined />} onClick={() => handleEditItem(index)} />
-          </Tooltip>
-          <Popconfirm title="ลบรายการนี้?" onConfirm={() => handleRemoveItem(index)}>
-            <Button type="text" danger icon={<DeleteOutlined />} />
-          </Popconfirm>
-        </Space>
+      width: 50,
+      render: (_: any, __: any, index: number) => (
+        <Popconfirm title="ลบรายการนี้?" onConfirm={() => handleRemoveItem(index)}>
+          <Button type="text" danger icon={<DeleteOutlined />} />
+        </Popconfirm>
       ),
     },
   ];
@@ -1062,87 +976,6 @@ const QuotationForm: React.FC = () => {
       {/* Other Modals */}
       <TempProductModal open={tempProductModalOpen} onClose={() => setTempProductModalOpen(false)} onAdd={handleAddTempProduct} />
       <SettingsModal open={settingsModalOpen} onClose={() => setSettingsModalOpen(false)} onSave={() => { loadInitialData(); setSettingsModalOpen(false); }} />
-      
-      {/* Edit Item Modal */}
-      <Modal
-        title="✏️ แก้ไขรายการสินค้า"
-        open={editItemModalOpen}
-        onCancel={() => { setEditItemModalOpen(false); setEditingItemIndex(null); setEditShowCustomUnit(false); editItemForm.resetFields(); }}
-        onOk={handleSaveEditItem}
-        okText="บันทึก"
-        cancelText="ยกเลิก"
-        width={600}
-      >
-        <Form form={editItemForm} layout="vertical">
-          <Row gutter={16}>
-            <Col span={8}>
-              <Form.Item label="รหัสสินค้า" name="itemCode">
-                <Input />
-              </Form.Item>
-            </Col>
-            <Col span={16}>
-              <Form.Item label="ชื่อสินค้า" name="itemName" rules={[{ required: true, message: 'กรุณากรอกชื่อสินค้า' }]}>
-                <Input />
-              </Form.Item>
-            </Col>
-          </Row>
-          <Form.Item label="รายละเอียด" name="itemDescription">
-            <TextArea rows={3} />
-          </Form.Item>
-          <Row gutter={16}>
-            <Col span={8}>
-              <Form.Item label="ยี่ห้อ" name="brand">
-                <Input />
-              </Form.Item>
-            </Col>
-            <Col span={8}>
-              <Form.Item label="จำนวน" name="qty" rules={[{ required: true, message: 'กรุณากรอกจำนวน' }]}>
-                <InputNumber min={1} style={{ width: '100%' }} />
-              </Form.Item>
-            </Col>
-            <Col span={editShowCustomUnit ? 4 : 8}>
-              <Form.Item label="หน่วย" name="unit" rules={[{ required: true, message: 'กรุณาเลือกหน่วย' }]}>
-                <Select onChange={handleEditUnitChange}>
-                  {units.map(u => (
-                    <Select.Option key={u} value={u}>{u}</Select.Option>
-                  ))}
-                  <Select.Option value="other">+ เพิ่มหน่วยใหม่...</Select.Option>
-                </Select>
-              </Form.Item>
-            </Col>
-            {editShowCustomUnit && (
-              <Col span={4}>
-                <Form.Item label="ระบุหน่วย" name="customUnit" rules={[{ required: true, message: 'กรุณาระบุ' }]}>
-                  <Input placeholder="เช่น งาน" />
-                </Form.Item>
-              </Col>
-            )}
-          </Row>
-          <Row gutter={16}>
-            <Col span={12}>
-              <Form.Item label="ราคา/หน่วย" name="unitPrice" rules={[{ required: true, message: 'กรุณากรอกราคา' }]}>
-                <InputNumber
-                  min={0}
-                  style={{ width: '100%' }}
-                  formatter={(v) => `${v}`.replace(/\B(?=(\d{3})+(?!\d))/g, ',')}
-                  parser={(v) => v!.replace(/,/g, '') as any}
-                />
-              </Form.Item>
-            </Col>
-            <Col span={12}>
-              <Form.Item label="ต้นทุนโดยประมาณ" name="estimatedCost">
-                <InputNumber
-                  min={0}
-                  style={{ width: '100%' }}
-                  formatter={(v) => `${v}`.replace(/\B(?=(\d{3})+(?!\d))/g, ',')}
-                  parser={(v) => v!.replace(/,/g, '') as any}
-                />
-              </Form.Item>
-            </Col>
-          </Row>
-        </Form>
-      </Modal>
-
       <QuickCalculator
         open={calculatorOpen}
         onClose={() => setCalculatorOpen(false)}
