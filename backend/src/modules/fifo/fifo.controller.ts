@@ -1,4 +1,4 @@
-import { Controller, Get, Query, ParseIntPipe, UseGuards, Request } from '@nestjs/common';
+import { Controller, Get, Post, Body, Query, Param, ParseIntPipe, UseGuards, Request } from '@nestjs/common';
 import { ApiTags, ApiBearerAuth, ApiQuery } from '@nestjs/swagger';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { FifoService } from './fifo.service';
@@ -226,5 +226,87 @@ export class FifoController {
     });
     
     return result;
+  }
+
+  // ==================== Serial Number Endpoints ====================
+
+  @Get('serial-numbers')
+  @ApiQuery({ name: 'productId', required: false })
+  @ApiQuery({ name: 'warehouseId', required: false })
+  @ApiQuery({ name: 'status', required: false })
+  @ApiQuery({ name: 'search', required: false })
+  async getSerialNumbers(
+    @Query('productId') productId?: number,
+    @Query('warehouseId') warehouseId?: number,
+    @Query('status') status?: string,
+    @Query('search') search?: string,
+  ) {
+    return this.fifoService.getSerialNumbers({
+      productId: productId ? Number(productId) : undefined,
+      warehouseId: warehouseId ? Number(warehouseId) : undefined,
+      status,
+      search,
+    });
+  }
+
+  @Post('serial-numbers')
+  async createSerialNumber(
+    @Body() body: {
+      productId: number;
+      serialNo: string;
+      warehouseId?: number;
+      grId?: number;
+      grDocNo?: string;
+      lotNo?: string;
+      expiryDate?: string;
+      notes?: string;
+    },
+    @Request() req: any,
+  ) {
+    return this.fifoService.createSerialNumber({
+      ...body,
+      createdBy: req.user?.sub,
+    });
+  }
+
+  @Post('serial-numbers/bulk')
+  async createBulkSerialNumbers(
+    @Body() body: {
+      productId: number;
+      serialNumbers: string[];
+      warehouseId?: number;
+      grId?: number;
+      grDocNo?: string;
+      lotNo?: string;
+      expiryDate?: string;
+    },
+    @Request() req: any,
+  ) {
+    return this.fifoService.createBulkSerialNumbers({
+      ...body,
+      createdBy: req.user?.sub,
+    });
+  }
+
+  @Post('serial-numbers/:id/status')
+  async updateSerialStatus(
+    @Param('id', ParseIntPipe) id: number,
+    @Body() body: {
+      status: string;
+      invoiceId?: number;
+      invoiceDocNo?: string;
+      notes?: string;
+    },
+  ) {
+    return this.fifoService.updateSerialStatus(id, body.status, body);
+  }
+
+  @Get('serial-numbers/lookup/:serialNo')
+  async lookupSerial(@Param('serialNo') serialNo: string) {
+    const result = await this.fifoService.lookupSerial(serialNo);
+    if (!result) {
+      return { found: false };
+    }
+    return { found: true, ...result };
   }
 }

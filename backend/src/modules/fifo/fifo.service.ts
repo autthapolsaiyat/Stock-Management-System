@@ -1,7 +1,7 @@
 import { Injectable, BadRequestException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository, MoreThan, QueryRunner } from 'typeorm';
-import { FifoLayerEntity, FifoTransactionEntity, StockBalanceEntity } from './entities';
+import { Repository, MoreThan, QueryRunner, Like } from 'typeorm';
+import { FifoLayerEntity, FifoTransactionEntity, StockBalanceEntity, SerialNumberEntity } from './entities';
 
 export interface CreateLayerParams {
   productId: number;
@@ -27,6 +27,8 @@ export class FifoService {
     private transactionRepository: Repository<FifoTransactionEntity>,
     @InjectRepository(StockBalanceEntity)
     private balanceRepository: Repository<StockBalanceEntity>,
+    @InjectRepository(SerialNumberEntity)
+    private serialRepository: Repository<SerialNumberEntity>,
   ) {}
 
   async createLayer(params: CreateLayerParams, queryRunner?: QueryRunner): Promise<FifoLayerEntity> {
@@ -741,6 +743,160 @@ export class FifoService {
         totalAlerts: alerts.length,
       },
       alerts,
+    };
+  }
+
+  // ==================== Serial Number Methods ====================
+
+  async getSerialNumbers(filters: {
+    productId?: number;
+    warehouseId?: number;
+    status?: string;
+    search?: string;
+  }) {
+    const where: any = {};
+    
+    if (filters.productId) where.productId = filters.productId;
+    if (filters.warehouseId) where.warehouseId = filters.warehouseId;
+    if (filters.status) where.status = filters.status;
+    if (filters.search) where.serialNo = Like(`%${filters.search}%`);
+    
+    const serials = await this.serialRepository.find({
+      where,
+      relations: ['product'],
+      order: { createdAt: 'DESC' },
+      take: 500,
+    });
+    
+    return serials.map(s => ({
+      id: s.id,
+      serialNo: s.serialNo,
+      productId: s.productId,
+      productCode: s.product?.code,
+      productName: s.product?.name,
+      warehouseId: s.warehouseId,
+      status: s.status,
+      grId: s.grId,
+      grDocNo: s.grDocNo,
+      receivedDate: s.receivedDate,
+      invoiceId: s.invoiceId,
+      invoiceDocNo: s.invoiceDocNo,
+      soldDate: s.soldDate,
+      lotNo: s.lotNo,
+      expiryDate: s.expiryDate,
+      notes: s.notes,
+      createdAt: s.createdAt,
+    }));
+  }
+
+  async createSerialNumber(data: {
+    productId: number;
+    serialNo: string;
+    warehouseId?: number;
+    grId?: number;
+    grDocNo?: string;
+    lotNo?: string;
+    expiryDate?: string;
+    notes?: string;
+    createdBy?: number;
+  }) {
+    // Check if serial already exists for this product
+    const existing = await this.serialRepository.findOne({
+      where: { productId: data.productId, serialNo: data.serialNo },
+    });
+    
+    if (existing) {
+      throw new BadRequestException(`Serial number ${data.serialNo} already exists for this product`);
+    }
+    
+    const serial = this.serialRepository.create({
+      productId: data.productId,
+      serialNo: data.serialNo,
+      warehouseId: data.warehouseId,
+      status: 'IN_STOCK',
+      grId: data.grId,
+      grDocNo: data.grDocNo,
+      receivedDate: new Date(),
+      lotNo: data.lotNo,
+      expiryDate: data.expiryDate ? new Date(data.expiryDate) : null,
+      notes: data.notes,
+      createdBy: data.createdBy,
+    });
+    
+    return this.serialRepository.save(serial);
+  }
+
+  async createBulkSerialNumbers(data: {
+    productId: number;
+    serialNumbers: string[];
+    warehouseId?: number;
+    grId?: number;
+    grDocNo?: string;
+    lotNo?: string;
+    expiryDate?: string;
+    createdBy?: number;
+  }) {
+    const results = { created: 0, skipped: 0, errors: [] as string[] };
+    
+    for (const serialNo of data.serialNumbers) {
+      try {
+        await this.createSerialNumber({
+          ...data,
+          serialNo: serialNo.trim(),
+        });
+        results.created++;
+      } catch (error: any) {
+        results.skipped++;
+        results.errors.push(`${serialNo}: ${error.message}`);
+      }
+    }
+    
+    return results;
+  }
+
+  async updateSerialStatus(id: number, status: string, data?: {
+    invoiceId?: number;
+    invoiceDocNo?: string;
+    notes?: string;
+  }) {
+    const serial = await this.serialRepository.findOne({ where: { id } });
+    if (!serial) {
+      throw new BadRequestException('Serial number not found');
+    }
+    
+    serial.status = status;
+    if (data?.invoiceId) serial.invoiceId = data.invoiceId;
+    if (data?.invoiceDocNo) serial.invoiceDocNo = data.invoiceDocNo;
+    if (data?.notes) serial.notes = data.notes;
+    if (status === 'SOLD') serial.soldDate = new Date();
+    
+    return this.serialRepository.save(serial);
+  }
+
+  async lookupSerial(serialNo: string) {
+    const serial = await this.serialRepository.findOne({
+      where: { serialNo },
+      relations: ['product'],
+    });
+    
+    if (!serial) {
+      return null;
+    }
+    
+    return {
+      id: serial.id,
+      serialNo: serial.serialNo,
+      productId: serial.productId,
+      productCode: serial.product?.code,
+      productName: serial.product?.name,
+      warehouseId: serial.warehouseId,
+      status: serial.status,
+      grDocNo: serial.grDocNo,
+      receivedDate: serial.receivedDate,
+      invoiceDocNo: serial.invoiceDocNo,
+      soldDate: serial.soldDate,
+      lotNo: serial.lotNo,
+      expiryDate: serial.expiryDate,
     };
   }
 }

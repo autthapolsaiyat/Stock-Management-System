@@ -24,6 +24,7 @@ import {
   HistoryOutlined,
   AlertOutlined,
   ClockCircleOutlined,
+  BarcodeOutlined,
 } from '@ant-design/icons';
 import { useAuth } from '../contexts/AuthContext';
 import { SettingOutlined } from '@ant-design/icons';
@@ -107,6 +108,7 @@ const MainLayout: React.FC = () => {
         { key: '/stock-movement', icon: <SwapOutlined />, label: 'การเคลื่อนไหว' },
         { key: '/reorder-alerts', icon: <AlertOutlined />, label: 'แจ้งเตือนสั่งซื้อ' },
         { key: '/expiry-alerts', icon: <ClockCircleOutlined />, label: 'แจ้งเตือนหมดอายุ' },
+        { key: '/serial-numbers', icon: <BarcodeOutlined />, label: 'Serial Number' },
         { key: '/stock-issues', icon: <ExportOutlined />, label: 'เบิกสินค้า' },
         { key: '/stock-transfers', icon: <SwapOutlined />, label: 'โอนสินค้า' },
         { key: '/stock-adjustments', icon: <SwapOutlined />, label: 'ปรับปรุงสต็อก' },
