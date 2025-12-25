@@ -5,6 +5,8 @@ import { ProductEntity } from './entities/product.entity';
 import { ProductCategoryEntity } from './entities/product-category.entity';
 import { UnitEntity } from './entities/unit.entity';
 import { CreateProductDto, UpdateProductDto, CreateCategoryDto, CreateUnitDto } from './dto/product.dto';
+import { AuditLogService } from '../audit-log/audit-log.service';
+import { AuditContext } from '../../common/types';
 
 @Injectable()
 export class ProductService {
@@ -13,6 +15,7 @@ export class ProductService {
     @InjectRepository(ProductCategoryEntity) private categoryRepository: Repository<ProductCategoryEntity>,
     @InjectRepository(UnitEntity) private unitRepository: Repository<UnitEntity>,
     private dataSource: DataSource,
+    private auditLogService: AuditLogService,
   ) {}
 
   async findAll(categoryId?: number, quotationType?: string) {
@@ -28,25 +31,74 @@ export class ProductService {
     return product;
   }
 
-  async create(dto: CreateProductDto) {
+  async create(dto: CreateProductDto, ctx?: AuditContext) {
     const existing = await this.productRepository.findOne({ where: { code: dto.code } });
     if (existing) throw new ConflictException('Product code already exists');
 
     const product = this.productRepository.create({ ...dto, isActive: true });
     const savedProduct = await this.productRepository.save(product);
+    
+    // Audit Log
+    if (ctx) {
+      await this.auditLogService.log({
+        module: 'PRODUCT',
+        action: 'CREATE',
+        documentId: savedProduct.id,
+        documentNo: savedProduct.code,
+        userId: ctx.userId,
+        userName: ctx.userName,
+        ipAddress: ctx.ipAddress,
+        userAgent: ctx.userAgent,
+        details: { name: savedProduct.name, code: savedProduct.code },
+      });
+    }
+    
     return this.findOne(savedProduct.id);
   }
 
-  async update(id: number, dto: UpdateProductDto) {
+  async update(id: number, dto: UpdateProductDto, ctx?: AuditContext) {
     const product = await this.findOne(id);
+    const oldData = { ...product };
     Object.assign(product, dto);
     await this.productRepository.save(product);
+    
+    // Audit Log
+    if (ctx) {
+      await this.auditLogService.log({
+        module: 'PRODUCT',
+        action: 'UPDATE',
+        documentId: id,
+        documentNo: product.code,
+        userId: ctx.userId,
+        userName: ctx.userName,
+        ipAddress: ctx.ipAddress,
+        userAgent: ctx.userAgent,
+        details: { before: { name: oldData.name, sellingPrice: oldData.sellingPrice }, after: { name: product.name, sellingPrice: product.sellingPrice } },
+      });
+    }
+    
     return this.findOne(id);
   }
 
-  async delete(id: number) {
+  async delete(id: number, ctx?: AuditContext) {
     const product = await this.findOne(id);
     product.isActive = false;
+    
+    // Audit Log
+    if (ctx) {
+      await this.auditLogService.log({
+        module: 'PRODUCT',
+        action: 'DELETE',
+        documentId: id,
+        documentNo: product.code,
+        userId: ctx.userId,
+        userName: ctx.userName,
+        ipAddress: ctx.ipAddress,
+        userAgent: ctx.userAgent,
+        details: { name: product.name },
+      });
+    }
+    
     return this.productRepository.save(product);
   }
 
@@ -55,8 +107,69 @@ export class ProductService {
     return this.categoryRepository.find({ where: { isActive: true } });
   }
 
-  async createCategory(dto: CreateCategoryDto) {
+  async createCategory(dto: CreateCategoryDto, ctx?: AuditContext) {
     const category = this.categoryRepository.create({ ...dto, isActive: true });
+    const saved = await this.categoryRepository.save(category);
+    
+    if (ctx) {
+      await this.auditLogService.log({
+        module: 'CATEGORY',
+        action: 'CREATE',
+        documentId: saved.id,
+        documentNo: saved.code,
+        userId: ctx.userId,
+        userName: ctx.userName,
+        ipAddress: ctx.ipAddress,
+        userAgent: ctx.userAgent,
+        details: { name: saved.name },
+      });
+    }
+    
+    return saved;
+  }
+
+  async updateCategory(id: number, dto: any, ctx?: AuditContext) {
+    const category = await this.categoryRepository.findOne({ where: { id } });
+    if (!category) throw new NotFoundException('Category not found');
+    Object.assign(category, dto);
+    const saved = await this.categoryRepository.save(category);
+    
+    if (ctx) {
+      await this.auditLogService.log({
+        module: 'CATEGORY',
+        action: 'UPDATE',
+        documentId: id,
+        documentNo: saved.code,
+        userId: ctx.userId,
+        userName: ctx.userName,
+        ipAddress: ctx.ipAddress,
+        userAgent: ctx.userAgent,
+        details: { name: saved.name },
+      });
+    }
+    
+    return saved;
+  }
+
+  async deleteCategory(id: number, ctx?: AuditContext) {
+    const category = await this.categoryRepository.findOne({ where: { id } });
+    if (!category) throw new NotFoundException('Category not found');
+    category.isActive = false;
+    
+    if (ctx) {
+      await this.auditLogService.log({
+        module: 'CATEGORY',
+        action: 'DELETE',
+        documentId: id,
+        documentNo: category.code,
+        userId: ctx.userId,
+        userName: ctx.userName,
+        ipAddress: ctx.ipAddress,
+        userAgent: ctx.userAgent,
+        details: { name: category.name },
+      });
+    }
+    
     return this.categoryRepository.save(category);
   }
 
@@ -65,10 +178,71 @@ export class ProductService {
     return this.unitRepository.find({ where: { isActive: true } });
   }
 
-  async createUnit(dto: CreateUnitDto) {
+  async createUnit(dto: CreateUnitDto, ctx?: AuditContext) {
     const existing = await this.unitRepository.findOne({ where: { name: dto.name } });
     if (existing) throw new ConflictException('Unit name already exists');
     const unit = this.unitRepository.create({ ...dto, isActive: true });
+    const saved = await this.unitRepository.save(unit);
+    
+    if (ctx) {
+      await this.auditLogService.log({
+        module: 'UNIT',
+        action: 'CREATE',
+        documentId: saved.id,
+        documentNo: saved.name,
+        userId: ctx.userId,
+        userName: ctx.userName,
+        ipAddress: ctx.ipAddress,
+        userAgent: ctx.userAgent,
+        details: { name: saved.name },
+      });
+    }
+    
+    return saved;
+  }
+
+  async updateUnit(id: number, dto: any, ctx?: AuditContext) {
+    const unit = await this.unitRepository.findOne({ where: { id } });
+    if (!unit) throw new NotFoundException('Unit not found');
+    Object.assign(unit, dto);
+    const saved = await this.unitRepository.save(unit);
+    
+    if (ctx) {
+      await this.auditLogService.log({
+        module: 'UNIT',
+        action: 'UPDATE',
+        documentId: id,
+        documentNo: saved.name,
+        userId: ctx.userId,
+        userName: ctx.userName,
+        ipAddress: ctx.ipAddress,
+        userAgent: ctx.userAgent,
+        details: { name: saved.name },
+      });
+    }
+    
+    return saved;
+  }
+
+  async deleteUnit(id: number, ctx?: AuditContext) {
+    const unit = await this.unitRepository.findOne({ where: { id } });
+    if (!unit) throw new NotFoundException('Unit not found');
+    unit.isActive = false;
+    
+    if (ctx) {
+      await this.auditLogService.log({
+        module: 'UNIT',
+        action: 'DELETE',
+        documentId: id,
+        documentNo: unit.name,
+        userId: ctx.userId,
+        userName: ctx.userName,
+        ipAddress: ctx.ipAddress,
+        userAgent: ctx.userAgent,
+        details: { name: unit.name },
+      });
+    }
+    
     return this.unitRepository.save(unit);
   }
 

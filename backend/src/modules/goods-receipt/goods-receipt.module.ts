@@ -8,6 +8,7 @@ import { FifoModule } from '../fifo/fifo.module';
 import { PurchaseOrderModule } from '../purchase-order/purchase-order.module';
 import { TempProductModule } from '../temp-product/temp-product.module';
 import { SystemSettingsModule } from '../system-settings/system-settings.module';
+import { AuditLogModule } from '../audit-log/audit-log.module';
 
 @Module({
   imports: [
@@ -17,6 +18,7 @@ import { SystemSettingsModule } from '../system-settings/system-settings.module'
     forwardRef(() => PurchaseOrderModule),
     TempProductModule,
     SystemSettingsModule,
+    AuditLogModule,
   ],
   controllers: [GoodsReceiptController],
   providers: [GoodsReceiptService],

@@ -2,12 +2,15 @@ import { Injectable, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { SupplierEntity } from './entities/supplier.entity';
+import { AuditLogService } from '../audit-log/audit-log.service';
+import { AuditContext } from '../../common/types';
 
 @Injectable()
 export class SupplierService {
   constructor(
     @InjectRepository(SupplierEntity)
     private supplierRepository: Repository<SupplierEntity>,
+    private auditLogService: AuditLogService,
   ) {}
 
   async findAll() {
@@ -20,20 +23,68 @@ export class SupplierService {
     return supplier;
   }
 
-  async create(dto: any) {
+  async create(dto: any, ctx?: AuditContext) {
     const supplier = this.supplierRepository.create({ ...dto, isActive: true });
-    return this.supplierRepository.save(supplier);
+    const saved = await this.supplierRepository.save(supplier);
+    
+    if (ctx) {
+      await this.auditLogService.log({
+        module: 'SUPPLIER',
+        action: 'CREATE',
+        documentId: saved.id,
+        documentNo: saved.code,
+        userId: ctx.userId,
+        userName: ctx.userName,
+        ipAddress: ctx.ipAddress,
+        userAgent: ctx.userAgent,
+        details: { name: saved.name, code: saved.code },
+      });
+    }
+    
+    return saved;
   }
 
-  async update(id: number, dto: any) {
+  async update(id: number, dto: any, ctx?: AuditContext) {
     const supplier = await this.findOne(id);
+    const oldData = { name: supplier.name, phone: supplier.phone };
     Object.assign(supplier, dto);
-    return this.supplierRepository.save(supplier);
+    const saved = await this.supplierRepository.save(supplier);
+    
+    if (ctx) {
+      await this.auditLogService.log({
+        module: 'SUPPLIER',
+        action: 'UPDATE',
+        documentId: id,
+        documentNo: saved.code,
+        userId: ctx.userId,
+        userName: ctx.userName,
+        ipAddress: ctx.ipAddress,
+        userAgent: ctx.userAgent,
+        details: { before: oldData, after: { name: saved.name, phone: saved.phone } },
+      });
+    }
+    
+    return saved;
   }
 
-  async delete(id: number) {
+  async delete(id: number, ctx?: AuditContext) {
     const supplier = await this.findOne(id);
     supplier.isActive = false;
+    
+    if (ctx) {
+      await this.auditLogService.log({
+        module: 'SUPPLIER',
+        action: 'DELETE',
+        documentId: id,
+        documentNo: supplier.code,
+        userId: ctx.userId,
+        userName: ctx.userName,
+        ipAddress: ctx.ipAddress,
+        userAgent: ctx.userAgent,
+        details: { name: supplier.name },
+      });
+    }
+    
     return this.supplierRepository.save(supplier);
   }
 }

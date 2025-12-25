@@ -6,6 +6,8 @@ import { UserEntity } from './entities/user.entity';
 import { RoleEntity } from './entities/role.entity';
 import { UserRoleEntity } from './entities/user-role.entity';
 import { CreateUserDto, UpdateUserDto } from './dto/user.dto';
+import { AuditLogService } from '../audit-log/audit-log.service';
+import { AuditContext } from '../../common/types';
 
 @Injectable()
 export class UserService {
@@ -13,6 +15,7 @@ export class UserService {
     @InjectRepository(UserEntity) private userRepository: Repository<UserEntity>,
     @InjectRepository(RoleEntity) private roleRepository: Repository<RoleEntity>,
     @InjectRepository(UserRoleEntity) private userRoleRepository: Repository<UserRoleEntity>,
+    private auditLogService: AuditLogService,
   ) {}
 
   async findAll() {
@@ -49,7 +52,7 @@ export class UserService {
     return user;
   }
 
-  async create(dto: CreateUserDto) {
+  async create(dto: CreateUserDto, ctx?: AuditContext) {
     const existing = await this.userRepository.findOne({ where: { username: dto.username } });
     if (existing) throw new ConflictException('Username already exists');
 
@@ -67,11 +70,26 @@ export class UserService {
     if (dto.roleIds?.length) {
       await this.assignRoles(savedUser.id, dto.roleIds);
     }
+    
+    // Audit Log
+    if (ctx) {
+      await this.auditLogService.log({
+        module: 'USER',
+        action: 'CREATE',
+        documentId: savedUser.id,
+        documentNo: savedUser.username,
+        userId: ctx.userId,
+        userName: ctx.userName,
+        ipAddress: ctx.ipAddress,
+        userAgent: ctx.userAgent,
+        details: { fullName: savedUser.fullName, email: savedUser.email },
+      });
+    }
 
     return this.findOne(savedUser.id);
   }
 
-  async update(id: number, dto: UpdateUserDto) {
+  async update(id: number, dto: UpdateUserDto, ctx?: AuditContext) {
     const user = await this.findOne(id);
     
     if (dto.fullName) user.fullName = dto.fullName;
@@ -84,13 +102,44 @@ export class UserService {
     if (dto.roleIds) {
       await this.assignRoles(id, dto.roleIds);
     }
+    
+    // Audit Log
+    if (ctx) {
+      await this.auditLogService.log({
+        module: 'USER',
+        action: 'UPDATE',
+        documentId: id,
+        documentNo: user.username,
+        userId: ctx.userId,
+        userName: ctx.userName,
+        ipAddress: ctx.ipAddress,
+        userAgent: ctx.userAgent,
+        details: { fullName: user.fullName, isActive: user.isActive },
+      });
+    }
 
     return this.findOne(id);
   }
 
-  async delete(id: number) {
+  async delete(id: number, ctx?: AuditContext) {
     const user = await this.findOne(id);
     user.isActive = false;
+    
+    // Audit Log
+    if (ctx) {
+      await this.auditLogService.log({
+        module: 'USER',
+        action: 'DELETE',
+        documentId: id,
+        documentNo: user.username,
+        userId: ctx.userId,
+        userName: ctx.userName,
+        ipAddress: ctx.ipAddress,
+        userAgent: ctx.userAgent,
+        details: { fullName: user.fullName },
+      });
+    }
+    
     return this.userRepository.save(user);
   }
 
@@ -107,7 +156,7 @@ export class UserService {
     });
   }
 
-  async updateRolesByCodes(userId: number, roleCodes: string[]) {
+  async updateRolesByCodes(userId: number, roleCodes: string[], ctx?: AuditContext) {
     await this.findOne(userId);
     
     const roles = await this.roleRepository.find({
@@ -121,20 +170,64 @@ export class UserService {
     );
     await this.userRoleRepository.save(userRoles);
     
+    // Audit Log
+    if (ctx) {
+      await this.auditLogService.log({
+        module: 'USER',
+        action: 'UPDATE_ROLES',
+        documentId: userId,
+        userId: ctx.userId,
+        userName: ctx.userName,
+        ipAddress: ctx.ipAddress,
+        userAgent: ctx.userAgent,
+        details: { roles: roleCodes },
+      });
+    }
+    
     return { message: 'Roles updated successfully' };
   }
 
-  async resetPassword(userId: number, newPassword: string) {
+  async resetPassword(userId: number, newPassword: string, ctx?: AuditContext) {
     const user = await this.findOne(userId);
     user.passwordHash = await bcrypt.hash(newPassword, 10);
     await this.userRepository.save(user);
+    
+    // Audit Log
+    if (ctx) {
+      await this.auditLogService.log({
+        module: 'USER',
+        action: 'RESET_PASSWORD',
+        documentId: userId,
+        documentNo: user.username,
+        userId: ctx.userId,
+        userName: ctx.userName,
+        ipAddress: ctx.ipAddress,
+        userAgent: ctx.userAgent,
+      });
+    }
+    
     return { message: 'Password reset successfully' };
   }
 
-  async toggleActive(userId: number) {
+  async toggleActive(userId: number, ctx?: AuditContext) {
     const user = await this.findOne(userId);
     user.isActive = !user.isActive;
     await this.userRepository.save(user);
+    
+    // Audit Log
+    if (ctx) {
+      await this.auditLogService.log({
+        module: 'USER',
+        action: user.isActive ? 'ACTIVATE' : 'DEACTIVATE',
+        documentId: userId,
+        documentNo: user.username,
+        userId: ctx.userId,
+        userName: ctx.userName,
+        ipAddress: ctx.ipAddress,
+        userAgent: ctx.userAgent,
+      });
+    }
+    
     return { message: `User ${user.isActive ? 'activated' : 'deactivated'} successfully` };
   }
 }

@@ -8,9 +8,13 @@ import { RoleEntity } from './entities/role.entity';
 import { PermissionEntity } from './entities/permission.entity';
 import { UserRoleEntity } from './entities/user-role.entity';
 import { RolePermissionEntity } from './entities/role-permission.entity';
+import { AuditLogModule } from '../audit-log/audit-log.module';
 
 @Module({
-  imports: [TypeOrmModule.forFeature([UserEntity, RoleEntity, PermissionEntity, UserRoleEntity, RolePermissionEntity])],
+  imports: [
+    TypeOrmModule.forFeature([UserEntity, RoleEntity, PermissionEntity, UserRoleEntity, RolePermissionEntity]),
+    AuditLogModule,
+  ],
   controllers: [UserController, RoleController],
   providers: [UserService],
   exports: [UserService],

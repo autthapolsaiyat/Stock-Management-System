@@ -1,8 +1,9 @@
-import { Controller, Get, Post, Put, Delete, Param, Body, UseGuards, ParseIntPipe } from '@nestjs/common';
+import { Controller, Get, Post, Put, Delete, Param, Body, UseGuards, ParseIntPipe, Req } from '@nestjs/common';
 import { ApiTags, ApiBearerAuth, ApiOperation } from '@nestjs/swagger';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { UserService } from './user.service';
 import { CreateUserDto, UpdateUserDto } from './dto/user.dto';
+import { getAuditContext } from '../../common/utils';
 
 @ApiTags('Users')
 @ApiBearerAuth()
@@ -31,37 +32,37 @@ export class UserController {
 
   @Post()
   @ApiOperation({ summary: 'Create user' })
-  create(@Body() dto: CreateUserDto) {
-    return this.userService.create(dto);
+  create(@Body() dto: CreateUserDto, @Req() req: any) {
+    return this.userService.create(dto, getAuditContext(req));
   }
 
   @Put(':id')
   @ApiOperation({ summary: 'Update user' })
-  update(@Param('id', ParseIntPipe) id: number, @Body() dto: UpdateUserDto) {
-    return this.userService.update(id, dto);
+  update(@Param('id', ParseIntPipe) id: number, @Body() dto: UpdateUserDto, @Req() req: any) {
+    return this.userService.update(id, dto, getAuditContext(req));
   }
 
   @Put(':id/roles')
   @ApiOperation({ summary: 'Update user roles by code' })
-  updateRoles(@Param('id', ParseIntPipe) id: number, @Body() body: { roles: string[] }) {
-    return this.userService.updateRolesByCodes(id, body.roles);
+  updateRoles(@Param('id', ParseIntPipe) id: number, @Body() body: { roles: string[] }, @Req() req: any) {
+    return this.userService.updateRolesByCodes(id, body.roles, getAuditContext(req));
   }
 
   @Put(':id/password')
   @ApiOperation({ summary: 'Reset user password' })
-  resetPassword(@Param('id', ParseIntPipe) id: number, @Body() body: { password: string }) {
-    return this.userService.resetPassword(id, body.password);
+  resetPassword(@Param('id', ParseIntPipe) id: number, @Body() body: { password: string }, @Req() req: any) {
+    return this.userService.resetPassword(id, body.password, getAuditContext(req));
   }
 
   @Put(':id/toggle-active')
   @ApiOperation({ summary: 'Toggle user active status' })
-  toggleActive(@Param('id', ParseIntPipe) id: number) {
-    return this.userService.toggleActive(id);
+  toggleActive(@Param('id', ParseIntPipe) id: number, @Req() req: any) {
+    return this.userService.toggleActive(id, getAuditContext(req));
   }
 
   @Delete(':id')
   @ApiOperation({ summary: 'Delete user' })
-  delete(@Param('id', ParseIntPipe) id: number) {
-    return this.userService.delete(id);
+  delete(@Param('id', ParseIntPipe) id: number, @Req() req: any) {
+    return this.userService.delete(id, getAuditContext(req));
   }
 }

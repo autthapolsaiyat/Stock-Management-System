@@ -1,7 +1,8 @@
-import { Controller, Get, Post, Put, Body, Param, Query, ParseIntPipe, UseGuards } from '@nestjs/common';
+import { Controller, Get, Post, Put, Delete, Body, Param, Query, ParseIntPipe, UseGuards, Req } from '@nestjs/common';
 import { ApiTags, ApiBearerAuth, ApiQuery } from '@nestjs/swagger';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { CustomerService } from './customer.service';
+import { getAuditContext } from '../../common/utils';
 
 @ApiTags('Customers')
 @ApiBearerAuth()
@@ -20,10 +21,13 @@ export class CustomerController {
   findOne(@Param('id', ParseIntPipe) id: number) { return this.customerService.findOne(id); }
 
   @Post()
-  create(@Body() dto: any) { return this.customerService.create(dto); }
+  create(@Body() dto: any, @Req() req: any) { return this.customerService.create(dto, getAuditContext(req)); }
 
   @Put(':id')
-  update(@Param('id', ParseIntPipe) id: number, @Body() dto: any) { return this.customerService.update(id, dto); }
+  update(@Param('id', ParseIntPipe) id: number, @Body() dto: any, @Req() req: any) { return this.customerService.update(id, dto, getAuditContext(req)); }
+
+  @Delete(':id')
+  delete(@Param('id', ParseIntPipe) id: number, @Req() req: any) { return this.customerService.delete(id, getAuditContext(req)); }
 
   @Put(':id/group')
   updateGroup(

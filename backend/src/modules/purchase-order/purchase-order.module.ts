@@ -5,12 +5,14 @@ import { PurchaseOrderService } from './purchase-order.service';
 import { PurchaseOrderController } from './purchase-order.controller';
 import { DocNumberingModule } from '../doc-numbering/doc-numbering.module';
 import { QuotationModule } from '../quotation/quotation.module';
+import { AuditLogModule } from '../audit-log/audit-log.module';
 
 @Module({
   imports: [
     TypeOrmModule.forFeature([PurchaseOrderEntity, PurchaseOrderItemEntity]),
     DocNumberingModule,
     forwardRef(() => QuotationModule),
+    AuditLogModule,
   ],
   controllers: [PurchaseOrderController],
   providers: [PurchaseOrderService],

@@ -7,6 +7,7 @@ import { FifoService } from '../fifo/fifo.service';
 import { PurchaseOrderService } from '../purchase-order/purchase-order.service';
 import { TempProductService } from '../temp-product/temp-product.service';
 import { SystemSettingsService } from '../system-settings/system-settings.service';
+import { AuditLogService } from '../audit-log/audit-log.service';
 
 @Injectable()
 export class GoodsReceiptService {
@@ -21,6 +22,7 @@ export class GoodsReceiptService {
     private tempProductService: TempProductService,
     private settingsService: SystemSettingsService,
     private dataSource: DataSource,
+    private auditLogService: AuditLogService,
   ) {}
 
   async findAll(status?: string) {
@@ -179,6 +181,16 @@ export class GoodsReceiptService {
 
       await queryRunner.manager.save(savedGR);
       await queryRunner.commitTransaction();
+      
+      // Audit Log
+      await this.auditLogService.log({
+        module: 'GOODS_RECEIPT',
+        action: 'CREATE',
+        documentId: savedGR.id,
+        documentNo: savedGR.docFullNo,
+        userId: userId,
+        details: { supplierId: savedGR.supplierId, grandTotal: savedGR.grandTotal },
+      });
 
       return this.findOne(savedGR.id);
     } catch (error) {

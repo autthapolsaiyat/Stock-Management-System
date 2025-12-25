@@ -6,6 +6,7 @@ import { QuotationController } from './quotation.controller';
 import { DocNumberingModule } from '../doc-numbering/doc-numbering.module';
 import { TempProductModule } from '../temp-product/temp-product.module';
 import { SystemSettingsModule } from '../system-settings/system-settings.module';
+import { AuditLogModule } from '../audit-log/audit-log.module';
 
 @Module({
   imports: [
@@ -13,6 +14,7 @@ import { SystemSettingsModule } from '../system-settings/system-settings.module'
     DocNumberingModule,
     TempProductModule,
     SystemSettingsModule,
+    AuditLogModule,
   ],
   controllers: [QuotationController],
   providers: [QuotationService],

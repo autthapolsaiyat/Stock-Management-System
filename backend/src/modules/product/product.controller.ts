@@ -1,8 +1,9 @@
-import { Controller, Get, Post, Put, Delete, Param, Body, Query, UseGuards, ParseIntPipe } from '@nestjs/common';
+import { Controller, Get, Post, Put, Delete, Param, Body, Query, UseGuards, ParseIntPipe, Req } from '@nestjs/common';
 import { ApiTags, ApiBearerAuth, ApiOperation, ApiQuery } from '@nestjs/swagger';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { ProductService } from './product.service';
 import { CreateProductDto, UpdateProductDto, CreateCategoryDto, CreateUnitDto } from './dto/product.dto';
+import { getAuditContext } from '../../common/utils';
 
 @ApiTags('Products')
 @ApiBearerAuth()
@@ -33,8 +34,20 @@ export class ProductController {
 
   @Post('categories')
   @ApiOperation({ summary: 'Create category' })
-  createCategory(@Body() dto: CreateCategoryDto) {
-    return this.productService.createCategory(dto);
+  createCategory(@Body() dto: CreateCategoryDto, @Req() req: any) {
+    return this.productService.createCategory(dto, getAuditContext(req));
+  }
+
+  @Put('categories/:id')
+  @ApiOperation({ summary: 'Update category' })
+  updateCategory(@Param('id', ParseIntPipe) id: number, @Body() dto: any, @Req() req: any) {
+    return this.productService.updateCategory(id, dto, getAuditContext(req));
+  }
+
+  @Delete('categories/:id')
+  @ApiOperation({ summary: 'Delete category' })
+  deleteCategory(@Param('id', ParseIntPipe) id: number, @Req() req: any) {
+    return this.productService.deleteCategory(id, getAuditContext(req));
   }
 
   @Get('units')
@@ -45,8 +58,20 @@ export class ProductController {
 
   @Post('units')
   @ApiOperation({ summary: 'Create unit' })
-  createUnit(@Body() dto: CreateUnitDto) {
-    return this.productService.createUnit(dto);
+  createUnit(@Body() dto: CreateUnitDto, @Req() req: any) {
+    return this.productService.createUnit(dto, getAuditContext(req));
+  }
+
+  @Put('units/:id')
+  @ApiOperation({ summary: 'Update unit' })
+  updateUnit(@Param('id', ParseIntPipe) id: number, @Body() dto: any, @Req() req: any) {
+    return this.productService.updateUnit(id, dto, getAuditContext(req));
+  }
+
+  @Delete('units/:id')
+  @ApiOperation({ summary: 'Delete unit' })
+  deleteUnit(@Param('id', ParseIntPipe) id: number, @Req() req: any) {
+    return this.productService.deleteUnit(id, getAuditContext(req));
   }
 
   @Get('price-history')
@@ -69,19 +94,19 @@ export class ProductController {
 
   @Post()
   @ApiOperation({ summary: 'Create product' })
-  create(@Body() dto: CreateProductDto) {
-    return this.productService.create(dto);
+  create(@Body() dto: CreateProductDto, @Req() req: any) {
+    return this.productService.create(dto, getAuditContext(req));
   }
 
   @Put(':id')
   @ApiOperation({ summary: 'Update product' })
-  update(@Param('id', ParseIntPipe) id: number, @Body() dto: UpdateProductDto) {
-    return this.productService.update(id, dto);
+  update(@Param('id', ParseIntPipe) id: number, @Body() dto: UpdateProductDto, @Req() req: any) {
+    return this.productService.update(id, dto, getAuditContext(req));
   }
 
   @Delete(':id')
   @ApiOperation({ summary: 'Delete product' })
-  delete(@Param('id', ParseIntPipe) id: number) {
-    return this.productService.delete(id);
+  delete(@Param('id', ParseIntPipe) id: number, @Req() req: any) {
+    return this.productService.delete(id, getAuditContext(req));
   }
 }

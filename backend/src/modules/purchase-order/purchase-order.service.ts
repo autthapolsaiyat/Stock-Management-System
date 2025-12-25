@@ -4,6 +4,7 @@ import { Repository, DataSource } from 'typeorm';
 import { PurchaseOrderEntity, PurchaseOrderItemEntity } from './entities';
 import { DocNumberingService } from '../doc-numbering/doc-numbering.service';
 import { QuotationService } from '../quotation/quotation.service';
+import { AuditLogService } from '../audit-log/audit-log.service';
 
 @Injectable()
 export class PurchaseOrderService {
@@ -15,6 +16,7 @@ export class PurchaseOrderService {
     private docNumberingService: DocNumberingService,
     private quotationService: QuotationService,
     private dataSource: DataSource,
+    private auditLogService: AuditLogService,
   ) {}
 
   async findAll(status?: string) {
@@ -140,6 +142,16 @@ export class PurchaseOrderService {
 
       await queryRunner.manager.save(savedPO);
       await queryRunner.commitTransaction();
+      
+      // Audit Log
+      await this.auditLogService.log({
+        module: 'PURCHASE_ORDER',
+        action: 'CREATE',
+        documentId: savedPO.id,
+        documentNo: savedPO.docFullNo,
+        userId: userId,
+        details: { supplierId: savedPO.supplierId, grandTotal: savedPO.grandTotal },
+      });
 
       return this.findOne(savedPO.id);
     } catch (error) {
@@ -249,6 +261,16 @@ export class PurchaseOrderService {
 
     po.status = 'PENDING_APPROVAL';
     po.updatedBy = userId;
+    
+    // Audit Log
+    await this.auditLogService.log({
+      module: 'PURCHASE_ORDER',
+      action: 'SUBMIT_FOR_APPROVAL',
+      documentId: id,
+      documentNo: po.docFullNo,
+      userId: userId,
+    });
+    
     return this.poRepository.save(po);
   }
 
@@ -263,6 +285,17 @@ export class PurchaseOrderService {
     po.approvedAt = new Date();
     po.approvalNote = note;
     po.updatedBy = userId;
+    
+    // Audit Log
+    await this.auditLogService.log({
+      module: 'PURCHASE_ORDER',
+      action: 'APPROVE',
+      documentId: id,
+      documentNo: po.docFullNo,
+      userId: userId,
+      details: { note },
+    });
+    
     return this.poRepository.save(po);
   }
 
@@ -274,6 +307,16 @@ export class PurchaseOrderService {
 
     po.status = 'SENT';
     po.updatedBy = userId;
+    
+    // Audit Log
+    await this.auditLogService.log({
+      module: 'PURCHASE_ORDER',
+      action: 'SEND',
+      documentId: id,
+      documentNo: po.docFullNo,
+      userId: userId,
+    });
+    
     return this.poRepository.save(po);
   }
 
@@ -282,6 +325,16 @@ export class PurchaseOrderService {
     if (['RECEIVED', 'CANCELLED'].includes(po.status)) {
       throw new BadRequestException('PO cannot be cancelled');
     }
+    
+    // Audit Log
+    await this.auditLogService.log({
+      module: 'PURCHASE_ORDER',
+      action: 'CANCEL',
+      documentId: id,
+      documentNo: po.docFullNo,
+      userId: userId,
+      details: { reason },
+    });
 
     const queryRunner = this.dataSource.createQueryRunner();
     await queryRunner.connect();

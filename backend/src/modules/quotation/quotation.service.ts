@@ -5,6 +5,8 @@ import { QuotationEntity, QuotationItemEntity } from './entities';
 import { DocNumberingService } from '../doc-numbering/doc-numbering.service';
 import { TempProductService } from '../temp-product/temp-product.service';
 import { SystemSettingsService } from '../system-settings/system-settings.service';
+import { AuditLogService } from '../audit-log/audit-log.service';
+import { AuditContext } from '../../common/types';
 
 @Injectable()
 export class QuotationService {
@@ -17,6 +19,7 @@ export class QuotationService {
     private tempProductService: TempProductService,
     private settingsService: SystemSettingsService,
     private dataSource: DataSource,
+    private auditLogService: AuditLogService,
   ) {}
 
   async findAll(status?: string, qtType?: string) {
@@ -169,6 +172,17 @@ export class QuotationService {
       await queryRunner.manager.save(savedQuotation);
       
       await queryRunner.commitTransaction();
+      
+      // Audit Log
+      await this.auditLogService.log({
+        module: 'QUOTATION',
+        action: 'CREATE',
+        documentId: savedQuotation.id,
+        documentNo: savedQuotation.docFullNo,
+        userId: userId,
+        details: { customerId: savedQuotation.customerId, grandTotal: savedQuotation.grandTotal, itemCount: dto.items?.length || 0 },
+      });
+      
       return this.findOne(savedQuotation.id);
     } catch (error) {
       await queryRunner.rollbackTransaction();
@@ -305,6 +319,16 @@ export class QuotationService {
       await queryRunner.manager.save(quotation);
       await queryRunner.commitTransaction();
       
+      // Audit Log
+      await this.auditLogService.log({
+        module: 'QUOTATION',
+        action: 'UPDATE',
+        documentId: id,
+        documentNo: quotation.docFullNo,
+        userId: userId,
+        details: { grandTotal: quotation.grandTotal },
+      });
+      
       return this.findOne(id);
     } catch (error) {
       await queryRunner.rollbackTransaction();
@@ -322,6 +346,16 @@ export class QuotationService {
     
     quotation.status = 'PENDING_APPROVAL';
     quotation.updatedBy = userId;
+    
+    // Audit Log
+    await this.auditLogService.log({
+      module: 'QUOTATION',
+      action: 'SUBMIT_FOR_APPROVAL',
+      documentId: id,
+      documentNo: quotation.docFullNo,
+      userId: userId,
+    });
+    
     return this.quotationRepository.save(quotation);
   }
 
@@ -336,6 +370,17 @@ export class QuotationService {
     quotation.approvedAt = new Date();
     quotation.approvalNote = note;
     quotation.updatedBy = userId;
+    
+    // Audit Log
+    await this.auditLogService.log({
+      module: 'QUOTATION',
+      action: 'APPROVE',
+      documentId: id,
+      documentNo: quotation.docFullNo,
+      userId: userId,
+      details: { note },
+    });
+    
     return this.quotationRepository.save(quotation);
   }
 
@@ -349,6 +394,17 @@ export class QuotationService {
     quotation.marginApprovedAt = new Date();
     quotation.marginApprovalNote = note;
     quotation.updatedBy = userId;
+    
+    // Audit Log
+    await this.auditLogService.log({
+      module: 'QUOTATION',
+      action: 'APPROVE_MARGIN',
+      documentId: id,
+      documentNo: quotation.docFullNo,
+      userId: userId,
+      details: { note, marginPercent: quotation.expectedMarginPercent },
+    });
+    
     return this.quotationRepository.save(quotation);
   }
 
@@ -360,6 +416,16 @@ export class QuotationService {
     
     quotation.status = 'SENT';
     quotation.updatedBy = userId;
+    
+    // Audit Log
+    await this.auditLogService.log({
+      module: 'QUOTATION',
+      action: 'SEND',
+      documentId: id,
+      documentNo: quotation.docFullNo,
+      userId: userId,
+    });
+    
     return this.quotationRepository.save(quotation);
   }
 
@@ -373,6 +439,16 @@ export class QuotationService {
     quotation.confirmedAt = new Date();
     quotation.confirmedBy = userId;
     quotation.updatedBy = userId;
+    
+    // Audit Log
+    await this.auditLogService.log({
+      module: 'QUOTATION',
+      action: 'CONFIRM',
+      documentId: id,
+      documentNo: quotation.docFullNo,
+      userId: userId,
+    });
+    
     return this.quotationRepository.save(quotation);
   }
 
@@ -387,6 +463,17 @@ export class QuotationService {
     quotation.cancelledBy = userId;
     quotation.cancelReason = reason;
     quotation.updatedBy = userId;
+    
+    // Audit Log
+    await this.auditLogService.log({
+      module: 'QUOTATION',
+      action: 'CANCEL',
+      documentId: id,
+      documentNo: quotation.docFullNo,
+      userId: userId,
+      details: { reason },
+    });
+    
     return this.quotationRepository.save(quotation);
   }
 
