@@ -25,6 +25,10 @@ import {
   AlertOutlined,
   ClockCircleOutlined,
   BarcodeOutlined,
+  AccountBookOutlined,
+  BankOutlined,
+  AuditOutlined,
+  LineChartOutlined,
 } from '@ant-design/icons';
 import { useAuth } from '../contexts/AuthContext';
 import { SettingOutlined } from '@ant-design/icons';
@@ -88,17 +92,6 @@ const MainLayout: React.FC = () => {
       ],
     },
     {
-      key: 'settings-menu',
-      icon: <SettingOutlined />,
-      label: 'ตั้งค่า',
-      children: [
-        { key: '/settings', icon: <SettingOutlined />, label: 'ตั้งค่าระบบ' },
-        { key: '/settings/user', icon: <UserOutlined />, label: 'ตั้งค่าส่วนตัว' },
-        { key: '/settings/company', icon: <TeamOutlined />, label: 'ตั้งค่าบริษัท' },
-        { key: '/admin/activity-logs', icon: <HistoryOutlined />, label: 'บันทึกกิจกรรม' },
-      ],
-    },
-    {
       key: 'stock',
       icon: <InboxOutlined />,
       label: 'คลังสินค้า',
@@ -115,6 +108,28 @@ const MainLayout: React.FC = () => {
         { key: '/stock-transfers', icon: <SwapOutlined />, label: 'โอนสินค้า' },
         { key: '/stock-adjustments', icon: <SwapOutlined />, label: 'ปรับปรุงสต็อก' },
         { key: '/stock-counts', icon: <FileTextOutlined />, label: 'นับสต็อก' },
+      ],
+    },
+    {
+      key: 'accounting',
+      icon: <AccountBookOutlined />,
+      label: 'บัญชี',
+      children: [
+        { key: '/accounting/chart-of-accounts', icon: <BankOutlined />, label: 'ผังบัญชี' },
+        { key: '/accounting/journal-entries', icon: <AuditOutlined />, label: 'สมุดรายวัน' },
+        { key: '/accounting/ar-ap-aging', icon: <TeamOutlined />, label: 'AR/AP Aging' },
+        { key: '/accounting/reports', icon: <LineChartOutlined />, label: 'รายงานการเงิน' },
+      ],
+    },
+    {
+      key: 'settings-menu',
+      icon: <SettingOutlined />,
+      label: 'ตั้งค่า',
+      children: [
+        { key: '/settings', icon: <SettingOutlined />, label: 'ตั้งค่าระบบ' },
+        { key: '/settings/user', icon: <UserOutlined />, label: 'ตั้งค่าส่วนตัว' },
+        { key: '/settings/company', icon: <TeamOutlined />, label: 'ตั้งค่าบริษัท' },
+        { key: '/admin/activity-logs', icon: <HistoryOutlined />, label: 'บันทึกกิจกรรม' },
       ],
     },
   ];
@@ -207,7 +222,7 @@ const MainLayout: React.FC = () => {
           theme="dark"
           mode="inline"
           selectedKeys={[location.pathname]}
-          defaultOpenKeys={salesOnly ? [] : ['master', 'sales', 'purchase', 'stock']}
+          defaultOpenKeys={salesOnly ? [] : ['master', 'sales', 'purchase', 'stock', 'accounting']}
           items={menuItems}
           onClick={({ key }) => navigate(key)}
           style={{ borderRight: 0, marginTop: 8 }}

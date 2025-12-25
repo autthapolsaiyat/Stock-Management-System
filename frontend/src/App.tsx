@@ -39,6 +39,14 @@ import BarcodeScannerPage from './pages/BarcodeScannerPage';
 import SettingsPage from './pages/SettingsPage';
 import { useAuth } from './contexts/AuthContext';
 
+// Accounting Pages
+import {
+  ChartOfAccountsPage,
+  JournalEntriesPage,
+  ARAPAgingPage,
+  FinancialReportsPage,
+} from './pages/accounting';
+
 // Protected Route Component
 const ProtectedRoute: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const { isAuthenticated, isLoading } = useAuth();
@@ -137,6 +145,12 @@ const App: React.FC = () => {
         <Route path="stock-transfers" element={<StockTransfersPage />} />
         <Route path="stock-adjustments" element={<StockAdjustmentsPage />} />
         <Route path="stock-counts" element={<StockCountsPage />} />
+
+        {/* Accounting */}
+        <Route path="accounting/chart-of-accounts" element={<ChartOfAccountsPage />} />
+        <Route path="accounting/journal-entries" element={<JournalEntriesPage />} />
+        <Route path="accounting/ar-ap-aging" element={<ARAPAgingPage />} />
+        <Route path="accounting/reports" element={<FinancialReportsPage />} />
         
         {/* Settings */}
         <Route path="settings" element={<SettingsPage />} />

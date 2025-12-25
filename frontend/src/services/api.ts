@@ -287,4 +287,116 @@ export const uploadApi = {
     api.post('/api/upload/base64', { base64, folder }),
 };
 
+// ==================== ACCOUNTING APIs ====================
+
+// Chart of Accounts API
+export const chartOfAccountsApi = {
+  getAll: () => api.get('/api/accounting/chart-of-accounts'),
+  getTree: () => api.get('/api/accounting/chart-of-accounts/tree'),
+  getByType: (type: string) => api.get(`/api/accounting/chart-of-accounts/type/${type}`),
+  getById: (id: number) => api.get(`/api/accounting/chart-of-accounts/${id}`),
+  create: (data: any) => api.post('/api/accounting/chart-of-accounts', data),
+  update: (id: number, data: any) => api.put(`/api/accounting/chart-of-accounts/${id}`, data),
+  delete: (id: number) => api.delete(`/api/accounting/chart-of-accounts/${id}`),
+  initialize: () => api.post('/api/accounting/chart-of-accounts/initialize'),
+};
+
+// Journal Entries API
+export const journalEntriesApi = {
+  getAll: (params?: {
+    startDate?: string;
+    endDate?: string;
+    journalType?: string;
+    status?: string;
+    referenceType?: string;
+  }) => api.get('/api/accounting/journal-entries', { params }),
+  getById: (id: number) => api.get(`/api/accounting/journal-entries/${id}`),
+  create: (data: any) => api.post('/api/accounting/journal-entries', data),
+  update: (id: number, data: any) => api.put(`/api/accounting/journal-entries/${id}`, data),
+  post: (id: number) => api.post(`/api/accounting/journal-entries/${id}/post`),
+  cancel: (id: number, reason: string) => api.post(`/api/accounting/journal-entries/${id}/cancel`, { reason }),
+  reverse: (id: number) => api.post(`/api/accounting/journal-entries/${id}/reverse`),
+  delete: (id: number) => api.delete(`/api/accounting/journal-entries/${id}`),
+};
+
+// Payment Receipts API (รับเงิน)
+export const paymentReceiptsApi = {
+  getAll: (params?: {
+    customerId?: number;
+    startDate?: string;
+    endDate?: string;
+    status?: string;
+  }) => api.get('/api/accounting/payment-receipts', { params }),
+  getById: (id: number) => api.get(`/api/accounting/payment-receipts/${id}`),
+  getCustomerOutstanding: (customerId: number) => 
+    api.get(`/api/accounting/payment-receipts/customer/${customerId}/outstanding`),
+  create: (data: any) => api.post('/api/accounting/payment-receipts', data),
+  post: (id: number) => api.post(`/api/accounting/payment-receipts/${id}/post`),
+  cancel: (id: number, reason: string) => api.post(`/api/accounting/payment-receipts/${id}/cancel`, { reason }),
+  delete: (id: number) => api.delete(`/api/accounting/payment-receipts/${id}`),
+};
+
+// Payment Vouchers API (จ่ายเงิน)
+export const paymentVouchersApi = {
+  getAll: (params?: {
+    supplierId?: number;
+    startDate?: string;
+    endDate?: string;
+    status?: string;
+  }) => api.get('/api/accounting/payment-vouchers', { params }),
+  getById: (id: number) => api.get(`/api/accounting/payment-vouchers/${id}`),
+  getSupplierOutstanding: (supplierId: number) => 
+    api.get(`/api/accounting/payment-vouchers/supplier/${supplierId}/outstanding`),
+  create: (data: any) => api.post('/api/accounting/payment-vouchers', data),
+  post: (id: number) => api.post(`/api/accounting/payment-vouchers/${id}/post`),
+  cancel: (id: number, reason: string) => api.post(`/api/accounting/payment-vouchers/${id}/cancel`, { reason }),
+  delete: (id: number) => api.delete(`/api/accounting/payment-vouchers/${id}`),
+};
+
+// Bank Accounts API
+export const bankAccountsApi = {
+  getAll: () => api.get('/api/accounting/bank-accounts'),
+  getById: (id: number) => api.get(`/api/accounting/bank-accounts/${id}`),
+  create: (data: any) => api.post('/api/accounting/bank-accounts', data),
+  update: (id: number, data: any) => api.put(`/api/accounting/bank-accounts/${id}`, data),
+  delete: (id: number) => api.delete(`/api/accounting/bank-accounts/${id}`),
+};
+
+// AR (Accounts Receivable) API
+export const arApi = {
+  getOutstanding: (params?: { customerId?: number; status?: string }) => 
+    api.get('/api/accounting/ar/outstanding', { params }),
+  getAging: (asOfDate?: string) => 
+    api.get('/api/accounting/ar/aging', { params: { asOfDate } }),
+  getSummary: () => api.get('/api/accounting/ar/summary'),
+};
+
+// AP (Accounts Payable) API
+export const apApi = {
+  getOutstanding: (params?: { supplierId?: number; status?: string }) => 
+    api.get('/api/accounting/ap/outstanding', { params }),
+  getAging: (asOfDate?: string) => 
+    api.get('/api/accounting/ap/aging', { params: { asOfDate } }),
+  getSummary: () => api.get('/api/accounting/ap/summary'),
+};
+
+// AR/AP Dashboard API
+export const arApDashboardApi = {
+  getSummary: () => api.get('/api/accounting/ar-ap/dashboard'),
+};
+
+// Financial Reports API
+export const financialReportsApi = {
+  getTrialBalance: (startDate: string, endDate: string, showZeroBalance?: boolean) =>
+    api.get('/api/accounting/reports/trial-balance', { params: { startDate, endDate, showZeroBalance } }),
+  getProfitLoss: (startDate: string, endDate: string) =>
+    api.get('/api/accounting/reports/profit-loss', { params: { startDate, endDate } }),
+  getBalanceSheet: (asOfDate: string) =>
+    api.get('/api/accounting/reports/balance-sheet', { params: { asOfDate } }),
+  getGeneralLedger: (accountId: number, startDate: string, endDate: string) =>
+    api.get(`/api/accounting/reports/general-ledger/${accountId}`, { params: { startDate, endDate } }),
+  getFinancialSummary: (year?: number) =>
+    api.get('/api/accounting/reports/financial-summary', { params: { year } }),
+};
+
 export default api;

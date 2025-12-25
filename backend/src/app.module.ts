@@ -28,6 +28,7 @@ import { CustomerGroupModule } from './modules/customer-group/customer-group.mod
 import { StockAdjustmentModule } from './modules/stock-adjustment/stock-adjustment.module';
 import { StockCountModule } from './modules/stock-count/stock-count.module';
 import { AuditLogModule } from './modules/audit-log/audit-log.module';
+import { AccountingModule } from './modules/accounting/accounting.module';
 
 @Module({
   imports: [
@@ -48,7 +49,7 @@ import { AuditLogModule } from './modules/audit-log/audit-log.module';
       }),
       inject: [ConfigService],
     }),
-    CommonModule, // OWASP Security Module
+    CommonModule,
     HealthModule,
     AuthModule,
     UserModule,
@@ -74,6 +75,7 @@ import { AuditLogModule } from './modules/audit-log/audit-log.module';
     StockAdjustmentModule,
     StockCountModule,
     AuditLogModule,
+    AccountingModule,
   ],
 })
 export class AppModule {}
