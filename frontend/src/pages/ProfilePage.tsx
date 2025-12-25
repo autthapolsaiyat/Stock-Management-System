@@ -44,7 +44,7 @@ const ProfilePage = () => {
   const [profileForm] = Form.useForm();
   const [passwordForm] = Form.useForm();
   const [newPassword, setNewPassword] = useState('');
-  const [passwordStrength, setPasswordStrength] = useState({ score: 0, label: '', color: '#d9d9d9', status: 'normal' as const });
+  const [passwordStrength, setPasswordStrength] = useState<{ score: number; label: string; color: string; status: 'exception' | 'active' | 'success' | 'normal' }>({ score: 0, label: '', color: '#d9d9d9', status: 'normal' });
 
   useEffect(() => {
     fetchProfile();
