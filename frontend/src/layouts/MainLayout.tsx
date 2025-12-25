@@ -312,7 +312,7 @@ const MainLayout: React.FC = () => {
             fontSize: 13,
           }}
         >
-          © 2025 Autthapol Saiyat (Boy) - Technology & AI Program Director | Mobile: 085-070-9938 | LINE: boy_saiyat
+          © 2025 Autthapol Saiyat (Boy). All Rights Reserved. Tel: 085-070-9938 | LINE: boy_saiyat
         </Footer>
       </Layout>
     </Layout>
