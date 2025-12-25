@@ -630,7 +630,7 @@ const QuotationForm: React.FC = () => {
     {
       title: '',
       width: 90,
-      render: (_: any, record: QuotationItem, index: number) => (
+      render: (_: any, __: QuotationItem, index: number) => (
         <Space size="small">
           <Tooltip title="แก้ไข">
             <Button type="text" icon={<EditOutlined />} onClick={() => handleEditItem(index)} />
