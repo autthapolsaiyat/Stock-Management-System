@@ -2,6 +2,7 @@ import { Module } from '@nestjs/common';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { ScheduleModule } from '@nestjs/schedule';
+import { CommonModule } from './common/common.module';
 import { HealthModule } from './modules/health/health.module';
 import { AuthModule } from './modules/auth/auth.module';
 import { UserModule } from './modules/user/user.module';
@@ -47,6 +48,7 @@ import { AuditLogModule } from './modules/audit-log/audit-log.module';
       }),
       inject: [ConfigService],
     }),
+    CommonModule, // OWASP Security Module
     HealthModule,
     AuthModule,
     UserModule,
