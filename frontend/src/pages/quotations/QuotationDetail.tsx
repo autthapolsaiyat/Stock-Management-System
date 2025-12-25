@@ -199,10 +199,11 @@ const QuotationDetail: React.FC = () => {
 
   const handleRevision = () => {
     Modal.confirm({
-      title: 'สร้าง Revision ใหม่',
-      content: 'คุณต้องการสร้าง Revision ใหม่ของใบเสนอราคานี้ใช่หรือไม่? Revision ใหม่จะถูกสร้างเป็นร่างและสามารถแก้ไขได้',
+      title: <span style={{ color: '#e5e7eb' }}>สร้าง Revision ใหม่</span>,
+      content: <span style={{ color: '#9ca3af' }}>คุณต้องการสร้าง Revision ใหม่ของใบเสนอราคานี้ใช่หรือไม่? Revision ใหม่จะถูกสร้างเป็นร่างและสามารถแก้ไขได้</span>,
       okText: 'สร้าง Revision',
       cancelText: 'ยกเลิก',
+      className: 'dark-modal',
       onOk: async () => {
         try {
           const res = await quotationsApi.createRevision(parseInt(id!), 'แก้ไขจากหน้า UI');
@@ -926,6 +927,8 @@ const QuotationDetail: React.FC = () => {
             deliveryDays: quotation.deliveryDays,
             creditTermDays: quotation.creditTermDays,
             contactPerson: quotation.contactPerson,
+            contactPhone: quotation.contactPhone,
+            contactEmail: quotation.contactEmail,
             publicNote: quotation.publicNote,
             subtotal: Number(quotation.subtotal) || 0,
             discountAmount: Number(quotation.discountAmount) || 0,
@@ -934,7 +937,13 @@ const QuotationDetail: React.FC = () => {
             grandTotal: Number(quotation.grandTotal) || 0,
           }}
           items={quotation.items || []}
-          customer={{ name: quotation.customerName, address: quotation.customerAddress }}
+          customer={{ 
+            name: quotation.customerName, 
+            address: quotation.customerAddress,
+            phone: quotation.contactPhone,
+            email: quotation.contactEmail,
+            contactPerson: quotation.contactPerson,
+          }}
         />
       )}
 
