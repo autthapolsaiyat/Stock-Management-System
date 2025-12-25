@@ -121,16 +121,23 @@ const QuotationForm: React.FC = () => {
 
   const loadInitialData = async () => {
     try {
-      const [customersRes, productsRes, categoriesRes, unitsRes] = await Promise.all([
+      const [customersRes, productsRes, categoriesRes] = await Promise.all([
         customersApi.getAll(),
         userQuotationType ? productsApi.getAll(undefined, userQuotationType) : productsApi.getAll(),
         productsApi.getCategories(),
-        unitsApi.getAll(),
       ]);
       setCustomers(customersRes.data || []);
       setProducts(productsRes.data || []);
       setCategories(categoriesRes.data || []);
-      setUnits(unitsRes.data || ['ea', 'set', 'box', 'pack', 'unit']);
+      
+      // Load units (non-blocking)
+      try {
+        const unitsRes = await unitsApi.getAll();
+        setUnits(unitsRes.data || ['ea', 'set', 'box', 'pack', 'unit', 'งาน', 'รายการ']);
+      } catch (e) {
+        console.log('Units API not available, using defaults');
+        setUnits(['ea', 'set', 'box', 'pack', 'unit', 'งาน', 'รายการ']);
+      }
       
       // Load price history (non-blocking)
       try {
@@ -623,7 +630,7 @@ const QuotationForm: React.FC = () => {
     {
       title: '',
       width: 90,
-      render: (_: any, __: QuotationItem, index: number) => (
+      render: (_: any, record: QuotationItem, index: number) => (
         <Space size="small">
           <Tooltip title="แก้ไข">
             <Button type="text" icon={<EditOutlined />} onClick={() => handleEditItem(index)} />

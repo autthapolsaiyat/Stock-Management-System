@@ -26,10 +26,10 @@ const TempProductModal: React.FC<TempProductModalProps> = ({ open, onClose, onAd
   const loadUnits = async () => {
     try {
       const res = await unitsApi.getAll();
-      setUnits(res.data || []);
+      setUnits(res.data || ['ea', 'set', 'box', 'pack', 'unit', 'งาน', 'รายการ']);
     } catch (error) {
       // Use default units if API fails
-      setUnits(['ea', 'set', 'box', 'pack', 'unit']);
+      setUnits(['ea', 'set', 'box', 'pack', 'unit', 'งาน', 'รายการ']);
     }
   };
 
