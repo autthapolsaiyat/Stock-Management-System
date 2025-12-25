@@ -63,6 +63,9 @@ const QuotationForm: React.FC = () => {
   const [tempProductModalOpen, setTempProductModalOpen] = useState(false);
   const [calculatorOpen, setCalculatorOpen] = useState(false);
   const [previewOpen, setPreviewOpen] = useState(false);
+  const [editItemModalOpen, setEditItemModalOpen] = useState(false);
+  const [editingItemIndex, setEditingItemIndex] = useState<number | null>(null);
+  const [editItemForm] = Form.useForm();
 
   // Calculated values
   const [summary, setSummary] = useState({
@@ -388,6 +391,48 @@ const QuotationForm: React.FC = () => {
     setTempProductModalOpen(false);
   };
 
+  const handleEditItem = (index: number) => {
+    const item = items[index];
+    editItemForm.setFieldsValue({
+      itemCode: item.itemCode,
+      itemName: item.itemName,
+      itemDescription: item.itemDescription,
+      brand: item.brand,
+      qty: item.qty,
+      unit: item.unit,
+      unitPrice: item.unitPrice,
+      estimatedCost: item.estimatedCost,
+    });
+    setEditingItemIndex(index);
+    setEditItemModalOpen(true);
+  };
+
+  const handleSaveEditItem = () => {
+    if (editingItemIndex === null) return;
+    const values = editItemForm.getFieldsValue();
+    const newItems = [...items];
+    const item = newItems[editingItemIndex];
+    
+    item.itemCode = values.itemCode;
+    item.itemName = values.itemName;
+    item.itemDescription = values.itemDescription;
+    item.brand = values.brand;
+    item.qty = values.qty || 1;
+    item.unit = values.unit;
+    item.unitPrice = values.unitPrice || 0;
+    item.estimatedCost = values.estimatedCost || 0;
+    
+    const netPrice = item.unitPrice - (item.discountAmount || 0);
+    item.lineTotal = item.qty * netPrice;
+    item.expectedMarginPercent = netPrice > 0 ? ((netPrice - item.estimatedCost) / netPrice) * 100 : 0;
+    
+    setItems(newItems);
+    setEditItemModalOpen(false);
+    setEditingItemIndex(null);
+    editItemForm.resetFields();
+    message.success('แก้ไขรายการสำเร็จ');
+  };
+
   const handleItemChange = (index: number, field: string, value: any) => {
     const newItems = [...items];
     (newItems[index] as any)[field] = value;
@@ -548,11 +593,16 @@ const QuotationForm: React.FC = () => {
     },
     {
       title: '',
-      width: 50,
-      render: (_: any, __: any, index: number) => (
-        <Popconfirm title="ลบรายการนี้?" onConfirm={() => handleRemoveItem(index)}>
-          <Button type="text" danger icon={<DeleteOutlined />} />
-        </Popconfirm>
+      width: 90,
+      render: (_: any, record: QuotationItem, index: number) => (
+        <Space size="small">
+          <Tooltip title="แก้ไข">
+            <Button type="text" icon={<EditOutlined />} onClick={() => handleEditItem(index)} />
+          </Tooltip>
+          <Popconfirm title="ลบรายการนี้?" onConfirm={() => handleRemoveItem(index)}>
+            <Button type="text" danger icon={<DeleteOutlined />} />
+          </Popconfirm>
+        </Space>
       ),
     },
   ];
@@ -976,6 +1026,75 @@ const QuotationForm: React.FC = () => {
       {/* Other Modals */}
       <TempProductModal open={tempProductModalOpen} onClose={() => setTempProductModalOpen(false)} onAdd={handleAddTempProduct} />
       <SettingsModal open={settingsModalOpen} onClose={() => setSettingsModalOpen(false)} onSave={() => { loadInitialData(); setSettingsModalOpen(false); }} />
+      
+      {/* Edit Item Modal */}
+      <Modal
+        title="✏️ แก้ไขรายการสินค้า"
+        open={editItemModalOpen}
+        onCancel={() => { setEditItemModalOpen(false); setEditingItemIndex(null); editItemForm.resetFields(); }}
+        onOk={handleSaveEditItem}
+        okText="บันทึก"
+        cancelText="ยกเลิก"
+        width={600}
+      >
+        <Form form={editItemForm} layout="vertical">
+          <Row gutter={16}>
+            <Col span={8}>
+              <Form.Item label="รหัสสินค้า" name="itemCode">
+                <Input />
+              </Form.Item>
+            </Col>
+            <Col span={16}>
+              <Form.Item label="ชื่อสินค้า" name="itemName" rules={[{ required: true, message: 'กรุณากรอกชื่อสินค้า' }]}>
+                <Input />
+              </Form.Item>
+            </Col>
+          </Row>
+          <Form.Item label="รายละเอียด" name="itemDescription">
+            <TextArea rows={3} />
+          </Form.Item>
+          <Row gutter={16}>
+            <Col span={8}>
+              <Form.Item label="ยี่ห้อ" name="brand">
+                <Input />
+              </Form.Item>
+            </Col>
+            <Col span={8}>
+              <Form.Item label="จำนวน" name="qty" rules={[{ required: true, message: 'กรุณากรอกจำนวน' }]}>
+                <InputNumber min={1} style={{ width: '100%' }} />
+              </Form.Item>
+            </Col>
+            <Col span={8}>
+              <Form.Item label="หน่วย" name="unit">
+                <Input />
+              </Form.Item>
+            </Col>
+          </Row>
+          <Row gutter={16}>
+            <Col span={12}>
+              <Form.Item label="ราคา/หน่วย" name="unitPrice" rules={[{ required: true, message: 'กรุณากรอกราคา' }]}>
+                <InputNumber
+                  min={0}
+                  style={{ width: '100%' }}
+                  formatter={(v) => `${v}`.replace(/\B(?=(\d{3})+(?!\d))/g, ',')}
+                  parser={(v) => v!.replace(/,/g, '') as any}
+                />
+              </Form.Item>
+            </Col>
+            <Col span={12}>
+              <Form.Item label="ต้นทุนโดยประมาณ" name="estimatedCost">
+                <InputNumber
+                  min={0}
+                  style={{ width: '100%' }}
+                  formatter={(v) => `${v}`.replace(/\B(?=(\d{3})+(?!\d))/g, ',')}
+                  parser={(v) => v!.replace(/,/g, '') as any}
+                />
+              </Form.Item>
+            </Col>
+          </Row>
+        </Form>
+      </Modal>
+
       <QuickCalculator
         open={calculatorOpen}
         onClose={() => setCalculatorOpen(false)}
