@@ -5,7 +5,7 @@ import {
 } from 'antd';
 import {
   PlusOutlined, SearchOutlined, EyeOutlined, EditOutlined,
-  CloseCircleOutlined, DeleteOutlined, FileTextOutlined, PrinterOutlined
+  CloseCircleOutlined, DeleteOutlined, PrinterOutlined
 } from '@ant-design/icons';
 import QuotationPrintPreview from '../../components/quotation/QuotationPrintPreview';
 import { quotationsApi } from '../../services/api';
