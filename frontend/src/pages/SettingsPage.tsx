@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
-import { Tabs, Table, Button, Card, Space, message, Modal, Form, Input, Popconfirm, InputNumber, Tag } from 'antd';
-import { PlusOutlined, EditOutlined, DeleteOutlined, SettingOutlined, AppstoreOutlined, ScissorOutlined, FileTextOutlined, ToolOutlined } from '@ant-design/icons';
+import { Tabs, Table, Button, Card, Space, message, Modal, Form, Input, Popconfirm, InputNumber, Tag, Switch, Row, Col, Divider } from 'antd';
+import { PlusOutlined, EditOutlined, DeleteOutlined, SettingOutlined, AppstoreOutlined, ScissorOutlined, FileTextOutlined, ToolOutlined, BellOutlined, FileProtectOutlined } from '@ant-design/icons';
 import { productsApi, unitsApi, systemSettingsApi } from '../services/api';
 import { ProductCategory } from '../types';
 
@@ -39,10 +39,15 @@ const SettingsPage: React.FC = () => {
   const [loadingQtSettings, setLoadingQtSettings] = useState(false);
   const [qtSettingsForm] = Form.useForm();
 
+  // System Settings state
+  const [loadingSystemSettings, setLoadingSystemSettings] = useState(false);
+  const [systemSettingsForm] = Form.useForm();
+
   useEffect(() => {
     loadCategories();
     loadUnits();
     loadQuotationSettings();
+    loadSystemSettings();
   }, []);
 
   // ============ Categories Functions ============
@@ -189,6 +194,67 @@ const SettingsPage: React.FC = () => {
     }
   };
 
+  // ============ System Settings Functions ============
+  const loadSystemSettings = async () => {
+    setLoadingSystemSettings(true);
+    try {
+      const res = await systemSettingsApi.getAll('SYSTEM');
+      const settingsMap: Record<string, string> = {};
+      (res.data || []).forEach((s: SystemSetting) => {
+        settingsMap[s.settingKey] = s.settingValue;
+      });
+      systemSettingsForm.setFieldsValue({
+        // Document Prefixes
+        DOC_PREFIX_QT: settingsMap.DOC_PREFIX_QT || 'QT',
+        DOC_PREFIX_PO: settingsMap.DOC_PREFIX_PO || 'PO',
+        DOC_PREFIX_GR: settingsMap.DOC_PREFIX_GR || 'GR',
+        DOC_PREFIX_INV: settingsMap.DOC_PREFIX_INV || 'INV',
+        DOC_PREFIX_SI: settingsMap.DOC_PREFIX_SI || 'SI',
+        // Alert Settings
+        ALERT_EXPIRY_DAYS: parseInt(settingsMap.ALERT_EXPIRY_DAYS) || 30,
+        ALERT_REORDER_ENABLED: settingsMap.ALERT_REORDER_ENABLED !== 'false',
+        ALERT_EXPIRY_ENABLED: settingsMap.ALERT_EXPIRY_ENABLED !== 'false',
+      });
+    } catch (error) {
+      // Use defaults
+      systemSettingsForm.setFieldsValue({
+        DOC_PREFIX_QT: 'QT',
+        DOC_PREFIX_PO: 'PO',
+        DOC_PREFIX_GR: 'GR',
+        DOC_PREFIX_INV: 'INV',
+        DOC_PREFIX_SI: 'SI',
+        ALERT_EXPIRY_DAYS: 30,
+        ALERT_REORDER_ENABLED: true,
+        ALERT_EXPIRY_ENABLED: true,
+      });
+    } finally {
+      setLoadingSystemSettings(false);
+    }
+  };
+
+  const handleSaveSystemSettings = async (values: any) => {
+    setLoadingSystemSettings(true);
+    try {
+      const settings = [
+        { key: 'DOC_PREFIX_QT', value: values.DOC_PREFIX_QT || 'QT' },
+        { key: 'DOC_PREFIX_PO', value: values.DOC_PREFIX_PO || 'PO' },
+        { key: 'DOC_PREFIX_GR', value: values.DOC_PREFIX_GR || 'GR' },
+        { key: 'DOC_PREFIX_INV', value: values.DOC_PREFIX_INV || 'INV' },
+        { key: 'DOC_PREFIX_SI', value: values.DOC_PREFIX_SI || 'SI' },
+        { key: 'ALERT_EXPIRY_DAYS', value: String(values.ALERT_EXPIRY_DAYS || 30) },
+        { key: 'ALERT_REORDER_ENABLED', value: String(values.ALERT_REORDER_ENABLED) },
+        { key: 'ALERT_EXPIRY_ENABLED', value: String(values.ALERT_EXPIRY_ENABLED) },
+      ];
+      
+      await systemSettingsApi.updateBulk(settings);
+      message.success('บันทึกตั้งค่าระบบสำเร็จ');
+    } catch (error) {
+      message.error('ไม่สามารถบันทึกตั้งค่าระบบได้');
+    } finally {
+      setLoadingSystemSettings(false);
+    }
+  };
+
   // ============ Columns ============
   const categoryColumns = [
     { title: 'รหัส', dataIndex: 'code', width: 120 },
@@ -318,14 +384,85 @@ const SettingsPage: React.FC = () => {
       ),
       children: (
         <Card className="card-holo">
-          <div style={{ marginBottom: 24 }}>
-            <h3 style={{ margin: 0 }}>🔧 ตั้งค่าระบบ</h3>
-            <p style={{ margin: 0, color: 'rgba(255,255,255,0.5)', fontSize: 13 }}>การตั้งค่าทั่วไปของระบบ</p>
-          </div>
-          <div style={{ padding: 40, textAlign: 'center', color: 'rgba(255,255,255,0.5)' }}>
-            <SettingOutlined style={{ fontSize: 48, marginBottom: 16 }} />
-            <p>ยังไม่มีการตั้งค่าระบบเพิ่มเติม</p>
-          </div>
+          <Form form={systemSettingsForm} layout="vertical" onFinish={handleSaveSystemSettings}>
+            {/* Document Prefix Section */}
+            <div style={{ marginBottom: 24 }}>
+              <h3 style={{ margin: 0, display: 'flex', alignItems: 'center', gap: 8 }}>
+                <FileProtectOutlined /> รูปแบบเลขที่เอกสาร
+              </h3>
+              <p style={{ margin: '4px 0 16px', color: 'rgba(255,255,255,0.5)', fontSize: 13 }}>
+                กำหนด Prefix สำหรับเลขที่เอกสารแต่ละประเภท
+              </p>
+            </div>
+            
+            <Row gutter={16}>
+              <Col span={8}>
+                <Form.Item label="ใบเสนอราคา (Quotation)" name="DOC_PREFIX_QT">
+                  <Input placeholder="QT" addonAfter="-YYMMDD-XXX" />
+                </Form.Item>
+              </Col>
+              <Col span={8}>
+                <Form.Item label="ใบสั่งซื้อ (PO)" name="DOC_PREFIX_PO">
+                  <Input placeholder="PO" addonAfter="-YYMMDD-XXX" />
+                </Form.Item>
+              </Col>
+              <Col span={8}>
+                <Form.Item label="ใบรับสินค้า (GR)" name="DOC_PREFIX_GR">
+                  <Input placeholder="GR" addonAfter="-YYMMDD-XXX" />
+                </Form.Item>
+              </Col>
+            </Row>
+            <Row gutter={16}>
+              <Col span={8}>
+                <Form.Item label="ใบแจ้งหนี้ (Invoice)" name="DOC_PREFIX_INV">
+                  <Input placeholder="INV" addonAfter="-YYMMDD-XXX" />
+                </Form.Item>
+              </Col>
+              <Col span={8}>
+                <Form.Item label="ใบขายสินค้า (Sales)" name="DOC_PREFIX_SI">
+                  <Input placeholder="SI" addonAfter="-YYMMDD-XXX" />
+                </Form.Item>
+              </Col>
+            </Row>
+
+            <Divider />
+
+            {/* Alert Settings Section */}
+            <div style={{ marginBottom: 24 }}>
+              <h3 style={{ margin: 0, display: 'flex', alignItems: 'center', gap: 8 }}>
+                <BellOutlined /> ตั้งค่าการแจ้งเตือน
+              </h3>
+              <p style={{ margin: '4px 0 16px', color: 'rgba(255,255,255,0.5)', fontSize: 13 }}>
+                กำหนดการแจ้งเตือนสินค้าใกล้หมด และหมดอายุ
+              </p>
+            </div>
+
+            <Row gutter={16}>
+              <Col span={8}>
+                <Form.Item label="แจ้งเตือนก่อนหมดอายุ (วัน)" name="ALERT_EXPIRY_DAYS" tooltip="จำนวนวันก่อนหมดอายุที่จะแสดงเตือน">
+                  <InputNumber min={1} max={365} style={{ width: '100%' }} />
+                </Form.Item>
+              </Col>
+              <Col span={8}>
+                <Form.Item label="เปิดแจ้งเตือนสินค้าใกล้หมด" name="ALERT_REORDER_ENABLED" valuePropName="checked">
+                  <Switch checkedChildren="เปิด" unCheckedChildren="ปิด" />
+                </Form.Item>
+              </Col>
+              <Col span={8}>
+                <Form.Item label="เปิดแจ้งเตือนหมดอายุ" name="ALERT_EXPIRY_ENABLED" valuePropName="checked">
+                  <Switch checkedChildren="เปิด" unCheckedChildren="ปิด" />
+                </Form.Item>
+              </Col>
+            </Row>
+
+            <Divider />
+
+            <Form.Item>
+              <Button type="primary" htmlType="submit" className="btn-holo" loading={loadingSystemSettings}>
+                บันทึกตั้งค่าระบบ
+              </Button>
+            </Form.Item>
+          </Form>
         </Card>
       ),
     },
