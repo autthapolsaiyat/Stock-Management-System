@@ -70,6 +70,11 @@ export interface Quotation {
   actualMarginPercent?: number;
   requiresMarginApproval: boolean;
   marginApproved: boolean;
+  // Project Header
+  hasProjectHeader?: boolean;
+  projectName?: string;
+  projectDescription?: string;
+  projectDisplayMode?: string;
   // Notes
   publicNote?: string;
   internalNote?: string;
