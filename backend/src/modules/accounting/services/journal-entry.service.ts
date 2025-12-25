@@ -84,7 +84,7 @@ export class JournalEntryService {
 
     // Generate document number
     const docDate = new Date(dto.docDate);
-    const docNo = await this.docNumberingService.generateNumber('JV', docDate);
+    const { docNo } = await this.docNumberingService.generateDocNumber('JV');
 
     // Calculate period
     const periodMonth = docDate.getMonth() + 1;
@@ -268,7 +268,7 @@ export class JournalEntryService {
     }
 
     // Create reversing entry
-    const docNo = await this.docNumberingService.generateNumber('JV', new Date());
+    const { docNo } = await this.docNumberingService.generateDocNumber('JV');
 
     const reversing = this.journalRepo.create({
       docNo,
@@ -416,7 +416,16 @@ export class JournalEntryService {
       throw new BadRequestException('Default accounts not configured');
     }
 
-    const lines = [
+    const lines: Array<{
+      lineNo: number;
+      accountId: number;
+      description: string;
+      debitAmount: number;
+      creditAmount: number;
+      partnerType?: string;
+      partnerId?: number;
+      partnerName?: string;
+    }> = [
       {
         lineNo: 1,
         accountId: inventoryAccount.id,

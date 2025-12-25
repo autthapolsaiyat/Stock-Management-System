@@ -85,7 +85,7 @@ export class PaymentReceiptService {
 
   async create(dto: CreatePaymentReceiptDto, userId?: number): Promise<PaymentReceiptEntity> {
     const docDate = new Date(dto.docDate);
-    const docNo = await this.docNumberingService.generateNumber('RC', docDate);
+    const { docNo } = await this.docNumberingService.generateDocNumber('RC');
 
     const queryRunner = this.dataSource.createQueryRunner();
     await queryRunner.connect();
@@ -284,7 +284,7 @@ export class PaymentReceiptService {
       throw new BadRequestException('Default accounts not configured');
     }
 
-    const docNo = await this.docNumberingService.generateNumber('JV', receipt.docDate);
+    const { docNo } = await this.docNumberingService.generateDocNumber('JV');
     const docDate = receipt.docDate;
 
     const entry = this.journalRepo.create({

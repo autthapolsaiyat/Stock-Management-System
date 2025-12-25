@@ -86,7 +86,7 @@ export class PaymentVoucherService {
 
   async create(dto: CreatePaymentVoucherDto, userId?: number): Promise<PaymentVoucherEntity> {
     const docDate = new Date(dto.docDate);
-    const docNo = await this.docNumberingService.generateNumber('PV', docDate);
+    const { docNo } = await this.docNumberingService.generateDocNumber('PV');
 
     const queryRunner = this.dataSource.createQueryRunner();
     await queryRunner.connect();
@@ -292,7 +292,7 @@ export class PaymentVoucherService {
       throw new BadRequestException('Default accounts not configured');
     }
 
-    const docNo = await this.docNumberingService.generateNumber('JV', voucher.docDate);
+    const { docNo } = await this.docNumberingService.generateDocNumber('JV');
     const docDate = voucher.docDate;
 
     const entry = this.journalRepo.create({
