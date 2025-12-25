@@ -225,15 +225,6 @@ const QuotationList: React.FC = () => {
               />
             </Tooltip>
           )}
-          {(['CONFIRMED', 'PARTIALLY_CLOSED'] as string[]).includes(record.status || '') && (
-            <Tooltip title="สร้าง PO">
-              <Button
-                type="text"
-                icon={<FileTextOutlined />}
-                onClick={() => navigate(`/purchase-orders/new?quotationId=${record.id}`)}
-              />
-            </Tooltip>
-          )}
           {['DRAFT', 'PENDING'].includes(record.status || '') && (
             <Popconfirm
               title="ยืนยันการยกเลิก?"
