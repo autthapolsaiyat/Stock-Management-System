@@ -1,5 +1,5 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { Card, Input, Button, Space, message, Descriptions, Tag, Spin, Row, Col, Tabs, Table, Empty } from 'antd';
+import { Card, Input, Button, Space, message, Descriptions, Tag, Spin, Row, Col,  Table, Empty } from 'antd';
 import { 
   BarcodeOutlined, 
   SearchOutlined,
