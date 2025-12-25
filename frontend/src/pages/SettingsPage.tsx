@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { Tabs, Table, Button, Card, Space, message, Modal, Form, Input, Popconfirm, InputNumber, Tag, Switch, Select } from 'antd';
+import { Tabs, Table, Button, Card, Space, message, Modal, Form, Input, Popconfirm, InputNumber, Tag } from 'antd';
 import { PlusOutlined, EditOutlined, DeleteOutlined, SettingOutlined, AppstoreOutlined, ScissorOutlined, FileTextOutlined, ToolOutlined } from '@ant-design/icons';
 import { productsApi, unitsApi, systemSettingsApi } from '../services/api';
 import { ProductCategory } from '../types';
@@ -36,19 +36,13 @@ const SettingsPage: React.FC = () => {
   const [unitForm] = Form.useForm();
 
   // Quotation Settings state
-  const [quotationSettings, setQuotationSettings] = useState<Record<string, string>>({});
   const [loadingQtSettings, setLoadingQtSettings] = useState(false);
   const [qtSettingsForm] = Form.useForm();
-
-  // System Settings state
-  const [systemSettings, setSystemSettings] = useState<SystemSetting[]>([]);
-  const [loadingSystemSettings, setLoadingSystemSettings] = useState(false);
 
   useEffect(() => {
     loadCategories();
     loadUnits();
     loadQuotationSettings();
-    loadSystemSettings();
   }, []);
 
   // ============ Categories Functions ============
@@ -162,7 +156,6 @@ const SettingsPage: React.FC = () => {
       (res.data || []).forEach((s: SystemSetting) => {
         settingsMap[s.settingKey] = s.settingValue;
       });
-      setQuotationSettings(settingsMap);
       qtSettingsForm.setFieldsValue({
         QT_VALID_DAYS: parseInt(settingsMap.QT_VALID_DAYS) || 30,
         QT_DELIVERY_DAYS: parseInt(settingsMap.QT_DELIVERY_DAYS) || 120,
@@ -180,35 +173,19 @@ const SettingsPage: React.FC = () => {
   const handleSaveQuotationSettings = async (values: any) => {
     try {
       const settings = [
-        { settingKey: 'QT_VALID_DAYS', settingValue: String(values.QT_VALID_DAYS), settingGroup: 'QUOTATION' },
-        { settingKey: 'QT_DELIVERY_DAYS', settingValue: String(values.QT_DELIVERY_DAYS), settingGroup: 'QUOTATION' },
-        { settingKey: 'QT_CREDIT_TERM_DAYS', settingValue: String(values.QT_CREDIT_TERM_DAYS), settingGroup: 'QUOTATION' },
-        { settingKey: 'QT_MIN_MARGIN_PERCENT', settingValue: String(values.QT_MIN_MARGIN_PERCENT), settingGroup: 'QUOTATION' },
-        { settingKey: 'QT_DEFAULT_TAX_RATE', settingValue: String(values.QT_DEFAULT_TAX_RATE), settingGroup: 'QUOTATION' },
+        { key: 'QT_VALID_DAYS', value: String(values.QT_VALID_DAYS) },
+        { key: 'QT_DELIVERY_DAYS', value: String(values.QT_DELIVERY_DAYS) },
+        { key: 'QT_CREDIT_TERM_DAYS', value: String(values.QT_CREDIT_TERM_DAYS) },
+        { key: 'QT_MIN_MARGIN_PERCENT', value: String(values.QT_MIN_MARGIN_PERCENT) },
+        { key: 'QT_DEFAULT_TAX_RATE', value: String(values.QT_DEFAULT_TAX_RATE) },
       ];
       
-      for (const setting of settings) {
-        await systemSettingsApi.upsert(setting);
-      }
+      await systemSettingsApi.updateBulk(settings);
       
       message.success('บันทึกค่าตั้งต้นสำเร็จ');
       loadQuotationSettings();
     } catch (error) {
       message.error('ไม่สามารถบันทึกค่าตั้งต้นได้');
-    }
-  };
-
-  // ============ System Settings Functions ============
-  const loadSystemSettings = async () => {
-    setLoadingSystemSettings(true);
-    try {
-      const res = await systemSettingsApi.getAll('SYSTEM');
-      setSystemSettings(res.data || []);
-    } catch (error) {
-      // No system settings yet
-      setSystemSettings([]);
-    } finally {
-      setLoadingSystemSettings(false);
     }
   };
 
