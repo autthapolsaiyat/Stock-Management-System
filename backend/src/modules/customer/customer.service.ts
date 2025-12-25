@@ -3,7 +3,13 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { CustomerEntity } from './entities/customer.entity';
 import { AuditLogService } from '../audit-log/audit-log.service';
-import { AuditContext } from '../../common/types';
+
+export interface AuditContext {
+  userId: number;
+  userName?: string;
+  ipAddress?: string;
+  userAgent?: string;
+}
 
 @Injectable()
 export class CustomerService {
@@ -42,7 +48,7 @@ export class CustomerService {
 
   async create(dto: any, ctx?: AuditContext) {
     const customer = this.customerRepository.create({ ...dto, isActive: true });
-    const saved = await this.customerRepository.save(customer);
+    const saved = await this.customerRepository.save(customer) as CustomerEntity;
     
     if (ctx) {
       await this.auditLogService.log({

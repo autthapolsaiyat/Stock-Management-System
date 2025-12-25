@@ -2,7 +2,22 @@ import { Controller, Get, Post, Put, Delete, Body, Param, Query, ParseIntPipe, U
 import { ApiTags, ApiBearerAuth, ApiQuery } from '@nestjs/swagger';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { CustomerService } from './customer.service';
-import { getAuditContext } from '../../common/utils';
+
+interface AuditContext {
+  userId: number;
+  userName?: string;
+  ipAddress?: string;
+  userAgent?: string;
+}
+
+function getAuditContext(req: any): AuditContext {
+  return {
+    userId: req.user?.sub || req.user?.id,
+    userName: req.user?.fullName || req.user?.username,
+    ipAddress: req.ip || req.headers?.['x-forwarded-for'] || req.connection?.remoteAddress,
+    userAgent: req.headers?.['user-agent'],
+  };
+}
 
 @ApiTags('Customers')
 @ApiBearerAuth()

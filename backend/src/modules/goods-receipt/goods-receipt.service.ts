@@ -189,7 +189,7 @@ export class GoodsReceiptService {
         documentId: savedGR.id,
         documentNo: savedGR.docFullNo,
         userId: userId,
-        details: { supplierId: savedGR.supplierId, grandTotal: savedGR.grandTotal },
+        details: { supplierId: savedGR.supplierId },
       });
 
       return this.findOne(savedGR.id);

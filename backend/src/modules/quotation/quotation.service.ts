@@ -6,7 +6,13 @@ import { DocNumberingService } from '../doc-numbering/doc-numbering.service';
 import { TempProductService } from '../temp-product/temp-product.service';
 import { SystemSettingsService } from '../system-settings/system-settings.service';
 import { AuditLogService } from '../audit-log/audit-log.service';
-import { AuditContext } from '../../common/types';
+
+export interface AuditContext {
+  userId: number;
+  userName?: string;
+  ipAddress?: string;
+  userAgent?: string;
+}
 
 @Injectable()
 export class QuotationService {

@@ -3,7 +3,22 @@ import { ApiTags, ApiBearerAuth, ApiOperation, ApiQuery } from '@nestjs/swagger'
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { ProductService } from './product.service';
 import { CreateProductDto, UpdateProductDto, CreateCategoryDto, CreateUnitDto } from './dto/product.dto';
-import { getAuditContext } from '../../common/utils';
+
+interface AuditContext {
+  userId: number;
+  userName?: string;
+  ipAddress?: string;
+  userAgent?: string;
+}
+
+function getAuditContext(req: any): AuditContext {
+  return {
+    userId: req.user?.sub || req.user?.id,
+    userName: req.user?.fullName || req.user?.username,
+    ipAddress: req.ip || req.headers?.['x-forwarded-for'] || req.connection?.remoteAddress,
+    userAgent: req.headers?.['user-agent'],
+  };
+}
 
 @ApiTags('Products')
 @ApiBearerAuth()

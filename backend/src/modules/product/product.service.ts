@@ -6,7 +6,13 @@ import { ProductCategoryEntity } from './entities/product-category.entity';
 import { UnitEntity } from './entities/unit.entity';
 import { CreateProductDto, UpdateProductDto, CreateCategoryDto, CreateUnitDto } from './dto/product.dto';
 import { AuditLogService } from '../audit-log/audit-log.service';
-import { AuditContext } from '../../common/types';
+
+export interface AuditContext {
+  userId: number;
+  userName?: string;
+  ipAddress?: string;
+  userAgent?: string;
+}
 
 @Injectable()
 export class ProductService {
@@ -116,7 +122,7 @@ export class ProductService {
         module: 'CATEGORY',
         action: 'CREATE',
         documentId: saved.id,
-        documentNo: saved.code,
+        documentNo: saved.name,
         userId: ctx.userId,
         userName: ctx.userName,
         ipAddress: ctx.ipAddress,
@@ -139,7 +145,7 @@ export class ProductService {
         module: 'CATEGORY',
         action: 'UPDATE',
         documentId: id,
-        documentNo: saved.code,
+        documentNo: saved.name,
         userId: ctx.userId,
         userName: ctx.userName,
         ipAddress: ctx.ipAddress,
@@ -161,7 +167,7 @@ export class ProductService {
         module: 'CATEGORY',
         action: 'DELETE',
         documentId: id,
-        documentNo: category.code,
+        documentNo: category.name,
         userId: ctx.userId,
         userName: ctx.userName,
         ipAddress: ctx.ipAddress,

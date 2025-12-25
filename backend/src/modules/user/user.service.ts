@@ -7,7 +7,13 @@ import { RoleEntity } from './entities/role.entity';
 import { UserRoleEntity } from './entities/user-role.entity';
 import { CreateUserDto, UpdateUserDto } from './dto/user.dto';
 import { AuditLogService } from '../audit-log/audit-log.service';
-import { AuditContext } from '../../common/types';
+
+export interface AuditContext {
+  userId: number;
+  userName?: string;
+  ipAddress?: string;
+  userAgent?: string;
+}
 
 @Injectable()
 export class UserService {
