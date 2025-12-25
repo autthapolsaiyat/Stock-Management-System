@@ -25,6 +25,10 @@ interface QuotationPrintPreviewProps {
     taxAmount: number;
     grandTotal: number;
     discountDisplayMode?: string;
+    hasProjectHeader?: boolean;
+    projectName?: string;
+    projectDescription?: string;
+    projectDisplayMode?: string;
   };
   items: QuotationItem[];
   customer: any;
@@ -280,6 +284,28 @@ const QuotationPrintPreview: React.FC<QuotationPrintPreviewProps> = ({
               </tr>
             </thead>
             <tbody>
+              {/* Project Header Row */}
+              {quotation.hasProjectHeader && quotation.projectName && (
+                <tr style={{ background: '#fffde7' }}>
+                  <td style={{ border: '1px solid #000', padding: 6, textAlign: 'center', verticalAlign: 'top' }}>
+                    {quotation.projectDisplayMode !== 'MODE_3' ? '1' : ''}
+                  </td>
+                  <td style={{ border: '1px solid #000', padding: 6, textAlign: 'center', verticalAlign: 'top' }}>
+                    {quotation.projectDisplayMode !== 'MODE_3' ? 'โครงการ' : ''}
+                  </td>
+                  <td style={{ border: '1px solid #000', padding: 6 }}></td>
+                  <td style={{ border: '1px solid #000', padding: 6, verticalAlign: 'top' }}>
+                    <div style={{ fontWeight: 'bold' }}>{quotation.projectName}</div>
+                    {quotation.projectDescription && (
+                      <div style={{ color: '#666', marginTop: 4 }}>{quotation.projectDescription}</div>
+                    )}
+                  </td>
+                  <td style={{ border: '1px solid #000', padding: 6 }}></td>
+                  <td style={{ border: '1px solid #000', padding: 6, textAlign: 'right', fontWeight: 'bold' }}>
+                    {quotation.projectDisplayMode === 'MODE_1' ? formatNumber(quotation.grandTotal) : ''}
+                  </td>
+                </tr>
+              )}
               {items.map((item, idx) => (
                 <tr key={idx}>
                   <td style={{ border: '1px solid #000', padding: 6, textAlign: 'center', verticalAlign: 'top' }}>{idx + 1}</td>

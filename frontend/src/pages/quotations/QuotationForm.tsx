@@ -819,6 +819,50 @@ const QuotationForm: React.FC = () => {
             </Row>
           </Card>
 
+          {/* Project Header */}
+          <Card title="📋 หัวข้อโครงการ (แสดงในใบเสนอราคา)" style={{ marginBottom: 16 }}>
+            <Form form={form}>
+              <Row gutter={16}>
+                <Col span={24}>
+                  <Form.Item name="hasProjectHeader" valuePropName="checked">
+                    <Checkbox onChange={(e) => form.setFieldsValue({ hasProjectHeader: e.target.checked })}>
+                      เปิดใช้หัวข้อโครงการ
+                    </Checkbox>
+                  </Form.Item>
+                </Col>
+              </Row>
+              <Form.Item noStyle shouldUpdate={(prev, cur) => prev.hasProjectHeader !== cur.hasProjectHeader}>
+                {({ getFieldValue }) => getFieldValue('hasProjectHeader') && (
+                  <>
+                    <Row gutter={16}>
+                      <Col span={24}>
+                        <Form.Item label="ชื่อโครงการ" name="projectName">
+                          <Input placeholder="เช่น โครงการพัฒนาระบบวิเคราะห์โปรไฟล์ยาเสพติด" />
+                        </Form.Item>
+                      </Col>
+                    </Row>
+                    <Row gutter={16}>
+                      <Col span={12}>
+                        <Form.Item label="รายละเอียดเพิ่มเติม" name="projectDescription">
+                          <TextArea rows={2} placeholder="เช่น ประกอบด้วย" />
+                        </Form.Item>
+                      </Col>
+                      <Col span={12}>
+                        <Form.Item label="รูปแบบการแสดง" name="projectDisplayMode">
+                          <Select defaultValue="MODE_1">
+                            <Select.Option value="MODE_1">แบบ 1: แสดงลำดับ + "โครงการ" + ยอดรวม</Select.Option>
+                            <Select.Option value="MODE_2">แบบ 2: แสดงลำดับ + "โครงการ" (ไม่แสดงยอด)</Select.Option>
+                            <Select.Option value="MODE_3">แบบ 3: แสดงเฉพาะชื่อโครงการ</Select.Option>
+                          </Select>
+                        </Form.Item>
+                      </Col>
+                    </Row>
+                  </>
+                )}
+              </Form.Item>
+            </Form>
+          </Card>
+
           {/* Notes */}
           <Card title="หมายเหตุ">
             <Form form={form}>
@@ -969,6 +1013,10 @@ const QuotationForm: React.FC = () => {
           contactEmail: form.getFieldValue('contactEmail'),
           publicNote: form.getFieldValue('publicNote'),
           discountDisplayMode: form.getFieldValue('discountDisplayMode'),
+          hasProjectHeader: form.getFieldValue('hasProjectHeader'),
+          projectName: form.getFieldValue('projectName'),
+          projectDescription: form.getFieldValue('projectDescription'),
+          projectDisplayMode: form.getFieldValue('projectDisplayMode'),
           ...summary,
         }}
         items={items}

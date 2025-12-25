@@ -935,6 +935,10 @@ const QuotationDetail: React.FC = () => {
             afterDiscount: Number(quotation.afterDiscount) || 0,
             taxAmount: Number(quotation.taxAmount) || 0,
             grandTotal: Number(quotation.grandTotal) || 0,
+            hasProjectHeader: quotation.hasProjectHeader,
+            projectName: quotation.projectName,
+            projectDescription: quotation.projectDescription,
+            projectDisplayMode: quotation.projectDisplayMode,
           }}
           items={quotation.items || []}
           customer={{ 

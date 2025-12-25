@@ -130,6 +130,19 @@ export class QuotationEntity {
   @Column({ name: 'margin_approval_note', type: 'text', nullable: true })
   marginApprovalNote: string;
 
+  // Project Header
+  @Column({ name: 'has_project_header', type: 'boolean', default: false })
+  hasProjectHeader: boolean;
+
+  @Column({ name: 'project_name', length: 500, nullable: true })
+  projectName: string;
+
+  @Column({ name: 'project_description', type: 'text', nullable: true })
+  projectDescription: string;
+
+  @Column({ name: 'project_display_mode', length: 20, default: 'MODE_1' })
+  projectDisplayMode: string; // MODE_1, MODE_2, MODE_3
+
   // Notes
   @Column({ name: 'public_note', type: 'text', nullable: true })
   publicNote: string;
