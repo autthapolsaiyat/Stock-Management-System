@@ -48,7 +48,8 @@ export class CustomerService {
 
   async create(dto: any, ctx?: AuditContext) {
     const customer = this.customerRepository.create({ ...dto, isActive: true });
-    const saved = await this.customerRepository.save(customer) as CustomerEntity;
+    const savedCustomer = await this.customerRepository.save(customer);
+    const saved = Array.isArray(savedCustomer) ? savedCustomer[0] : savedCustomer;
     
     if (ctx) {
       await this.auditLogService.log({

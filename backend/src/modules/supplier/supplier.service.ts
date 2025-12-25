@@ -31,7 +31,8 @@ export class SupplierService {
 
   async create(dto: any, ctx?: AuditContext) {
     const supplier = this.supplierRepository.create({ ...dto, isActive: true });
-    const saved = await this.supplierRepository.save(supplier) as SupplierEntity;
+    const savedSupplier = await this.supplierRepository.save(supplier);
+    const saved = Array.isArray(savedSupplier) ? savedSupplier[0] : savedSupplier;
     
     if (ctx) {
       await this.auditLogService.log({
