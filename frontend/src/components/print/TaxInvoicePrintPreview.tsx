@@ -3,6 +3,31 @@ import { Modal, Button, Spin, Radio, Space, Checkbox, Divider } from 'antd';
 import { PrinterOutlined, SettingOutlined } from '@ant-design/icons';
 import { systemSettingsApi } from '../../services/api';
 
+// CSS สำหรับแก้สีตัวหนังสือใน Modal (Dark Mode fix)
+const modalDarkStyles = `
+  .tax-invoice-print-modal .ant-modal-content,
+  .tax-invoice-print-modal .ant-modal-header,
+  .tax-invoice-print-modal .ant-modal-title,
+  .tax-invoice-print-modal .ant-modal-body,
+  .tax-invoice-print-modal .ant-checkbox-wrapper,
+  .tax-invoice-print-modal .ant-checkbox + span,
+  .tax-invoice-print-modal .ant-radio-wrapper,
+  .tax-invoice-print-modal .ant-radio + span,
+  .tax-invoice-print-modal .ant-divider-inner-text,
+  .tax-invoice-print-modal span,
+  .tax-invoice-print-modal div,
+  .tax-invoice-print-modal label {
+    color: #000 !important;
+  }
+  .tax-invoice-print-modal .ant-modal-content {
+    background: #fff !important;
+  }
+  .tax-invoice-print-modal .ant-btn-default {
+    color: #000 !important;
+    border-color: #d9d9d9 !important;
+  }
+`;
+
 interface TaxInvoicePrintPreviewProps {
   open: boolean;
   onClose: () => void;
@@ -74,7 +99,7 @@ const TaxInvoicePrintPreview: React.FC<TaxInvoicePrintPreviewProps> = ({
       selectedCopies.forEach((copyType, index) => {
         const copyConfig = COPY_COLORS[copyType as keyof typeof COPY_COLORS];
         const pageBreak = index > 0 ? 'page-break-before: always;' : '';
-        allPages += generateInvoiceHTML(copyConfig, pageBreak);
+        allPages += generateInvoiceHTML(copyConfig, pageBreak, copyType === 'ORIGINAL');
       });
 
       printWindow.document.write(`
@@ -105,7 +130,7 @@ const TaxInvoicePrintPreview: React.FC<TaxInvoicePrintPreviewProps> = ({
     }
   };
 
-  const generateInvoiceHTML = (copyConfig: typeof COPY_COLORS.ORIGINAL, pageBreak: string) => {
+  const generateInvoiceHTML = (copyConfig: typeof COPY_COLORS.ORIGINAL, pageBreak: string, isOriginal: boolean) => {
     const items = invoice?.items || invoice?.lines || [];
     
     // Badge HTML based on style
@@ -336,23 +361,26 @@ const TaxInvoicePrintPreview: React.FC<TaxInvoicePrintPreviewProps> = ({
   const currentCopyConfig = COPY_COLORS[previewCopy as keyof typeof COPY_COLORS];
 
   return (
-    <Modal
-      open={open}
-      onCancel={onClose}
-      width={900}
-      title={
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', paddingRight: 30 }}>
-          <span>พิมพ์ใบกำกับภาษี / ใบแจ้งหนี้</span>
-          <Button 
-            type="text" 
-            icon={<SettingOutlined />} 
-            onClick={() => setShowSettings(!showSettings)}
-          >
-            ตั้งค่า
-          </Button>
-        </div>
-      }
-      footer={[
+    <>
+      <style>{modalDarkStyles}</style>
+      <Modal
+        open={open}
+        onCancel={onClose}
+        width={900}
+        className="tax-invoice-print-modal"
+        title={
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', paddingRight: 30 }}>
+            <span>พิมพ์ใบกำกับภาษี / ใบแจ้งหนี้</span>
+            <Button 
+              type="text" 
+              icon={<SettingOutlined />} 
+              onClick={() => setShowSettings(!showSettings)}
+            >
+              ตั้งค่า
+            </Button>
+          </div>
+        }
+        footer={[
         <Button key="cancel" onClick={onClose}>ปิด</Button>,
         <Button key="print" type="primary" icon={<PrinterOutlined />} onClick={handlePrint}>
           พิมพ์ ({selectedCopies.length} ใบ)
@@ -365,7 +393,7 @@ const TaxInvoicePrintPreview: React.FC<TaxInvoicePrintPreviewProps> = ({
         <>
           {/* Settings Panel */}
           {showSettings && (
-            <div style={{ marginBottom: 16, padding: 16, background: '#fafafa', borderRadius: 8, border: '1px solid #d9d9d9', color: '#000' }}>
+            <div style={{ marginBottom: 16, padding: 16, background: '#fafafa', borderRadius: 8, border: '1px solid #d9d9d9' }}>
               <div style={{ marginBottom: 12, fontWeight: 'bold' }}>
                 <SettingOutlined /> รูปแบบการแสดงสำเนา
               </div>
@@ -373,22 +401,22 @@ const TaxInvoicePrintPreview: React.FC<TaxInvoicePrintPreviewProps> = ({
                 <Space direction="vertical">
                   <Radio value="TOP_BANNER">
                     <span style={{ fontWeight: 500 }}>แถบด้านบน</span>
-                    <span style={{ color: '#555', marginLeft: 8 }}>- แถบสีเต็มความกว้างด้านบน</span>
+                    <span style={{ color: '#888', marginLeft: 8 }}>- แถบสีเต็มความกว้างด้านบน</span>
                   </Radio>
                   <Radio value="CORNER_BADGE">
                     <span style={{ fontWeight: 500 }}>มุมขวาบน</span>
-                    <span style={{ color: '#555', marginLeft: 8 }}>- ป้ายสีเล็กที่มุมขวาบน (ประหยัดหมึกกว่า)</span>
+                    <span style={{ color: '#888', marginLeft: 8 }}>- ป้ายสีเล็กที่มุมขวาบน (ประหยัดหมึกกว่า)</span>
                   </Radio>
                 </Space>
               </Radio.Group>
-              <div style={{ marginTop: 8, fontSize: 12, color: '#555' }}>
+              <div style={{ marginTop: 8, fontSize: 12, color: '#888' }}>
                 * การตั้งค่านี้จะถูกบันทึกสำหรับการใช้งานครั้งต่อไป
               </div>
             </div>
           )}
 
           {/* Copy Selection */}
-          <div style={{ marginBottom: 16, padding: 16, background: '#f5f5f5', borderRadius: 8, color: '#000' }}>
+          <div style={{ marginBottom: 16, padding: 16, background: '#f5f5f5', borderRadius: 8 }}>
             <div style={{ marginBottom: 8, fontWeight: 'bold' }}>เลือกสำเนาที่ต้องการพิมพ์:</div>
             <Checkbox.Group 
               value={selectedCopies} 
@@ -428,7 +456,7 @@ const TaxInvoicePrintPreview: React.FC<TaxInvoicePrintPreviewProps> = ({
           <div 
             style={{ 
               padding: 20, 
-              border: '1px solid #ddd', color: '#000',
+              border: '1px solid #ddd',
               position: 'relative',
               background: '#fff',
               minHeight: 500
@@ -558,6 +586,7 @@ const TaxInvoicePrintPreview: React.FC<TaxInvoicePrintPreviewProps> = ({
         </>
       )}
     </Modal>
+    </>
   );
 };
 
