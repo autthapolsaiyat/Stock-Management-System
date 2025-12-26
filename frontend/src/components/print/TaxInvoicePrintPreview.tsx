@@ -428,7 +428,7 @@ const TaxInvoicePrintPreview: React.FC<TaxInvoicePrintPreviewProps> = ({
           <div 
             style={{ 
               padding: 20, 
-              border: '1px solid #ddd',
+              border: '1px solid #ddd', color: '#000',
               position: 'relative',
               background: '#fff',
               minHeight: 500
