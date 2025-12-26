@@ -84,6 +84,39 @@ const ProtectedRoute: React.FC<{ children: React.ReactNode }> = ({ children }) =
   return <>{children}</>;
 };
 
+// Accounting Route Protection
+const AccountRoute: React.FC<{ children: React.ReactNode }> = ({ children }) => {
+  const { hasAccountAccess, isLoading } = useAuth();
+
+  if (isLoading) {
+    return (
+      <div style={{ height: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', background: '#020617' }}>
+        <Spin size="large" />
+      </div>
+    );
+  }
+
+  if (!hasAccountAccess()) {
+    return (
+      <div style={{ 
+        height: '100vh', 
+        display: 'flex', 
+        flexDirection: 'column',
+        alignItems: 'center', 
+        justifyContent: 'center', 
+        background: '#020617',
+        color: '#fff'
+      }}>
+        <h2 style={{ color: '#ef4444' }}>🔒 ไม่มีสิทธิ์เข้าถึง</h2>
+        <p style={{ color: '#9ca3af' }}>คุณไม่มีสิทธิ์เข้าถึงระบบบัญชี กรุณาติดต่อผู้ดูแลระบบ</p>
+        <a href="/" style={{ color: '#3b82f6', marginTop: 16 }}>← กลับหน้าหลัก</a>
+      </div>
+    );
+  }
+
+  return <>{children}</>;
+};
+
 const App: React.FC = () => {
   return (
     <Routes>
@@ -156,21 +189,22 @@ const App: React.FC = () => {
         <Route path="stock-adjustments" element={<StockAdjustmentsPage />} />
         <Route path="stock-counts" element={<StockCountsPage />} />
 
-        {/* Accounting */}
-        <Route path="accounting/chart-of-accounts" element={<ChartOfAccountsPage />} />
-        <Route path="accounting/journal-entries" element={<JournalEntriesPage />} />
-        <Route path="accounting/general-ledger" element={<GeneralLedgerPage />} />
-        <Route path="accounting/payment-receipts" element={<PaymentReceiptPage />} />
-        <Route path="accounting/payment-vouchers" element={<PaymentVoucherPage />} />
-        <Route path="accounting/ar-ap-aging" element={<ARAPAgingPage />} />
-        <Route path="accounting/reports" element={<FinancialReportsPage />} />
-        <Route path="accounting/bank-reconciliation" element={<BankReconciliationPage />} />
-        <Route path="accounting/closing-period" element={<ClosingPeriodPage />} />
-        <Route path="accounting/tax-invoices" element={<TaxInvoicePage />} />
-        <Route path="accounting/withholding-tax" element={<WithholdingTaxPage />} />
-        <Route path="accounting/vat-report" element={<VatReportPage />} />
-        <Route path="accounting/fixed-assets" element={<FixedAssetPage />} />
-        <Route path="accounting/cash-flow" element={<CashFlowPage />} />
+        {/* Accounting - Protected by AccountRoute */}
+        <Route path="accounting/chart-of-accounts" element={<AccountRoute><ChartOfAccountsPage /></AccountRoute>} />
+        <Route path="accounting/journal-entries" element={<AccountRoute><JournalEntriesPage /></AccountRoute>} />
+        <Route path="accounting/general-ledger" element={<AccountRoute><GeneralLedgerPage /></AccountRoute>} />
+        <Route path="accounting/payment-receipts" element={<AccountRoute><PaymentReceiptPage /></AccountRoute>} />
+        <Route path="accounting/payment-vouchers" element={<AccountRoute><PaymentVoucherPage /></AccountRoute>} />
+        <Route path="accounting/ar-ap-aging" element={<AccountRoute><ARAPAgingPage /></AccountRoute>} />
+        <Route path="accounting/reports" element={<AccountRoute><FinancialReportsPage /></AccountRoute>} />
+        <Route path="accounting/financial-reports" element={<AccountRoute><FinancialReportsPage /></AccountRoute>} />
+        <Route path="accounting/bank-reconciliation" element={<AccountRoute><BankReconciliationPage /></AccountRoute>} />
+        <Route path="accounting/closing-period" element={<AccountRoute><ClosingPeriodPage /></AccountRoute>} />
+        <Route path="accounting/tax-invoices" element={<AccountRoute><TaxInvoicePage /></AccountRoute>} />
+        <Route path="accounting/withholding-tax" element={<AccountRoute><WithholdingTaxPage /></AccountRoute>} />
+        <Route path="accounting/vat-report" element={<AccountRoute><VatReportPage /></AccountRoute>} />
+        <Route path="accounting/fixed-assets" element={<AccountRoute><FixedAssetPage /></AccountRoute>} />
+        <Route path="accounting/cash-flow" element={<AccountRoute><CashFlowPage /></AccountRoute>} />
         
         {/* Settings */}
         <Route path="settings" element={<SettingsPage />} />

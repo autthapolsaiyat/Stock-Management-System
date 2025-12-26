@@ -22,6 +22,8 @@ interface AuthContextType {
   hasRole: (role: string) => boolean;
   hasPermission: (permission: string) => boolean;
   isSalesOnly: () => boolean;
+  isAccountOnly: () => boolean;
+  hasAccountAccess: () => boolean;
   getQuotationType: () => string | null;
 }
 
@@ -97,6 +99,21 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
            !user?.roles?.includes('MANAGER') || false;
   };
 
+  // Check if user is account-only (accounting menu only)
+  const isAccountOnly = (): boolean => {
+    const accountRoles = ['ACCOUNT', 'ACCOUNTANT', 'FINANCE'];
+    return user?.roles?.some(r => accountRoles.includes(r)) && 
+           !user?.roles?.includes('ADMIN') && 
+           !user?.roles?.includes('SUPER_ADMIN') &&
+           !user?.roles?.includes('MANAGER') || false;
+  };
+
+  // Check if user has access to accounting module
+  const hasAccountAccess = (): boolean => {
+    const accountRoles = ['ACCOUNT', 'ACCOUNTANT', 'FINANCE', 'ADMIN', 'SUPER_ADMIN', 'MANAGER'];
+    return user?.roles?.some(r => accountRoles.includes(r)) || false;
+  };
+
   // Get user's quotation type
   const getQuotationType = (): string | null => {
     return user?.quotationType || null;
@@ -114,6 +131,8 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
         hasRole,
         hasPermission,
         isSalesOnly,
+        isAccountOnly,
+        hasAccountAccess,
         getQuotationType,
       }}
     >

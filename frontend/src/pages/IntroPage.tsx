@@ -5,7 +5,8 @@ import {
   UserOutlined, SafetyOutlined, EnvironmentOutlined, FileTextOutlined,
   ShareAltOutlined, CopyOutlined, EditOutlined, SettingOutlined,
   LogoutOutlined, ShoppingCartOutlined, InboxOutlined, ToolOutlined,
-  DollarOutlined, FileSearchOutlined, BarChartOutlined
+  DollarOutlined, FileSearchOutlined, BarChartOutlined, CalculatorOutlined,
+  BankOutlined, AuditOutlined
 } from '@ant-design/icons';
 import { QRCodeSVG } from 'qrcode.react';
 import { useAuth } from '../contexts/AuthContext';
@@ -25,6 +26,7 @@ const IntroPage = () => {
   const [dashboardStats, setDashboardStats] = useState({ stockValue: 0, products: 0, categories: 0 });
   const [stockStats, setStockStats] = useState({ total: 0, low: 0, warning: 0 });
   const [poStats, setPoStats] = useState({ total: 0, pending: 0, totalAmount: 0 });
+  const [accountingStats, setAccountingStats] = useState({ journalEntries: 0, pendingPayments: 0, pendingReceipts: 0, totalAR: 0, totalAP: 0 });
   const [profile, setProfile] = useState<any>({});
   
   const checkInStats = { present: 18, leave: 2, month: 'ธ.ค. 2568' };
@@ -40,6 +42,7 @@ const IntroPage = () => {
   );
   const isStock = isSuperAdmin || user?.roles?.some((r: string) => ['ADMIN', 'STOCK', 'WAREHOUSE', 'MANAGER'].includes(r));
   const isPurchase = isSuperAdmin || user?.roles?.some((r: string) => ['ADMIN', 'PURCHASE', 'MANAGER'].includes(r));
+  const isAccount = isSuperAdmin || user?.roles?.some((r: string) => ['ADMIN', 'ACCOUNT', 'ACCOUNTANT', 'FINANCE', 'MANAGER'].includes(r));
 
   useEffect(() => {
     const handleResize = () => setIsMobile(window.innerWidth < 768);
@@ -59,6 +62,21 @@ const IntroPage = () => {
       if (isManager) { try { const [p, s] = await Promise.all([api.get('/api/products'), api.get('/api/stock/balance')]); setDashboardStats({ stockValue: (s.data || []).reduce((sum: number, x: any) => sum + ((x.quantity || 0) * (x.avgCost || 0)), 0), products: p.data?.length || 0, categories: new Set(p.data?.map((x: any) => x.category?.id)).size }); } catch {} }
       if (isStock) { try { const r = await api.get('/api/stock/balance'); const s = r.data || []; setStockStats({ total: s.length, low: s.filter((x: any) => x.quantity <= 0).length, warning: s.filter((x: any) => x.quantity > 0 && x.quantity <= 10).length }); } catch {} }
       if (isPurchase) { try { const r = await api.get('/api/purchase-orders'); const p = r.data || []; setPoStats({ total: p.length, pending: p.filter((x: any) => x.status === 'PENDING' || x.status === 'DRAFT').length, totalAmount: p.reduce((s: number, x: any) => s + (x.totalAmount || 0), 0) }); } catch {} }
+      if (isAccount) { try { 
+        const [jeRes, arRes, apRes] = await Promise.all([
+          api.get('/api/accounting/journal-entries').catch(() => ({ data: [] })),
+          api.get('/api/accounting/ar-ap/aging?type=AR').catch(() => ({ data: { summary: { totalOutstanding: 0 } } })),
+          api.get('/api/accounting/ar-ap/aging?type=AP').catch(() => ({ data: { summary: { totalOutstanding: 0 } } })),
+        ]);
+        const je = jeRes.data || [];
+        setAccountingStats({ 
+          journalEntries: je.length, 
+          pendingPayments: je.filter((x: any) => x.status === 'DRAFT').length,
+          pendingReceipts: 0,
+          totalAR: arRes.data?.summary?.totalOutstanding || 0,
+          totalAP: apRes.data?.summary?.totalOutstanding || 0
+        }); 
+      } catch {} }
     } catch {}
     setLoading(false);
   };
@@ -290,6 +308,66 @@ const IntroPage = () => {
                 <StatRow icon="📅" label="ครบกำหนดเร็วสุด" value={contractStats.nextExpiry} color="#ef4444" />
               </StatsBox>
               <Button block style={{ borderRadius: 10, background: darkMode ? 'rgba(255,255,255,0.1)' : '#fff1f2', border: 'none', color: '#f43f5e' }}>ดูคู่สัญญา</Button>
+            </div>
+          )}
+
+          {/* Card 11: ระบบบัญชี */}
+          {isAccount && (
+            <div onClick={() => navigate('/accounting/journal-entries')} style={cardStyle}>
+              <Badge text="บัญชี" gradient="linear-gradient(135deg, #14b8a6, #0d9488)" />
+              <CardIcon gradient="linear-gradient(135deg, #14b8a6, #0d9488)" icon={<CalculatorOutlined />} />
+              <h3 style={{ fontSize: 18, fontWeight: 600, color: darkMode ? '#fff' : '#1f2937', marginBottom: 4, textAlign: 'center' }}>ระบบบัญชี</h3>
+              <p style={{ fontSize: 12, color: darkMode ? 'rgba(255,255,255,0.5)' : '#9ca3af', marginBottom: 16, textAlign: 'center' }}>บันทึกบัญชี & รายงานการเงิน</p>
+              <StatsBox>
+                <StatRow icon="📝" label="รายการบันทึก" value={`${accountingStats.journalEntries} รายการ`} color={darkMode ? '#fff' : '#1f2937'} />
+                <StatRow icon="📥" label="ลูกหนี้ค้างรับ" value={formatCurrency(accountingStats.totalAR)} color="#22c55e" />
+                <StatRow icon="📤" label="เจ้าหนี้ค้างจ่าย" value={formatCurrency(accountingStats.totalAP)} color="#ef4444" />
+              </StatsBox>
+              <div style={{ display: 'flex', gap: 8 }}>
+                <Button block style={{ borderRadius: 10, background: darkMode ? 'rgba(255,255,255,0.1)' : '#f0fdfa', border: 'none', color: '#14b8a6', flex: 1 }} onClick={(e) => { e.stopPropagation(); navigate('/accounting/journal-entries'); }}>📒</Button>
+                <Button block style={{ borderRadius: 10, background: darkMode ? 'rgba(255,255,255,0.1)' : '#f0fdfa', border: 'none', color: '#14b8a6', flex: 1 }} onClick={(e) => { e.stopPropagation(); navigate('/accounting/payment-receipts'); }}>💵</Button>
+                <Button block style={{ borderRadius: 10, background: darkMode ? 'rgba(255,255,255,0.1)' : '#f0fdfa', border: 'none', color: '#14b8a6', flex: 1 }} onClick={(e) => { e.stopPropagation(); navigate('/accounting/financial-reports'); }}>📊</Button>
+              </div>
+            </div>
+          )}
+
+          {/* Card 12: ภาษี & เอกสาร */}
+          {isAccount && (
+            <div onClick={() => navigate('/accounting/tax-invoices')} style={cardStyle}>
+              <Badge text="บัญชี" gradient="linear-gradient(135deg, #14b8a6, #0d9488)" />
+              <CardIcon gradient="linear-gradient(135deg, #8b5cf6, #7c3aed)" icon={<AuditOutlined />} />
+              <h3 style={{ fontSize: 18, fontWeight: 600, color: darkMode ? '#fff' : '#1f2937', marginBottom: 4, textAlign: 'center' }}>ภาษี & เอกสาร</h3>
+              <p style={{ fontSize: 12, color: darkMode ? 'rgba(255,255,255,0.5)' : '#9ca3af', marginBottom: 16, textAlign: 'center' }}>ใบกำกับภาษี หัก ณ ที่จ่าย VAT</p>
+              <StatsBox>
+                <StatRow icon="🧾" label="ใบกำกับภาษี" value="ออกใบกำกับ" color={darkMode ? '#fff' : '#1f2937'} />
+                <StatRow icon="📋" label="หัก ณ ที่จ่าย" value="ภ.ง.ด." color="#8b5cf6" />
+                <StatRow icon="📑" label="รายงาน VAT" value="ภ.พ.30" color="#f59e0b" />
+              </StatsBox>
+              <div style={{ display: 'flex', gap: 8 }}>
+                <Button block style={{ borderRadius: 10, background: darkMode ? 'rgba(255,255,255,0.1)' : '#faf5ff', border: 'none', color: '#8b5cf6', flex: 1 }} onClick={(e) => { e.stopPropagation(); navigate('/accounting/tax-invoices'); }}>🧾</Button>
+                <Button block style={{ borderRadius: 10, background: darkMode ? 'rgba(255,255,255,0.1)' : '#faf5ff', border: 'none', color: '#8b5cf6', flex: 1 }} onClick={(e) => { e.stopPropagation(); navigate('/accounting/withholding-tax'); }}>📋</Button>
+                <Button block style={{ borderRadius: 10, background: darkMode ? 'rgba(255,255,255,0.1)' : '#faf5ff', border: 'none', color: '#8b5cf6', flex: 1 }} onClick={(e) => { e.stopPropagation(); navigate('/accounting/vat-report'); }}>📑</Button>
+              </div>
+            </div>
+          )}
+
+          {/* Card 13: สินทรัพย์ & ธนาคาร */}
+          {isAccount && (
+            <div onClick={() => navigate('/accounting/fixed-assets')} style={cardStyle}>
+              <Badge text="บัญชี" gradient="linear-gradient(135deg, #14b8a6, #0d9488)" />
+              <CardIcon gradient="linear-gradient(135deg, #f59e0b, #d97706)" icon={<BankOutlined />} />
+              <h3 style={{ fontSize: 18, fontWeight: 600, color: darkMode ? '#fff' : '#1f2937', marginBottom: 4, textAlign: 'center' }}>สินทรัพย์ & ธนาคาร</h3>
+              <p style={{ fontSize: 12, color: darkMode ? 'rgba(255,255,255,0.5)' : '#9ca3af', marginBottom: 16, textAlign: 'center' }}>ทะเบียนสินทรัพย์ กระทบยอด</p>
+              <StatsBox>
+                <StatRow icon="🏢" label="สินทรัพย์ถาวร" value="ทะเบียน FA" color={darkMode ? '#fff' : '#1f2937'} />
+                <StatRow icon="🏦" label="กระทบยอดธนาคาร" value="Bank Recon" color="#f59e0b" />
+                <StatRow icon="💳" label="ผังบัญชี" value="COA" color="#0ea5e9" />
+              </StatsBox>
+              <div style={{ display: 'flex', gap: 8 }}>
+                <Button block style={{ borderRadius: 10, background: darkMode ? 'rgba(255,255,255,0.1)' : '#fffbeb', border: 'none', color: '#f59e0b', flex: 1 }} onClick={(e) => { e.stopPropagation(); navigate('/accounting/fixed-assets'); }}>🏢</Button>
+                <Button block style={{ borderRadius: 10, background: darkMode ? 'rgba(255,255,255,0.1)' : '#fffbeb', border: 'none', color: '#f59e0b', flex: 1 }} onClick={(e) => { e.stopPropagation(); navigate('/accounting/bank-reconciliation'); }}>🏦</Button>
+                <Button block style={{ borderRadius: 10, background: darkMode ? 'rgba(255,255,255,0.1)' : '#fffbeb', border: 'none', color: '#f59e0b', flex: 1 }} onClick={(e) => { e.stopPropagation(); navigate('/accounting/chart-of-accounts'); }}>💳</Button>
+              </div>
             </div>
           )}
         </div>
