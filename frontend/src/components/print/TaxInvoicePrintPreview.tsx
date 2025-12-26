@@ -365,7 +365,7 @@ const TaxInvoicePrintPreview: React.FC<TaxInvoicePrintPreviewProps> = ({
         <>
           {/* Settings Panel */}
           {showSettings && (
-            <div style={{ marginBottom: 16, padding: 16, background: '#fafafa', borderRadius: 8, border: '1px solid #d9d9d9' }}>
+            <div style={{ marginBottom: 16, padding: 16, background: '#fafafa', borderRadius: 8, border: '1px solid #d9d9d9', color: '#000' }}>
               <div style={{ marginBottom: 12, fontWeight: 'bold' }}>
                 <SettingOutlined /> รูปแบบการแสดงสำเนา
               </div>
@@ -373,15 +373,15 @@ const TaxInvoicePrintPreview: React.FC<TaxInvoicePrintPreviewProps> = ({
                 <Space direction="vertical">
                   <Radio value="TOP_BANNER">
                     <span style={{ fontWeight: 500 }}>แถบด้านบน</span>
-                    <span style={{ color: '#888', marginLeft: 8 }}>- แถบสีเต็มความกว้างด้านบน</span>
+                    <span style={{ color: '#555', marginLeft: 8 }}>- แถบสีเต็มความกว้างด้านบน</span>
                   </Radio>
                   <Radio value="CORNER_BADGE">
                     <span style={{ fontWeight: 500 }}>มุมขวาบน</span>
-                    <span style={{ color: '#888', marginLeft: 8 }}>- ป้ายสีเล็กที่มุมขวาบน (ประหยัดหมึกกว่า)</span>
+                    <span style={{ color: '#555', marginLeft: 8 }}>- ป้ายสีเล็กที่มุมขวาบน (ประหยัดหมึกกว่า)</span>
                   </Radio>
                 </Space>
               </Radio.Group>
-              <div style={{ marginTop: 8, fontSize: 12, color: '#888' }}>
+              <div style={{ marginTop: 8, fontSize: 12, color: '#555' }}>
                 * การตั้งค่านี้จะถูกบันทึกสำหรับการใช้งานครั้งต่อไป
               </div>
             </div>
