@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
-import { Modal, Button, Spin, Radio, Space, Checkbox } from 'antd';
-import { PrinterOutlined } from '@ant-design/icons';
+import { Modal, Button, Spin, Radio, Space, Checkbox, Divider, Switch } from 'antd';
+import { PrinterOutlined, SettingOutlined } from '@ant-design/icons';
 import { systemSettingsApi } from '../../services/api';
 
 interface TaxInvoicePrintPreviewProps {
@@ -9,13 +9,15 @@ interface TaxInvoicePrintPreviewProps {
   invoice: any;
 }
 
-// มาตรฐานสีใบกำกับภาษี (สรรพากร)
+// มาตรฐานสีใบกำกับภาษี (สรรพากร) - ประหยัดหมึก
 const COPY_COLORS = {
-  ORIGINAL: { name: 'ต้นฉบับ', color: '#ffffff', label: 'ต้นฉบับ (ลูกค้า)', labelEN: 'ORIGINAL' },
-  COPY1: { name: 'สำเนา 1', color: '#fffde7', label: 'สำเนา (บัญชี)', labelEN: 'COPY - ACCOUNTING' },
-  COPY2: { name: 'สำเนา 2', color: '#fce4ec', label: 'สำเนา (คลัง)', labelEN: 'COPY - WAREHOUSE' },
-  COPY3: { name: 'สำเนา 3', color: '#e3f2fd', label: 'สำเนา (เก็บเข้าเล่ม)', labelEN: 'COPY - FILE' },
+  ORIGINAL: { name: 'ต้นฉบับ', color: '#1890ff', label: 'ต้นฉบับ', labelEN: 'ORIGINAL', textColor: '#fff' },
+  COPY1: { name: 'สำเนา 1', color: '#faad14', label: 'สำเนา (บัญชี)', labelEN: 'COPY - ACCOUNTING', textColor: '#000' },
+  COPY2: { name: 'สำเนา 2', color: '#eb2f96', label: 'สำเนา (คลัง)', labelEN: 'COPY - WAREHOUSE', textColor: '#fff' },
+  COPY3: { name: 'สำเนา 3', color: '#13c2c2', label: 'สำเนา (เก็บเล่ม)', labelEN: 'COPY - FILE', textColor: '#fff' },
 };
+
+type BadgeStyle = 'TOP_BANNER' | 'CORNER_BADGE';
 
 const TaxInvoicePrintPreview: React.FC<TaxInvoicePrintPreviewProps> = ({
   open,
@@ -26,10 +28,15 @@ const TaxInvoicePrintPreview: React.FC<TaxInvoicePrintPreviewProps> = ({
   const [loading, setLoading] = useState(true);
   const [selectedCopies, setSelectedCopies] = useState<string[]>(['ORIGINAL']);
   const [previewCopy, setPreviewCopy] = useState<string>('ORIGINAL');
+  const [badgeStyle, setBadgeStyle] = useState<BadgeStyle>('TOP_BANNER');
+  const [showSettings, setShowSettings] = useState(false);
 
   useEffect(() => {
     if (open) {
       loadSettings();
+      // Load saved preference
+      const savedStyle = localStorage.getItem('taxInvoiceBadgeStyle') as BadgeStyle;
+      if (savedStyle) setBadgeStyle(savedStyle);
     }
   }, [open]);
 
@@ -54,6 +61,11 @@ const TaxInvoicePrintPreview: React.FC<TaxInvoicePrintPreviewProps> = ({
     }
   };
 
+  const handleStyleChange = (style: BadgeStyle) => {
+    setBadgeStyle(style);
+    localStorage.setItem('taxInvoiceBadgeStyle', style);
+  };
+
   const handlePrint = () => {
     const printWindow = window.open('', '_blank');
     if (printWindow) {
@@ -62,13 +74,13 @@ const TaxInvoicePrintPreview: React.FC<TaxInvoicePrintPreviewProps> = ({
       selectedCopies.forEach((copyType, index) => {
         const copyConfig = COPY_COLORS[copyType as keyof typeof COPY_COLORS];
         const pageBreak = index > 0 ? 'page-break-before: always;' : '';
-        allPages += generateInvoiceHTML(copyConfig, pageBreak);
+        allPages += generateInvoiceHTML(copyConfig, pageBreak, copyType === 'ORIGINAL');
       });
 
       printWindow.document.write(`
         <html>
           <head>
-            <title>ใบกำกับภาษี ${invoice?.docFullNo || ''}</title>
+            <title>ใบกำกับภาษี ${invoice?.docFullNo || invoice?.docNo || ''}</title>
             <style>
               @page { size: A4; margin: 10mm; }
               @media print {
@@ -78,10 +90,11 @@ const TaxInvoicePrintPreview: React.FC<TaxInvoicePrintPreviewProps> = ({
               table { border-collapse: collapse; width: 100%; }
               th, td { border: 1px solid #000; padding: 6px 8px; color: #000; }
               th { background: #f5f5f5 !important; }
-              .copy-label { position: absolute; top: 10px; right: 20px; font-size: 12px; font-weight: bold; padding: 4px 12px; border: 2px solid #000; }
-              .header-title { font-size: 22px; font-weight: bold; text-align: center; margin: 10px 0; }
+              .invoice-page { position: relative; padding: 20px; min-height: 100vh; box-sizing: border-box; background: #fff; }
+              .top-banner { padding: 8px 20px; text-align: center; font-weight: bold; font-size: 14px; margin-bottom: 15px; }
+              .corner-badge { position: absolute; top: 15px; right: 15px; padding: 8px 15px; font-weight: bold; font-size: 12px; border-radius: 4px; text-align: center; line-height: 1.4; }
+              .header-title { font-size: 20px; font-weight: bold; text-align: center; margin: 10px 0; border: 2px solid #000; padding: 8px; }
               .company-info { text-align: center; margin-bottom: 15px; }
-              .invoice-page { position: relative; padding: 20px; min-height: 100vh; box-sizing: border-box; }
             </style>
           </head>
           <body>${allPages}</body>
@@ -92,18 +105,25 @@ const TaxInvoicePrintPreview: React.FC<TaxInvoicePrintPreviewProps> = ({
     }
   };
 
-  const generateInvoiceHTML = (copyConfig: typeof COPY_COLORS.ORIGINAL, pageBreak: string) => {
-    const items = invoice?.items || [];
+  const generateInvoiceHTML = (copyConfig: typeof COPY_COLORS.ORIGINAL, pageBreak: string, isOriginal: boolean) => {
+    const items = invoice?.items || invoice?.lines || [];
+    
+    // Badge HTML based on style
+    const badgeHTML = badgeStyle === 'TOP_BANNER' 
+      ? `<div class="top-banner" style="background-color: ${copyConfig.color}; color: ${copyConfig.textColor};">
+           ${copyConfig.labelEN} - ${copyConfig.label}
+         </div>`
+      : `<div class="corner-badge" style="background-color: ${copyConfig.color}; color: ${copyConfig.textColor};">
+           ${copyConfig.labelEN}<br/>${copyConfig.label}
+         </div>`;
     
     return `
-      <div class="invoice-page" style="background-color: ${copyConfig.color}; ${pageBreak}">
-        <div class="copy-label" style="background-color: ${copyConfig.color};">
-          ${copyConfig.labelEN}<br/>${copyConfig.label}
-        </div>
+      <div class="invoice-page" style="${pageBreak}">
+        ${badgeHTML}
         
         <div class="company-info">
-          <div style="font-size: 20px; font-weight: bold;">${companySettings.COMPANY_NAME_TH || 'บริษัท แสงวิทย์ ไซเอนซ์ จำกัด'}</div>
-          <div style="font-size: 14px;">${companySettings.COMPANY_NAME_EN || 'SAENGVITH SCIENCE CO., LTD.'}</div>
+          <div style="font-size: 18px; font-weight: bold;">${companySettings.COMPANY_NAME_TH || 'บริษัท แสงวิทย์ ไซเอนซ์ จำกัด'}</div>
+          <div style="font-size: 13px;">${companySettings.COMPANY_NAME_EN || 'SAENGVITH SCIENCE CO., LTD.'}</div>
           <div style="font-size: 12px; margin-top: 5px;">
             ${companySettings.COMPANY_ADDRESS_TH || '123/4-5 ซอยสมเด็จพระปิ่นเกล้า 9 ถนนสมเด็จพระปิ่นเกล้า แขวงอรุณอมรินทร์ เขตบางกอกน้อย กรุงเทพฯ 10700'}
           </div>
@@ -122,7 +142,7 @@ const TaxInvoicePrintPreview: React.FC<TaxInvoicePrintPreviewProps> = ({
             <td style="border: none; width: 60%; vertical-align: top; padding: 0;">
               <table style="width: 100%;">
                 <tr>
-                  <td style="border: 1px solid #000; width: 80px; background: #f5f5f5;">ลูกค้า</td>
+                  <td style="border: 1px solid #000; width: 100px; background: #f5f5f5;">ลูกค้า</td>
                   <td style="border: 1px solid #000;">${invoice?.customer?.name || invoice?.customerName || '-'}</td>
                 </tr>
                 <tr>
@@ -138,8 +158,8 @@ const TaxInvoicePrintPreview: React.FC<TaxInvoicePrintPreviewProps> = ({
             <td style="border: none; width: 40%; vertical-align: top; padding: 0 0 0 10px;">
               <table style="width: 100%;">
                 <tr>
-                  <td style="border: 1px solid #000; width: 100px; background: #f5f5f5;">เลขที่</td>
-                  <td style="border: 1px solid #000; font-weight: bold;">${invoice?.docFullNo || '-'}</td>
+                  <td style="border: 1px solid #000; width: 80px; background: #f5f5f5;">เลขที่</td>
+                  <td style="border: 1px solid #000; font-weight: bold;">${invoice?.docFullNo || invoice?.docNo || '-'}</td>
                 </tr>
                 <tr>
                   <td style="border: 1px solid #000; background: #f5f5f5;">วันที่</td>
@@ -147,7 +167,7 @@ const TaxInvoicePrintPreview: React.FC<TaxInvoicePrintPreviewProps> = ({
                 </tr>
                 <tr>
                   <td style="border: 1px solid #000; background: #f5f5f5;">อ้างอิง</td>
-                  <td style="border: 1px solid #000;">${invoice?.quotationNo || invoice?.referenceNo || '-'}</td>
+                  <td style="border: 1px solid #000;">${invoice?.quotationNo || invoice?.referenceNo || invoice?.referenceDocNo || '-'}</td>
                 </tr>
               </table>
             </td>
@@ -173,12 +193,12 @@ const TaxInvoicePrintPreview: React.FC<TaxInvoicePrintPreviewProps> = ({
                 <td>${item.productCode || item.product?.code || '-'}</td>
                 <td>${item.productName || item.product?.name || item.description || '-'}</td>
                 <td style="text-align: center;">${formatNumber(item.quantity, 0)}</td>
-                <td style="text-align: center;">${item.unitName || item.unit?.name || '-'}</td>
+                <td style="text-align: center;">${item.unitName || item.unit?.name || 'ชิ้น'}</td>
                 <td style="text-align: right;">${formatNumber(item.unitPrice)}</td>
                 <td style="text-align: right;">${formatNumber(item.amount || (item.quantity * item.unitPrice))}</td>
               </tr>
             `).join('')}
-            ${Array(Math.max(0, 8 - items.length)).fill(0).map(() => `
+            ${Array(Math.max(0, 6 - items.length)).fill(0).map(() => `
               <tr>
                 <td>&nbsp;</td>
                 <td></td>
@@ -198,7 +218,7 @@ const TaxInvoicePrintPreview: React.FC<TaxInvoicePrintPreviewProps> = ({
               <div style="font-weight: bold; margin-bottom: 5px;">หมายเหตุ:</div>
               <div>${invoice?.remarks || invoice?.notes || '-'}</div>
               <div style="margin-top: 10px; font-size: 13px;">
-                <strong>จำนวนเงิน (ตัวอักษร):</strong> ${numberToThaiText(invoice?.totalAmount || invoice?.grandTotal || 0)}
+                <strong>จำนวนเงิน (ตัวอักษร):</strong> ${numberToThaiText(Number(invoice?.totalAmount) || Number(invoice?.grandTotal) || 0)}
               </div>
             </td>
             <td style="border: 1px solid #000; width: 40%; padding: 0;">
@@ -210,10 +230,6 @@ const TaxInvoicePrintPreview: React.FC<TaxInvoicePrintPreviewProps> = ({
                 <tr>
                   <td style="border: none; border-bottom: 1px solid #000; text-align: right; padding: 6px;">ส่วนลด</td>
                   <td style="border: none; border-bottom: 1px solid #000; text-align: right; padding: 6px;">${formatNumber(invoice?.discountAmount || invoice?.discount || 0)}</td>
-                </tr>
-                <tr>
-                  <td style="border: none; border-bottom: 1px solid #000; text-align: right; padding: 6px;">ราคาหลังหักส่วนลด</td>
-                  <td style="border: none; border-bottom: 1px solid #000; text-align: right; padding: 6px;">${formatNumber((invoice?.subtotal || invoice?.subTotal || 0) - (invoice?.discountAmount || invoice?.discount || 0))}</td>
                 </tr>
                 <tr>
                   <td style="border: none; border-bottom: 1px solid #000; text-align: right; padding: 6px;">ภาษีมูลค่าเพิ่ม ${invoice?.vatRate || 7}%</td>
@@ -231,15 +247,15 @@ const TaxInvoicePrintPreview: React.FC<TaxInvoicePrintPreviewProps> = ({
         <table style="margin-top: 30px; border: none;">
           <tr>
             <td style="border: none; text-align: center; width: 33%;">
-              <div style="border-top: 1px solid #000; width: 150px; margin: 60px auto 5px; padding-top: 5px;">ผู้รับสินค้า</div>
+              <div style="border-top: 1px solid #000; width: 150px; margin: 50px auto 5px; padding-top: 5px;">ผู้รับสินค้า</div>
               <div>วันที่ ____/____/____</div>
             </td>
             <td style="border: none; text-align: center; width: 34%;">
-              <div style="border-top: 1px solid #000; width: 150px; margin: 60px auto 5px; padding-top: 5px;">ผู้ตรวจสอบ</div>
+              <div style="border-top: 1px solid #000; width: 150px; margin: 50px auto 5px; padding-top: 5px;">ผู้ตรวจสอบ</div>
               <div>วันที่ ____/____/____</div>
             </td>
             <td style="border: none; text-align: center; width: 33%;">
-              <div style="border-top: 1px solid #000; width: 150px; margin: 60px auto 5px; padding-top: 5px;">ผู้มีอำนาจลงนาม</div>
+              <div style="border-top: 1px solid #000; width: 150px; margin: 50px auto 5px; padding-top: 5px;">ผู้มีอำนาจลงนาม</div>
               <div>วันที่ ____/____/____</div>
             </td>
           </tr>
@@ -257,14 +273,11 @@ const TaxInvoicePrintPreview: React.FC<TaxInvoicePrintPreviewProps> = ({
     return `${date.getDate()} ${thaiMonths[date.getMonth()]} ${thaiYear}`;
   };
 
-  const formatNumber = (num: number, decimals: number = 2) => {
+  const formatNumber = (num: number | string, decimals: number = 2) => {
     return Number(num || 0).toLocaleString('th-TH', { minimumFractionDigits: decimals, maximumFractionDigits: decimals });
   };
 
   const numberToThaiText = (num: number): string => {
-    const units = ['', 'หนึ่ง', 'สอง', 'สาม', 'สี่', 'ห้า', 'หก', 'เจ็ด', 'แปด', 'เก้า'];
-    const positions = ['', 'สิบ', 'ร้อย', 'พัน', 'หมื่น', 'แสน', 'ล้าน'];
-    
     if (num === 0) return 'ศูนย์บาทถ้วน';
     
     const baht = Math.floor(num);
@@ -272,6 +285,8 @@ const TaxInvoicePrintPreview: React.FC<TaxInvoicePrintPreviewProps> = ({
     
     const convertSection = (n: number): string => {
       if (n === 0) return '';
+      const units = ['', 'หนึ่ง', 'สอง', 'สาม', 'สี่', 'ห้า', 'หก', 'เจ็ด', 'แปด', 'เก้า'];
+      const positions = ['', 'สิบ', 'ร้อย', 'พัน', 'หมื่น', 'แสน', 'ล้าน'];
       let result = '';
       let remaining = n;
       let pos = 0;
@@ -325,7 +340,18 @@ const TaxInvoicePrintPreview: React.FC<TaxInvoicePrintPreviewProps> = ({
       open={open}
       onCancel={onClose}
       width={900}
-      title="พิมพ์ใบกำกับภาษี / ใบแจ้งหนี้"
+      title={
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', paddingRight: 30 }}>
+          <span>พิมพ์ใบกำกับภาษี / ใบแจ้งหนี้</span>
+          <Button 
+            type="text" 
+            icon={<SettingOutlined />} 
+            onClick={() => setShowSettings(!showSettings)}
+          >
+            ตั้งค่า
+          </Button>
+        </div>
+      }
       footer={[
         <Button key="cancel" onClick={onClose}>ปิด</Button>,
         <Button key="print" type="primary" icon={<PrinterOutlined />} onClick={handlePrint}>
@@ -337,6 +363,30 @@ const TaxInvoicePrintPreview: React.FC<TaxInvoicePrintPreviewProps> = ({
         <div style={{ textAlign: 'center', padding: 50 }}><Spin size="large" /></div>
       ) : (
         <>
+          {/* Settings Panel */}
+          {showSettings && (
+            <div style={{ marginBottom: 16, padding: 16, background: '#fafafa', borderRadius: 8, border: '1px solid #d9d9d9' }}>
+              <div style={{ marginBottom: 12, fontWeight: 'bold' }}>
+                <SettingOutlined /> รูปแบบการแสดงสำเนา
+              </div>
+              <Radio.Group value={badgeStyle} onChange={(e) => handleStyleChange(e.target.value)}>
+                <Space direction="vertical">
+                  <Radio value="TOP_BANNER">
+                    <span style={{ fontWeight: 500 }}>แถบด้านบน</span>
+                    <span style={{ color: '#888', marginLeft: 8 }}>- แถบสีเต็มความกว้างด้านบน</span>
+                  </Radio>
+                  <Radio value="CORNER_BADGE">
+                    <span style={{ fontWeight: 500 }}>มุมขวาบน</span>
+                    <span style={{ color: '#888', marginLeft: 8 }}>- ป้ายสีเล็กที่มุมขวาบน (ประหยัดหมึกกว่า)</span>
+                  </Radio>
+                </Space>
+              </Radio.Group>
+              <div style={{ marginTop: 8, fontSize: 12, color: '#888' }}>
+                * การตั้งค่านี้จะถูกบันทึกสำหรับการใช้งานครั้งต่อไป
+              </div>
+            </div>
+          )}
+
           {/* Copy Selection */}
           <div style={{ marginBottom: 16, padding: 16, background: '#f5f5f5', borderRadius: 8 }}>
             <div style={{ marginBottom: 8, fontWeight: 'bold' }}>เลือกสำเนาที่ต้องการพิมพ์:</div>
@@ -352,9 +402,9 @@ const TaxInvoicePrintPreview: React.FC<TaxInvoicePrintPreviewProps> = ({
                       width: 16, 
                       height: 16, 
                       backgroundColor: config.color, 
-                      border: '1px solid #ccc',
                       marginRight: 4,
-                      verticalAlign: 'middle'
+                      verticalAlign: 'middle',
+                      borderRadius: 2
                     }} />
                     {config.label}
                   </Checkbox>
@@ -362,7 +412,9 @@ const TaxInvoicePrintPreview: React.FC<TaxInvoicePrintPreviewProps> = ({
               </Space>
             </Checkbox.Group>
             
-            <div style={{ marginTop: 12 }}>
+            <Divider style={{ margin: '12px 0' }} />
+            
+            <div>
               <span style={{ marginRight: 8 }}>ดูตัวอย่าง:</span>
               <Radio.Group value={previewCopy} onChange={(e) => setPreviewCopy(e.target.value)} size="small">
                 {Object.entries(COPY_COLORS).map(([key, config]) => (
@@ -374,35 +426,50 @@ const TaxInvoicePrintPreview: React.FC<TaxInvoicePrintPreviewProps> = ({
 
           {/* Preview */}
           <div 
-            id="inv-print-content"
             style={{ 
-              backgroundColor: currentCopyConfig.color, 
               padding: 20, 
               border: '1px solid #ddd',
               position: 'relative',
-              minHeight: 600
+              background: '#fff',
+              minHeight: 500
             }}
           >
-            {/* Copy Label */}
-            <div style={{ 
-              position: 'absolute', 
-              top: 10, 
-              right: 20, 
-              fontSize: 11, 
-              fontWeight: 'bold', 
-              padding: '4px 12px', 
-              border: '2px solid #000',
-              backgroundColor: currentCopyConfig.color
-            }}>
-              {currentCopyConfig.labelEN}<br/>{currentCopyConfig.label}
-            </div>
+            {/* Badge Preview */}
+            {badgeStyle === 'TOP_BANNER' ? (
+              <div style={{ 
+                backgroundColor: currentCopyConfig.color, 
+                color: currentCopyConfig.textColor,
+                padding: '8px 20px',
+                textAlign: 'center',
+                fontWeight: 'bold',
+                marginBottom: 15
+              }}>
+                {currentCopyConfig.labelEN} - {currentCopyConfig.label}
+              </div>
+            ) : (
+              <div style={{ 
+                position: 'absolute', 
+                top: 15, 
+                right: 15, 
+                backgroundColor: currentCopyConfig.color,
+                color: currentCopyConfig.textColor,
+                padding: '8px 15px',
+                fontWeight: 'bold',
+                fontSize: 12,
+                borderRadius: 4,
+                textAlign: 'center',
+                lineHeight: 1.4
+              }}>
+                {currentCopyConfig.labelEN}<br/>{currentCopyConfig.label}
+              </div>
+            )}
 
             {/* Company Header */}
             <div style={{ textAlign: 'center', marginBottom: 15 }}>
-              <div style={{ fontSize: 20, fontWeight: 'bold' }}>
+              <div style={{ fontSize: 18, fontWeight: 'bold' }}>
                 {companySettings.COMPANY_NAME_TH || 'บริษัท แสงวิทย์ ไซเอนซ์ จำกัด'}
               </div>
-              <div style={{ fontSize: 14 }}>
+              <div style={{ fontSize: 13 }}>
                 {companySettings.COMPANY_NAME_EN || 'SAENGVITH SCIENCE CO., LTD.'}
               </div>
               <div style={{ fontSize: 12, marginTop: 5 }}>
@@ -415,7 +482,7 @@ const TaxInvoicePrintPreview: React.FC<TaxInvoicePrintPreviewProps> = ({
             </div>
 
             {/* Title */}
-            <div style={{ fontSize: 22, fontWeight: 'bold', textAlign: 'center', margin: '10px 0' }}>
+            <div style={{ fontSize: 20, fontWeight: 'bold', textAlign: 'center', margin: '10px 0', border: '2px solid #000', padding: 8 }}>
               ใบกำกับภาษี / TAX INVOICE
             </div>
 
@@ -424,7 +491,7 @@ const TaxInvoicePrintPreview: React.FC<TaxInvoicePrintPreviewProps> = ({
               <table style={{ width: '60%', borderCollapse: 'collapse' }}>
                 <tbody>
                   <tr>
-                    <td style={{ border: '1px solid #000', padding: '6px 8px', width: 80, background: '#f5f5f5' }}>ลูกค้า</td>
+                    <td style={{ border: '1px solid #000', padding: '6px 8px', width: 100, background: '#f5f5f5' }}>ลูกค้า</td>
                     <td style={{ border: '1px solid #000', padding: '6px 8px' }}>{invoice?.customer?.name || invoice?.customerName || '-'}</td>
                   </tr>
                   <tr>
@@ -441,7 +508,7 @@ const TaxInvoicePrintPreview: React.FC<TaxInvoicePrintPreviewProps> = ({
                 <tbody>
                   <tr>
                     <td style={{ border: '1px solid #000', padding: '6px 8px', width: 80, background: '#f5f5f5' }}>เลขที่</td>
-                    <td style={{ border: '1px solid #000', padding: '6px 8px', fontWeight: 'bold' }}>{invoice?.docFullNo || '-'}</td>
+                    <td style={{ border: '1px solid #000', padding: '6px 8px', fontWeight: 'bold' }}>{invoice?.docFullNo || invoice?.docNo || '-'}</td>
                   </tr>
                   <tr>
                     <td style={{ border: '1px solid #000', padding: '6px 8px', background: '#f5f5f5' }}>วันที่</td>
@@ -449,33 +516,31 @@ const TaxInvoicePrintPreview: React.FC<TaxInvoicePrintPreviewProps> = ({
                   </tr>
                   <tr>
                     <td style={{ border: '1px solid #000', padding: '6px 8px', background: '#f5f5f5' }}>อ้างอิง</td>
-                    <td style={{ border: '1px solid #000', padding: '6px 8px' }}>{invoice?.quotationNo || invoice?.referenceNo || '-'}</td>
+                    <td style={{ border: '1px solid #000', padding: '6px 8px' }}>{invoice?.quotationNo || invoice?.referenceNo || invoice?.referenceDocNo || '-'}</td>
                   </tr>
                 </tbody>
               </table>
             </div>
 
-            {/* Items Table */}
+            {/* Items Table Preview */}
             <table style={{ width: '100%', borderCollapse: 'collapse' }}>
               <thead>
                 <tr>
                   <th style={{ border: '1px solid #000', padding: '6px 8px', background: '#f5f5f5', width: 40 }}>ลำดับ</th>
-                  <th style={{ border: '1px solid #000', padding: '6px 8px', background: '#f5f5f5', width: 100 }}>รหัสสินค้า</th>
+                  <th style={{ border: '1px solid #000', padding: '6px 8px', background: '#f5f5f5', width: 80 }}>รหัส</th>
                   <th style={{ border: '1px solid #000', padding: '6px 8px', background: '#f5f5f5' }}>รายการ</th>
-                  <th style={{ border: '1px solid #000', padding: '6px 8px', background: '#f5f5f5', width: 60 }}>จำนวน</th>
-                  <th style={{ border: '1px solid #000', padding: '6px 8px', background: '#f5f5f5', width: 50 }}>หน่วย</th>
-                  <th style={{ border: '1px solid #000', padding: '6px 8px', background: '#f5f5f5', width: 90 }}>ราคา/หน่วย</th>
-                  <th style={{ border: '1px solid #000', padding: '6px 8px', background: '#f5f5f5', width: 100 }}>จำนวนเงิน</th>
+                  <th style={{ border: '1px solid #000', padding: '6px 8px', background: '#f5f5f5', width: 50 }}>จำนวน</th>
+                  <th style={{ border: '1px solid #000', padding: '6px 8px', background: '#f5f5f5', width: 80 }}>ราคา/หน่วย</th>
+                  <th style={{ border: '1px solid #000', padding: '6px 8px', background: '#f5f5f5', width: 90 }}>จำนวนเงิน</th>
                 </tr>
               </thead>
               <tbody>
-                {(invoice?.items || []).slice(0, 8).map((item: any, idx: number) => (
+                {(invoice?.items || invoice?.lines || []).slice(0, 4).map((item: any, idx: number) => (
                   <tr key={idx}>
                     <td style={{ border: '1px solid #000', padding: '6px 8px', textAlign: 'center' }}>{idx + 1}</td>
-                    <td style={{ border: '1px solid #000', padding: '6px 8px' }}>{item.productCode || item.product?.code || '-'}</td>
-                    <td style={{ border: '1px solid #000', padding: '6px 8px' }}>{item.productName || item.product?.name || item.description || '-'}</td>
+                    <td style={{ border: '1px solid #000', padding: '6px 8px' }}>{item.productCode || '-'}</td>
+                    <td style={{ border: '1px solid #000', padding: '6px 8px' }}>{item.productName || item.description || '-'}</td>
                     <td style={{ border: '1px solid #000', padding: '6px 8px', textAlign: 'center' }}>{formatNumber(item.quantity, 0)}</td>
-                    <td style={{ border: '1px solid #000', padding: '6px 8px', textAlign: 'center' }}>{item.unitName || item.unit?.name || '-'}</td>
                     <td style={{ border: '1px solid #000', padding: '6px 8px', textAlign: 'right' }}>{formatNumber(item.unitPrice)}</td>
                     <td style={{ border: '1px solid #000', padding: '6px 8px', textAlign: 'right' }}>{formatNumber(item.amount || (item.quantity * item.unitPrice))}</td>
                   </tr>
@@ -484,48 +549,10 @@ const TaxInvoicePrintPreview: React.FC<TaxInvoicePrintPreviewProps> = ({
             </table>
 
             {/* Summary */}
-            <div style={{ display: 'flex', marginTop: 15 }}>
-              <div style={{ flex: 1, border: '1px solid #000', padding: 10 }}>
-                <div style={{ fontWeight: 'bold' }}>หมายเหตุ:</div>
-                <div>{invoice?.remarks || invoice?.notes || '-'}</div>
-                <div style={{ marginTop: 10, fontSize: 13 }}>
-                  <strong>จำนวนเงิน (ตัวอักษร):</strong> {numberToThaiText(invoice?.totalAmount || invoice?.grandTotal || 0)}
-                </div>
-              </div>
-              <div style={{ width: 250, border: '1px solid #000', borderLeft: 'none' }}>
-                <div style={{ display: 'flex', borderBottom: '1px solid #000', padding: '6px 8px' }}>
-                  <span style={{ flex: 1, textAlign: 'right' }}>รวมเงิน</span>
-                  <span style={{ width: 100, textAlign: 'right' }}>{formatNumber(invoice?.subtotal || invoice?.subTotal || 0)}</span>
-                </div>
-                <div style={{ display: 'flex', borderBottom: '1px solid #000', padding: '6px 8px' }}>
-                  <span style={{ flex: 1, textAlign: 'right' }}>ส่วนลด</span>
-                  <span style={{ width: 100, textAlign: 'right' }}>{formatNumber(invoice?.discountAmount || invoice?.discount || 0)}</span>
-                </div>
-                <div style={{ display: 'flex', borderBottom: '1px solid #000', padding: '6px 8px' }}>
-                  <span style={{ flex: 1, textAlign: 'right' }}>ภาษีมูลค่าเพิ่ม {invoice?.vatRate || 7}%</span>
-                  <span style={{ width: 100, textAlign: 'right' }}>{formatNumber(invoice?.vatAmount || invoice?.vat || 0)}</span>
-                </div>
-                <div style={{ display: 'flex', padding: '6px 8px', fontWeight: 'bold', fontSize: 16 }}>
-                  <span style={{ flex: 1, textAlign: 'right' }}>ยอดรวมทั้งสิ้น</span>
-                  <span style={{ width: 100, textAlign: 'right' }}>{formatNumber(invoice?.totalAmount || invoice?.grandTotal || 0)}</span>
-                </div>
-              </div>
-            </div>
-
-            {/* Signatures */}
-            <div style={{ display: 'flex', justifyContent: 'space-around', marginTop: 40, textAlign: 'center' }}>
-              <div>
-                <div style={{ borderTop: '1px solid #000', width: 150, margin: '60px auto 5px', paddingTop: 5 }}>ผู้รับสินค้า</div>
-                <div>วันที่ ____/____/____</div>
-              </div>
-              <div>
-                <div style={{ borderTop: '1px solid #000', width: 150, margin: '60px auto 5px', paddingTop: 5 }}>ผู้ตรวจสอบ</div>
-                <div>วันที่ ____/____/____</div>
-              </div>
-              <div>
-                <div style={{ borderTop: '1px solid #000', width: 150, margin: '60px auto 5px', paddingTop: 5 }}>ผู้มีอำนาจลงนาม</div>
-                <div>วันที่ ____/____/____</div>
-              </div>
+            <div style={{ marginTop: 15, textAlign: 'right' }}>
+              <div>รวมเงิน: <strong>{formatNumber(invoice?.subtotal || invoice?.subTotal || 0)}</strong></div>
+              <div>VAT {invoice?.vatRate || 7}%: <strong>{formatNumber(invoice?.vatAmount || invoice?.vat || 0)}</strong></div>
+              <div style={{ fontSize: 18, marginTop: 5 }}>ยอดรวมทั้งสิ้น: <strong>{formatNumber(invoice?.totalAmount || invoice?.grandTotal || 0)} บาท</strong></div>
             </div>
           </div>
         </>
