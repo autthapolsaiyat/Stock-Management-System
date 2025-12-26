@@ -41,7 +41,7 @@ interface CashFlowItem {
 }
 
 const CashFlowPage: React.FC = () => {
-  const [loading, setLoading] = useState(false);
+  const [, setLoading] = useState(false);
   const [startDate, setStartDate] = useState(dayjs().startOf('year'));
   const [endDate, setEndDate] = useState(dayjs());
   const [data, setData] = useState<CashFlowData | null>(null);

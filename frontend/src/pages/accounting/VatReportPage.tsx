@@ -3,7 +3,7 @@ import {
   Card, Table, Typography, Row, Col, DatePicker, Tabs, Button, Space, Statistic, Tag, Alert
 } from 'antd';
 import {
-  FileTextOutlined, PrinterOutlined, DownloadOutlined,
+  PrinterOutlined, DownloadOutlined,
   RiseOutlined, FallOutlined, CalculatorOutlined
 } from '@ant-design/icons';
 import { vatReportApi } from '../../services/api';

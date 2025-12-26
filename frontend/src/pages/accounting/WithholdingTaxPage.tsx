@@ -243,7 +243,7 @@ const WithholdingTaxPage: React.FC = () => {
       key: 'incomeType',
       width: 100,
       render: (type: string) => {
-        const income = INCOME_TYPES.find(i => i.value === type);
+        
         return type;
       },
     },
