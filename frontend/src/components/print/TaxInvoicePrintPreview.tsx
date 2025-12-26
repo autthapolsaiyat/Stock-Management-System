@@ -130,7 +130,7 @@ const TaxInvoicePrintPreview: React.FC<TaxInvoicePrintPreviewProps> = ({
     }
   };
 
-  const generateInvoiceHTML = (copyConfig: typeof COPY_COLORS.ORIGINAL, pageBreak: string, isOriginal: boolean) => {
+  const generateInvoiceHTML = (copyConfig: typeof COPY_COLORS.ORIGINAL, pageBreak: string) => {
     const items = invoice?.items || invoice?.lines || [];
     
     // Badge HTML based on style
