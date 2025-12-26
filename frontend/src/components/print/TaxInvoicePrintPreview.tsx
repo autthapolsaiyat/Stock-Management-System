@@ -99,7 +99,7 @@ const TaxInvoicePrintPreview: React.FC<TaxInvoicePrintPreviewProps> = ({
       selectedCopies.forEach((copyType, index) => {
         const copyConfig = COPY_COLORS[copyType as keyof typeof COPY_COLORS];
         const pageBreak = index > 0 ? 'page-break-before: always;' : '';
-        allPages += generateInvoiceHTML(copyConfig, pageBreak, copyType === 'ORIGINAL');
+        allPages += generateInvoiceHTML(copyConfig, pageBreak);
       });
 
       printWindow.document.write(`
