@@ -11,6 +11,7 @@ import { PaymentVoucherService } from './services/payment-voucher.service';
 import { BankAccountService } from './services/bank-account.service';
 import { ArApService } from './services/ar-ap.service';
 import { ReportService } from './services/report.service';
+import { TaxService } from './services/tax.service';
 
 // DTOs
 import { CreateChartOfAccountDto, UpdateChartOfAccountDto } from './dto/chart-of-account.dto';
@@ -37,6 +38,7 @@ export class AccountingController {
     private readonly bankService: BankAccountService,
     private readonly arApService: ArApService,
     private readonly reportService: ReportService,
+    private readonly taxService: TaxService,
   ) {}
 
   // ==================== CHART OF ACCOUNTS ====================
@@ -403,5 +405,164 @@ export class AccountingController {
   async getFinancialSummary(@Query('year') year?: string) {
     const targetYear = year ? parseInt(year) : new Date().getFullYear();
     return this.reportService.getFinancialSummary(targetYear);
+  }
+
+  // ==================== TAX INVOICES ====================
+
+  @Get('tax-invoices')
+  @ApiOperation({ summary: 'Get all tax invoices' })
+  async getTaxInvoices(
+    @Query('startDate') startDate?: string,
+    @Query('endDate') endDate?: string,
+    @Query('docType') docType?: string,
+  ) {
+    return this.taxService.getTaxInvoices(startDate, endDate, docType);
+  }
+
+  @Get('tax-invoices/:id')
+  @ApiOperation({ summary: 'Get tax invoice by ID' })
+  async getTaxInvoiceById(@Param('id', ParseIntPipe) id: number) {
+    return this.taxService.getTaxInvoiceById(id);
+  }
+
+  @Post('tax-invoices')
+  @ApiOperation({ summary: 'Create tax invoice' })
+  async createTaxInvoice(@Body() data: any, @CurrentUser() user: any) {
+    return this.taxService.createTaxInvoice(data, user?.id);
+  }
+
+  @Post('tax-invoices/:id/issue')
+  @ApiOperation({ summary: 'Issue tax invoice' })
+  async issueTaxInvoice(@Param('id', ParseIntPipe) id: number) {
+    return this.taxService.issueTaxInvoice(id);
+  }
+
+  @Post('tax-invoices/:id/cancel')
+  @ApiOperation({ summary: 'Cancel tax invoice' })
+  async cancelTaxInvoice(@Param('id', ParseIntPipe) id: number, @Body('reason') reason: string) {
+    return this.taxService.cancelTaxInvoice(id, reason);
+  }
+
+  @Delete('tax-invoices/:id')
+  @ApiOperation({ summary: 'Delete tax invoice' })
+  async deleteTaxInvoice(@Param('id', ParseIntPipe) id: number) {
+    return this.taxService.deleteTaxInvoice(id);
+  }
+
+  // ==================== WITHHOLDING TAX ====================
+
+  @Get('withholding-tax')
+  @ApiOperation({ summary: 'Get all withholding tax certificates' })
+  async getWithholdingTaxes(
+    @Query('startDate') startDate?: string,
+    @Query('endDate') endDate?: string,
+    @Query('formType') formType?: string,
+  ) {
+    return this.taxService.getWithholdingTaxes(startDate, endDate, formType);
+  }
+
+  @Get('withholding-tax/:id')
+  @ApiOperation({ summary: 'Get withholding tax by ID' })
+  async getWithholdingTaxById(@Param('id', ParseIntPipe) id: number) {
+    return this.taxService.getWithholdingTaxById(id);
+  }
+
+  @Post('withholding-tax')
+  @ApiOperation({ summary: 'Create withholding tax certificate' })
+  async createWithholdingTax(@Body() data: any, @CurrentUser() user: any) {
+    return this.taxService.createWithholdingTax(data, user?.id);
+  }
+
+  @Post('withholding-tax/:id/issue')
+  @ApiOperation({ summary: 'Issue withholding tax certificate' })
+  async issueWithholdingTax(@Param('id', ParseIntPipe) id: number) {
+    return this.taxService.issueWithholdingTax(id);
+  }
+
+  @Delete('withholding-tax/:id')
+  @ApiOperation({ summary: 'Delete withholding tax certificate' })
+  async deleteWithholdingTax(@Param('id', ParseIntPipe) id: number) {
+    return this.taxService.deleteWithholdingTax(id);
+  }
+
+  // ==================== VAT REPORT ====================
+
+  @Get('vat-report/output')
+  @ApiOperation({ summary: 'Get output VAT report' })
+  async getOutputVat(@Query('year') year: number, @Query('month') month: number) {
+    return this.taxService.getOutputVat(year, month);
+  }
+
+  @Get('vat-report/input')
+  @ApiOperation({ summary: 'Get input VAT report' })
+  async getInputVat(@Query('year') year: number, @Query('month') month: number) {
+    return this.taxService.getInputVat(year, month);
+  }
+
+  @Get('vat-report/summary')
+  @ApiOperation({ summary: 'Get VAT summary' })
+  async getVatSummary(@Query('year') year: number, @Query('month') month: number) {
+    return this.taxService.getVatSummary(year, month);
+  }
+
+  // ==================== FIXED ASSETS ====================
+
+  @Get('fixed-assets')
+  @ApiOperation({ summary: 'Get all fixed assets' })
+  async getFixedAssets(
+    @Query('category') category?: string,
+    @Query('status') status?: string,
+  ) {
+    return this.taxService.getFixedAssets(category, status);
+  }
+
+  @Get('fixed-assets/:id')
+  @ApiOperation({ summary: 'Get fixed asset by ID' })
+  async getFixedAssetById(@Param('id', ParseIntPipe) id: number) {
+    return this.taxService.getFixedAssetById(id);
+  }
+
+  @Post('fixed-assets')
+  @ApiOperation({ summary: 'Create fixed asset' })
+  async createFixedAsset(@Body() data: any, @CurrentUser() user: any) {
+    return this.taxService.createFixedAsset(data, user?.id);
+  }
+
+  @Put('fixed-assets/:id')
+  @ApiOperation({ summary: 'Update fixed asset' })
+  async updateFixedAsset(@Param('id', ParseIntPipe) id: number, @Body() data: any) {
+    return this.taxService.updateFixedAsset(id, data);
+  }
+
+  @Delete('fixed-assets/:id')
+  @ApiOperation({ summary: 'Delete fixed asset' })
+  async deleteFixedAsset(@Param('id', ParseIntPipe) id: number) {
+    return this.taxService.deleteFixedAsset(id);
+  }
+
+  @Post('fixed-assets/:id/dispose')
+  @ApiOperation({ summary: 'Dispose fixed asset' })
+  async disposeFixedAsset(
+    @Param('id', ParseIntPipe) id: number,
+    @Body() data: { disposalDate: string; disposalAmount: number },
+  ) {
+    return this.taxService.disposeFixedAsset(id, data);
+  }
+
+  @Post('fixed-assets/calculate-depreciation')
+  @ApiOperation({ summary: 'Calculate depreciation for all assets' })
+  async calculateDepreciation(@Body() data: { year: number; month: number }) {
+    return this.taxService.calculateDepreciation(data.year, data.month);
+  }
+
+  // ==================== CASH FLOW ====================
+
+  @Get('cash-flow/statement')
+  @ApiOperation({ summary: 'Get cash flow statement' })
+  async getCashFlowStatement(
+    @Query('startDate') startDate: string,
+    @Query('endDate') endDate: string,
+  ) {
+    return this.taxService.getCashFlowStatement(startDate, endDate);
   }
 }

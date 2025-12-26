@@ -13,6 +13,11 @@ import {
   BankAccountEntity,
   ArApOutstandingEntity,
   FiscalPeriodEntity,
+  TaxInvoiceEntity,
+  TaxInvoiceLineEntity,
+  WithholdingTaxEntity,
+  FixedAssetEntity,
+  DepreciationHistoryEntity,
 } from './entities';
 
 // Services
@@ -25,6 +30,7 @@ import {
   ArApService,
   ReportService,
 } from './services';
+import { TaxService } from './services/tax.service';
 
 // Controller
 import { AccountingController } from './accounting.controller';
@@ -45,6 +51,11 @@ import { DocNumberingModule } from '../doc-numbering/doc-numbering.module';
       BankAccountEntity,
       ArApOutstandingEntity,
       FiscalPeriodEntity,
+      TaxInvoiceEntity,
+      TaxInvoiceLineEntity,
+      WithholdingTaxEntity,
+      FixedAssetEntity,
+      DepreciationHistoryEntity,
     ]),
     DocNumberingModule,
   ],
@@ -57,6 +68,7 @@ import { DocNumberingModule } from '../doc-numbering/doc-numbering.module';
     BankAccountService,
     ArApService,
     ReportService,
+    TaxService,
   ],
   exports: [
     ChartOfAccountService,
@@ -66,6 +78,7 @@ import { DocNumberingModule } from '../doc-numbering/doc-numbering.module';
     BankAccountService,
     ArApService,
     ReportService,
+    TaxService,
   ],
 })
 export class AccountingModule {}
