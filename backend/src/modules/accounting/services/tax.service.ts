@@ -57,7 +57,7 @@ export class TaxService {
     const savedInvoice = await this.taxInvoiceRepo.save(invoice);
     
     // Get the saved ID (handle both array and single entity return)
-    const savedId = (savedInvoice as TaxInvoiceEntity).id;
+    const savedId = (savedInvoice as any).id;
 
     if (data.lines && data.lines.length > 0) {
       const lines = data.lines.map((line: any) => ({
