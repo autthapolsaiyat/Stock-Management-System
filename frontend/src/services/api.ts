@@ -424,3 +424,64 @@ export const closingPeriodApi = {
 };
 
 export default api;
+// ==========================================
+// เพิ่มใน frontend/src/services/api.ts
+// ก่อน export default api;
+// ==========================================
+
+// Tax Invoices API (ใบกำกับภาษี/ใบเพิ่มหนี้/ใบลดหนี้)
+export const taxInvoicesApi = {
+  getAll: (params?: { startDate?: string; endDate?: string; docType?: string }) =>
+    api.get('/api/accounting/tax-invoices', { params }),
+  getById: (id: number) => api.get(`/api/accounting/tax-invoices/${id}`),
+  create: (data: any) => api.post('/api/accounting/tax-invoices', data),
+  issue: (id: number) => api.post(`/api/accounting/tax-invoices/${id}/issue`),
+  cancel: (id: number, reason: string) => api.post(`/api/accounting/tax-invoices/${id}/cancel`, { reason }),
+  delete: (id: number) => api.delete(`/api/accounting/tax-invoices/${id}`),
+};
+
+// Withholding Tax API (หัก ณ ที่จ่าย)
+export const withholdingTaxApi = {
+  getAll: (params?: { startDate?: string; endDate?: string; formType?: string }) =>
+    api.get('/api/accounting/withholding-tax', { params }),
+  getById: (id: number) => api.get(`/api/accounting/withholding-tax/${id}`),
+  create: (data: any) => api.post('/api/accounting/withholding-tax', data),
+  issue: (id: number) => api.post(`/api/accounting/withholding-tax/${id}/issue`),
+  delete: (id: number) => api.delete(`/api/accounting/withholding-tax/${id}`),
+};
+
+// VAT Report API (รายงานภาษีซื้อ-ขาย)
+export const vatReportApi = {
+  getOutputVat: (year: number, month: number) =>
+    api.get('/api/accounting/vat-report/output', { params: { year, month } }),
+  getInputVat: (year: number, month: number) =>
+    api.get('/api/accounting/vat-report/input', { params: { year, month } }),
+  getSummary: (year: number, month: number) =>
+    api.get('/api/accounting/vat-report/summary', { params: { year, month } }),
+  exportPP30: (year: number, month: number) =>
+    api.get('/api/accounting/vat-report/export-pp30', { params: { year, month }, responseType: 'blob' }),
+};
+
+// Fixed Assets API (สินทรัพย์ถาวร)
+export const fixedAssetsApi = {
+  getAll: (params?: { category?: string; status?: string }) =>
+    api.get('/api/accounting/fixed-assets', { params }),
+  getById: (id: number) => api.get(`/api/accounting/fixed-assets/${id}`),
+  create: (data: any) => api.post('/api/accounting/fixed-assets', data),
+  update: (id: number, data: any) => api.put(`/api/accounting/fixed-assets/${id}`, data),
+  delete: (id: number) => api.delete(`/api/accounting/fixed-assets/${id}`),
+  dispose: (id: number, data: { disposalDate: string; disposalAmount: number }) =>
+    api.post(`/api/accounting/fixed-assets/${id}/dispose`, data),
+  calculateDepreciation: (year: number, month: number) =>
+    api.post('/api/accounting/fixed-assets/calculate-depreciation', { year, month }),
+  getDepreciationReport: (year: number) =>
+    api.get('/api/accounting/fixed-assets/depreciation-report', { params: { year } }),
+};
+
+// Cash Flow API (งบกระแสเงินสด)
+export const cashFlowApi = {
+  getStatement: (startDate: string, endDate: string) =>
+    api.get('/api/accounting/cash-flow/statement', { params: { startDate, endDate } }),
+  getByActivity: (activity: 'operating' | 'investing' | 'financing', startDate: string, endDate: string) =>
+    api.get(`/api/accounting/cash-flow/${activity}`, { params: { startDate, endDate } }),
+};

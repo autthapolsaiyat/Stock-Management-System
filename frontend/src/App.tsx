@@ -50,6 +50,11 @@ import {
   PaymentVoucherPage,
   BankReconciliationPage,
   ClosingPeriodPage,
+  TaxInvoicePage,
+  WithholdingTaxPage,
+  VatReportPage,
+  FixedAssetPage,
+  CashFlowPage,
 } from './pages/accounting';
 
 // Protected Route Component
@@ -161,6 +166,11 @@ const App: React.FC = () => {
         <Route path="accounting/reports" element={<FinancialReportsPage />} />
         <Route path="accounting/bank-reconciliation" element={<BankReconciliationPage />} />
         <Route path="accounting/closing-period" element={<ClosingPeriodPage />} />
+        <Route path="accounting/tax-invoices" element={<TaxInvoicePage />} />
+        <Route path="accounting/withholding-tax" element={<WithholdingTaxPage />} />
+        <Route path="accounting/vat-report" element={<VatReportPage />} />
+        <Route path="accounting/fixed-assets" element={<FixedAssetPage />} />
+        <Route path="accounting/cash-flow" element={<CashFlowPage />} />
         
         {/* Settings */}
         <Route path="settings" element={<SettingsPage />} />

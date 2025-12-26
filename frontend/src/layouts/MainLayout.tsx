@@ -32,6 +32,10 @@ import {
   BookOutlined,
   WalletOutlined,
   LockOutlined,
+  FileDoneOutlined,
+  CalculatorOutlined,
+  ToolOutlined,
+  FundOutlined,
 } from '@ant-design/icons';
 import { useAuth } from '../contexts/AuthContext';
 import { SettingOutlined } from '@ant-design/icons';
@@ -127,6 +131,25 @@ const MainLayout: React.FC = () => {
         { key: '/accounting/reports', icon: <LineChartOutlined />, label: 'รายงานการเงิน' },
         { key: '/accounting/bank-reconciliation', icon: <BankOutlined />, label: 'กระทบยอดธนาคาร' },
         { key: '/accounting/closing-period', icon: <LockOutlined />, label: 'ปิดงวดบัญชี' },
+      ],
+    },
+    {
+      key: 'tax',
+      icon: <CalculatorOutlined />,
+      label: 'ภาษี',
+      children: [
+        { key: '/accounting/tax-invoices', icon: <FileDoneOutlined />, label: 'ใบกำกับภาษี' },
+        { key: '/accounting/withholding-tax', icon: <AuditOutlined />, label: 'หัก ณ ที่จ่าย' },
+        { key: '/accounting/vat-report', icon: <CalculatorOutlined />, label: 'รายงาน VAT (ภ.พ.30)' },
+      ],
+    },
+    {
+      key: 'assets',
+      icon: <ToolOutlined />,
+      label: 'สินทรัพย์',
+      children: [
+        { key: '/accounting/fixed-assets', icon: <ToolOutlined />, label: 'ทะเบียนสินทรัพย์' },
+        { key: '/accounting/cash-flow', icon: <FundOutlined />, label: 'งบกระแสเงินสด' },
       ],
     },
     {
@@ -230,7 +253,7 @@ const MainLayout: React.FC = () => {
           theme="dark"
           mode="inline"
           selectedKeys={[location.pathname]}
-          defaultOpenKeys={salesOnly ? [] : ['master', 'sales', 'purchase', 'stock', 'accounting']}
+          defaultOpenKeys={salesOnly ? [] : ['master', 'sales', 'purchase', 'stock', 'accounting', 'tax', 'assets']}
           items={menuItems}
           onClick={({ key }) => navigate(key)}
           style={{ borderRight: 0, marginTop: 8 }}

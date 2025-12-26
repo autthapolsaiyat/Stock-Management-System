@@ -7,3 +7,8 @@ export { default as PaymentReceiptPage } from './PaymentReceiptPage';
 export { default as PaymentVoucherPage } from './PaymentVoucherPage';
 export { default as BankReconciliationPage } from './BankReconciliationPage';
 export { default as ClosingPeriodPage } from './ClosingPeriodPage';
+export { default as TaxInvoicePage } from './TaxInvoicePage';
+export { default as WithholdingTaxPage } from './WithholdingTaxPage';
+export { default as VatReportPage } from './VatReportPage';
+export { default as FixedAssetPage } from './FixedAssetPage';
+export { default as CashFlowPage } from './CashFlowPage';
