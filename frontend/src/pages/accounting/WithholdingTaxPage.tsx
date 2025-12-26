@@ -9,6 +9,7 @@ import {
 } from '@ant-design/icons';
 import { withholdingTaxApi, suppliersApi } from '../../services/api';
 import dayjs from 'dayjs';
+import { WithholdingTaxPrintPreview } from '../../components/print';
 
 const { Title, Text } = Typography;
 const { Option } = Select;
@@ -86,6 +87,7 @@ const WithholdingTaxPage: React.FC = () => {
   const [modalVisible, setModalVisible] = useState(false);
   const [viewModalVisible, setViewModalVisible] = useState(false);
   const [selectedCert, setSelectedCert] = useState<WithholdingTax | null>(null);
+  const [printModalVisible, setPrintModalVisible] = useState(false);
   const [form] = Form.useForm();
 
   const [filters, setFilters] = useState({
@@ -131,6 +133,16 @@ const WithholdingTaxPage: React.FC = () => {
       const res = await withholdingTaxApi.getById(cert.id);
       setSelectedCert(res.data);
       setViewModalVisible(true);
+    } catch (error) {
+      message.error('เกิดข้อผิดพลาด');
+    }
+  };
+
+  const handlePrint = async (cert: WithholdingTax) => {
+    try {
+      const res = await withholdingTaxApi.getById(cert.id);
+      setSelectedCert(res.data);
+      setPrintModalVisible(true);
     } catch (error) {
       message.error('เกิดข้อผิดพลาด');
     }
@@ -288,7 +300,7 @@ const WithholdingTaxPage: React.FC = () => {
       render: (_: unknown, record: WithholdingTax) => (
         <Space>
           <Button type="text" icon={<EyeOutlined />} onClick={() => handleView(record)} />
-          <Button type="text" icon={<PrinterOutlined />} onClick={() => handleView(record)} />
+          <Button type="text" icon={<PrinterOutlined />} onClick={() => handlePrint(record)} />
           {record.status === 'DRAFT' && (
             <>
               <Popconfirm title="ต้องการออกหนังสือรับรองนี้?" onConfirm={() => handleIssue(record.id)}>
@@ -535,7 +547,7 @@ const WithholdingTaxPage: React.FC = () => {
         open={viewModalVisible}
         onCancel={() => setViewModalVisible(false)}
         footer={[
-          <Button key="print" icon={<PrinterOutlined />} onClick={() => window.print()}>
+          <Button key="print" icon={<PrinterOutlined />} onClick={() => { setViewModalVisible(false); setPrintModalVisible(true); }}>
             พิมพ์
           </Button>,
           <Button key="close" onClick={() => setViewModalVisible(false)}>
@@ -598,6 +610,13 @@ const WithholdingTaxPage: React.FC = () => {
           </div>
         )}
       </Modal>
+
+      {/* Print Modal */}
+      <WithholdingTaxPrintPreview
+        open={printModalVisible}
+        onClose={() => setPrintModalVisible(false)}
+        data={selectedCert}
+      />
     </div>
   );
 };

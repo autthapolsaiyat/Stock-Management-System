@@ -9,6 +9,7 @@ import {
 } from '@ant-design/icons';
 import { taxInvoicesApi, customersApi } from '../../services/api';
 import dayjs from 'dayjs';
+import { TaxInvoicePrintPreview } from '../../components/print';
 
 const { Title, Text } = Typography;
 const { Option } = Select;
@@ -76,6 +77,7 @@ const TaxInvoicePage: React.FC = () => {
     { lineNo: 1, description: '', quantity: 1, unitPrice: 0, amount: 0 },
   ]);
   const [activeTab, setActiveTab] = useState('all');
+  const [printModalVisible, setPrintModalVisible] = useState(false);
 
   const [filters, setFilters] = useState({
     startDate: dayjs().startOf('month').format('YYYY-MM-DD'),
@@ -119,6 +121,16 @@ const TaxInvoicePage: React.FC = () => {
       const res = await taxInvoicesApi.getById(invoice.id);
       setSelectedInvoice(res.data);
       setViewModalVisible(true);
+    } catch (error) {
+      message.error('เกิดข้อผิดพลาด');
+    }
+  };
+
+  const handlePrint = async (invoice: TaxInvoice) => {
+    try {
+      const res = await taxInvoicesApi.getById(invoice.id);
+      setSelectedInvoice(res.data);
+      setPrintModalVisible(true);
     } catch (error) {
       message.error('เกิดข้อผิดพลาด');
     }
@@ -301,7 +313,7 @@ const TaxInvoicePage: React.FC = () => {
       render: (_: unknown, record: TaxInvoice) => (
         <Space>
           <Button type="text" icon={<EyeOutlined />} onClick={() => handleView(record)} />
-          <Button type="text" icon={<PrinterOutlined />} onClick={() => handleView(record)} />
+          <Button type="text" icon={<PrinterOutlined />} onClick={() => handlePrint(record)} />
           {record.status === 'DRAFT' && (
             <Popconfirm title="ต้องการออกเอกสารนี้?" onConfirm={() => handleIssue(record.id)}>
               <Button type="text" icon={<FileDoneOutlined />} style={{ color: 'green' }} />
@@ -580,7 +592,7 @@ const TaxInvoicePage: React.FC = () => {
         open={viewModalVisible}
         onCancel={() => setViewModalVisible(false)}
         footer={[
-          <Button key="print" icon={<PrinterOutlined />} onClick={() => window.print()}>
+          <Button key="print" icon={<PrinterOutlined />} onClick={() => { setViewModalVisible(false); setPrintModalVisible(true); }}>
             พิมพ์
           </Button>,
           <Button key="close" onClick={() => setViewModalVisible(false)}>
@@ -656,6 +668,27 @@ const TaxInvoicePage: React.FC = () => {
           </>
         )}
       </Modal>
+
+      {/* Print Modal */}
+      <TaxInvoicePrintPreview
+        open={printModalVisible}
+        onClose={() => setPrintModalVisible(false)}
+        invoice={selectedInvoice ? {
+          ...selectedInvoice,
+          docFullNo: selectedInvoice.docNo,
+          customer: {
+            name: selectedInvoice.customerName,
+            taxId: selectedInvoice.customerTaxId,
+            address: selectedInvoice.customerAddress,
+          },
+          items: selectedInvoice.lines?.map(line => ({
+            description: line.description,
+            quantity: line.quantity,
+            unitPrice: line.unitPrice,
+            amount: line.amount,
+          }))
+        } : null}
+      />
     </div>
   );
 };
