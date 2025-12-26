@@ -27,7 +27,7 @@ import { OutstandingStatus } from './entities/ar-ap-outstanding.entity';
 @ApiTags('Accounting')
 @ApiBearerAuth()
 @UseGuards(JwtAuthGuard)
-@Controller('api/accounting')
+@Controller('accounting')
 export class AccountingController {
   constructor(
     private readonly coaService: ChartOfAccountService,
