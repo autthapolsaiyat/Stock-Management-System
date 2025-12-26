@@ -55,7 +55,7 @@ const MainLayout: React.FC = () => {
   const [collapsed, setCollapsed] = useState(false);
   const navigate = useNavigate();
   const location = useLocation();
-  const { user, logout, isSalesOnly, isAccountOnly, hasAccountAccess, getQuotationType } = useAuth();
+  const { user, logout, isSalesOnly, isAccountOnly, getQuotationType } = useAuth();
   const { mode, toggleTheme } = useTheme();
 
   const salesOnly = isSalesOnly();
