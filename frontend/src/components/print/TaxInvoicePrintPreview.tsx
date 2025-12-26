@@ -388,7 +388,7 @@ const TaxInvoicePrintPreview: React.FC<TaxInvoicePrintPreviewProps> = ({
           )}
 
           {/* Copy Selection */}
-          <div style={{ marginBottom: 16, padding: 16, background: '#f5f5f5', borderRadius: 8 }}>
+          <div style={{ marginBottom: 16, padding: 16, background: '#f5f5f5', borderRadius: 8, color: '#000' }}>
             <div style={{ marginBottom: 8, fontWeight: 'bold' }}>เลือกสำเนาที่ต้องการพิมพ์:</div>
             <Checkbox.Group 
               value={selectedCopies} 
