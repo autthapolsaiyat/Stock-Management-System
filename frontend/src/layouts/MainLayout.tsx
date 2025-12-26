@@ -29,6 +29,9 @@ import {
   BankOutlined,
   AuditOutlined,
   LineChartOutlined,
+  BookOutlined,
+  WalletOutlined,
+  LockOutlined,
 } from '@ant-design/icons';
 import { useAuth } from '../contexts/AuthContext';
 import { SettingOutlined } from '@ant-design/icons';
@@ -117,8 +120,13 @@ const MainLayout: React.FC = () => {
       children: [
         { key: '/accounting/chart-of-accounts', icon: <BankOutlined />, label: 'ผังบัญชี' },
         { key: '/accounting/journal-entries', icon: <AuditOutlined />, label: 'สมุดรายวัน' },
+        { key: '/accounting/general-ledger', icon: <BookOutlined />, label: 'บัญชีแยกประเภท' },
+        { key: '/accounting/payment-receipts', icon: <DollarOutlined />, label: 'ใบสำคัญรับ' },
+        { key: '/accounting/payment-vouchers', icon: <WalletOutlined />, label: 'ใบสำคัญจ่าย' },
         { key: '/accounting/ar-ap-aging', icon: <TeamOutlined />, label: 'AR/AP Aging' },
         { key: '/accounting/reports', icon: <LineChartOutlined />, label: 'รายงานการเงิน' },
+        { key: '/accounting/bank-reconciliation', icon: <BankOutlined />, label: 'กระทบยอดธนาคาร' },
+        { key: '/accounting/closing-period', icon: <LockOutlined />, label: 'ปิดงวดบัญชี' },
       ],
     },
     {

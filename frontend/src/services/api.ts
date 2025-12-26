@@ -400,3 +400,61 @@ export const financialReportsApi = {
 };
 
 export default api;
+// ==========================================
+// เพิ่มใน frontend/src/services/api.ts
+// ==========================================
+
+// General Ledger API
+export const generalLedgerApi = {
+  getByAccount: (accountId: number, startDate: string, endDate: string) =>
+    api.get(`/accounting/general-ledger/${accountId}`, { params: { startDate, endDate } }),
+};
+
+// Payment Receipts API (ใบสำคัญรับ)
+export const paymentReceiptsApi = {
+  getAll: (params?: any) => api.get('/accounting/payment-receipts', { params }),
+  getById: (id: number) => api.get(`/accounting/payment-receipts/${id}`),
+  create: (data: any) => api.post('/accounting/payment-receipts', data),
+  update: (id: number, data: any) => api.put(`/accounting/payment-receipts/${id}`, data),
+  delete: (id: number) => api.delete(`/accounting/payment-receipts/${id}`),
+  post: (id: number) => api.post(`/accounting/payment-receipts/${id}/post`),
+  cancel: (id: number, reason: string) => api.post(`/accounting/payment-receipts/${id}/cancel`, { reason }),
+};
+
+// Payment Vouchers API (ใบสำคัญจ่าย)
+export const paymentVouchersApi = {
+  getAll: (params?: any) => api.get('/accounting/payment-vouchers', { params }),
+  getById: (id: number) => api.get(`/accounting/payment-vouchers/${id}`),
+  create: (data: any) => api.post('/accounting/payment-vouchers', data),
+  update: (id: number, data: any) => api.put(`/accounting/payment-vouchers/${id}`, data),
+  delete: (id: number) => api.delete(`/accounting/payment-vouchers/${id}`),
+  post: (id: number) => api.post(`/accounting/payment-vouchers/${id}/post`),
+  cancel: (id: number, reason: string) => api.post(`/accounting/payment-vouchers/${id}/cancel`, { reason }),
+};
+
+// Bank Accounts API
+export const bankAccountsApi = {
+  getAll: () => api.get('/accounting/bank-accounts'),
+  getById: (id: number) => api.get(`/accounting/bank-accounts/${id}`),
+  create: (data: any) => api.post('/accounting/bank-accounts', data),
+  update: (id: number, data: any) => api.put(`/accounting/bank-accounts/${id}`, data),
+  delete: (id: number) => api.delete(`/accounting/bank-accounts/${id}`),
+};
+
+// Bank Reconciliation API
+export const bankReconciliationApi = {
+  getItems: (bankAccountId: number, asOfDate: string) =>
+    api.get(`/accounting/bank-reconciliation/${bankAccountId}`, { params: { asOfDate } }),
+  reconcile: (data: any) => api.post('/accounting/bank-reconciliation/reconcile', data),
+  autoReconcile: (bankAccountId: number, asOfDate: string) =>
+    api.post(`/accounting/bank-reconciliation/${bankAccountId}/auto-reconcile`, { asOfDate }),
+};
+
+// Closing Period API
+export const closingPeriodApi = {
+  getByYear: (year: number) => api.get(`/accounting/closing-periods`, { params: { year } }),
+  initializeYear: (year: number) => api.post('/accounting/closing-periods/initialize', { year }),
+  checkClosing: (id: number) => api.get(`/accounting/closing-periods/${id}/check`),
+  close: (id: number) => api.post(`/accounting/closing-periods/${id}/close`),
+  reopen: (id: number, reason: string) => api.post(`/accounting/closing-periods/${id}/reopen`, { reason }),
+};

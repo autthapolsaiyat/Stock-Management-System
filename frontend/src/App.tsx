@@ -45,6 +45,11 @@ import {
   JournalEntriesPage,
   ARAPAgingPage,
   FinancialReportsPage,
+  GeneralLedgerPage,
+  PaymentReceiptPage,
+  PaymentVoucherPage,
+  BankReconciliationPage,
+  ClosingPeriodPage,
 } from './pages/accounting';
 
 // Protected Route Component
@@ -149,8 +154,13 @@ const App: React.FC = () => {
         {/* Accounting */}
         <Route path="accounting/chart-of-accounts" element={<ChartOfAccountsPage />} />
         <Route path="accounting/journal-entries" element={<JournalEntriesPage />} />
+        <Route path="accounting/general-ledger" element={<GeneralLedgerPage />} />
+        <Route path="accounting/payment-receipts" element={<PaymentReceiptPage />} />
+        <Route path="accounting/payment-vouchers" element={<PaymentVoucherPage />} />
         <Route path="accounting/ar-ap-aging" element={<ARAPAgingPage />} />
         <Route path="accounting/reports" element={<FinancialReportsPage />} />
+        <Route path="accounting/bank-reconciliation" element={<BankReconciliationPage />} />
+        <Route path="accounting/closing-period" element={<ClosingPeriodPage />} />
         
         {/* Settings */}
         <Route path="settings" element={<SettingsPage />} />

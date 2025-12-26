@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import {
-  Card, Table, Typography, Row, Col, DatePicker, Tabs, Button, Space, Statistic
+  Card, Table, Typography, Row, Col, DatePicker, Tabs, Button, Space, Divider, Statistic
 } from 'antd';
 import {
   FileTextOutlined, LineChartOutlined, BankOutlined, PrinterOutlined

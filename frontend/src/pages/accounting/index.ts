@@ -2,3 +2,8 @@ export { default as ChartOfAccountsPage } from './ChartOfAccountsPage';
 export { default as JournalEntriesPage } from './JournalEntriesPage';
 export { default as ARAPAgingPage } from './ARAPAgingPage';
 export { default as FinancialReportsPage } from './FinancialReportsPage';
+export { default as GeneralLedgerPage } from './GeneralLedgerPage';
+export { default as PaymentReceiptPage } from './PaymentReceiptPage';
+export { default as PaymentVoucherPage } from './PaymentVoucherPage';
+export { default as BankReconciliationPage } from './BankReconciliationPage';
+export { default as ClosingPeriodPage } from './ClosingPeriodPage';
