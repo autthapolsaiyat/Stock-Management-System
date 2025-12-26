@@ -179,20 +179,24 @@ const TaxInvoicePage: React.FC = () => {
     return { subtotal, vatAmount, totalAmount };
   };
 
-  const handleSubmit = async () => {
-    try {
-      const values = await form.validateFields();
-      const { subtotal, vatAmount, totalAmount } = calculateTotals();
-      
-      const data = {
-        ...values,
-        docType,
-        docDate: values.docDate.format('YYYY-MM-DD'),
-        subtotal,
-        vatAmount,
-        totalAmount,
-        lines: lines.filter(l => l.description && l.amount > 0),
-      };
+const handleSubmit = async () => {
+  try {
+    const values = await form.validateFields();
+    const { subtotal, vatAmount, totalAmount } = calculateTotals();
+    
+    // หา customerName จาก customerId
+    const customer = customers.find(c => c.id === values.customerId);
+    
+    const data = {
+      ...values,
+      docType,
+      docDate: values.docDate.format('YYYY-MM-DD'),
+      customerName: customer?.name || '',
+      subtotal,
+      vatAmount,
+      totalAmount,
+      lines: lines.filter(l => l.description && l.amount > 0),
+    };
 
       await taxInvoicesApi.create(data);
       message.success('สร้างเอกสารสำเร็จ');
