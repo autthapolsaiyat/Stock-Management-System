@@ -11,6 +11,7 @@ import { JournalEntryEntity, JournalType, JournalStatus, ReferenceType } from '.
 import { JournalEntryLineEntity } from '../entities/journal-entry-line.entity';
 import { CreatePaymentVoucherDto } from '../dto/payment.dto';
 import { DocNumberingService } from '../../doc-numbering/doc-numbering.service';
+import { AuditLogService } from '../../audit-log/audit-log.service';
 
 @Injectable()
 export class PaymentVoucherService {
@@ -31,6 +32,7 @@ export class PaymentVoucherService {
     private journalLineRepo: Repository<JournalEntryLineEntity>,
     private docNumberingService: DocNumberingService,
     private dataSource: DataSource,
+    private auditLogService: AuditLogService,
   ) {}
 
   async findAll(params?: {
@@ -198,6 +200,17 @@ export class PaymentVoucherService {
       }
 
       await queryRunner.commitTransaction();
+
+      // Audit Log
+      await this.auditLogService.log({
+        module: 'PAYMENT_VOUCHER',
+        action: 'CREATE',
+        documentId: savedVoucher.id,
+        documentNo: savedVoucher.docNo,
+        userId: userId || 0,
+        details: { supplierName, netAmount },
+      });
+
       return this.findById(savedVoucher.id);
     } catch (error) {
       await queryRunner.rollbackTransaction();
@@ -262,6 +275,17 @@ export class PaymentVoucherService {
       await queryRunner.manager.save(voucher);
 
       await queryRunner.commitTransaction();
+
+      // Audit Log
+      await this.auditLogService.log({
+        module: 'PAYMENT_VOUCHER',
+        action: 'POST',
+        documentId: voucher.id,
+        documentNo: voucher.docNo,
+        userId: userId || 0,
+        details: { supplierName: voucher.supplierName, netAmount: voucher.netAmount, journalDocNo: voucher.journalDocNo },
+      });
+
       return this.findById(id);
     } catch (error) {
       await queryRunner.rollbackTransaction();
@@ -442,6 +466,17 @@ export class PaymentVoucherService {
       await queryRunner.manager.save(voucher);
 
       await queryRunner.commitTransaction();
+
+      // Audit Log
+      await this.auditLogService.log({
+        module: 'PAYMENT_VOUCHER',
+        action: 'CANCEL',
+        documentId: voucher.id,
+        documentNo: voucher.docNo,
+        userId: userId || 0,
+        details: { reason },
+      });
+
       return this.findById(id);
     } catch (error) {
       await queryRunner.rollbackTransaction();
@@ -451,12 +486,22 @@ export class PaymentVoucherService {
     }
   }
 
-  async delete(id: number): Promise<void> {
+  async delete(id: number, userId?: number): Promise<void> {
     const voucher = await this.findById(id);
 
     if (voucher.status !== PaymentStatus.DRAFT) {
       throw new BadRequestException('Can only delete DRAFT payment vouchers');
     }
+
+    // Audit Log
+    await this.auditLogService.log({
+      module: 'PAYMENT_VOUCHER',
+      action: 'DELETE',
+      documentId: voucher.id,
+      documentNo: voucher.docNo,
+      userId: userId || 0,
+      details: { supplierName: voucher.supplierName },
+    });
 
     await this.voucherRepo.remove(voucher);
   }

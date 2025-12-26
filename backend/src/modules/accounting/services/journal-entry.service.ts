@@ -6,6 +6,7 @@ import { JournalEntryLineEntity } from '../entities/journal-entry-line.entity';
 import { ChartOfAccountEntity } from '../entities/chart-of-account.entity';
 import { CreateJournalEntryDto, UpdateJournalEntryDto } from '../dto/journal-entry.dto';
 import { DocNumberingService } from '../../doc-numbering/doc-numbering.service';
+import { AuditLogService } from '../../audit-log/audit-log.service';
 
 @Injectable()
 export class JournalEntryService {
@@ -18,6 +19,7 @@ export class JournalEntryService {
     private coaRepo: Repository<ChartOfAccountEntity>,
     private docNumberingService: DocNumberingService,
     private dataSource: DataSource,
+    private auditLogService: AuditLogService,
   ) {}
 
   async findAll(params?: {
@@ -144,6 +146,17 @@ export class JournalEntryService {
       }
 
       await queryRunner.commitTransaction();
+      
+      // Audit Log
+      await this.auditLogService.log({
+        module: 'JOURNAL_ENTRY',
+        action: 'CREATE',
+        documentId: savedEntry.id,
+        documentNo: savedEntry.docNo,
+        userId: userId || 0,
+        details: { journalType: savedEntry.journalType, totalDebit, totalCredit },
+      });
+
       return this.findById(savedEntry.id);
     } catch (error) {
       await queryRunner.rollbackTransaction();
@@ -241,7 +254,19 @@ export class JournalEntryService {
     entry.postedBy = userId;
     entry.updatedBy = userId;
 
-    return this.journalRepo.save(entry);
+    const saved = await this.journalRepo.save(entry);
+
+    // Audit Log
+    await this.auditLogService.log({
+      module: 'JOURNAL_ENTRY',
+      action: 'POST',
+      documentId: saved.id,
+      documentNo: saved.docNo,
+      userId: userId || 0,
+      details: { journalType: saved.journalType, totalDebit: saved.totalDebit, totalCredit: saved.totalCredit },
+    });
+
+    return saved;
   }
 
   async cancel(id: number, reason: string, userId?: number): Promise<JournalEntryEntity> {
@@ -257,7 +282,19 @@ export class JournalEntryService {
     entry.cancelReason = reason;
     entry.updatedBy = userId;
 
-    return this.journalRepo.save(entry);
+    const saved = await this.journalRepo.save(entry);
+
+    // Audit Log
+    await this.auditLogService.log({
+      module: 'JOURNAL_ENTRY',
+      action: 'CANCEL',
+      documentId: saved.id,
+      documentNo: saved.docNo,
+      userId: userId || 0,
+      details: { reason },
+    });
+
+    return saved;
   }
 
   async reverse(id: number, userId?: number): Promise<JournalEntryEntity> {
@@ -320,15 +357,35 @@ export class JournalEntryService {
     original.reversedById = savedReversing.id;
     await this.journalRepo.save(original);
 
+    // Audit Log
+    await this.auditLogService.log({
+      module: 'JOURNAL_ENTRY',
+      action: 'REVERSE',
+      documentId: savedReversing.id,
+      documentNo: savedReversing.docNo,
+      userId: userId || 0,
+      details: { originalDocNo: original.docNo, originalId: original.id },
+    });
+
     return this.findById(savedReversing.id);
   }
 
-  async delete(id: number): Promise<void> {
+  async delete(id: number, userId?: number): Promise<void> {
     const entry = await this.findById(id);
 
     if (entry.status !== JournalStatus.DRAFT) {
       throw new BadRequestException('Can only delete DRAFT journal entries');
     }
+
+    // Audit Log
+    await this.auditLogService.log({
+      module: 'JOURNAL_ENTRY',
+      action: 'DELETE',
+      documentId: entry.id,
+      documentNo: entry.docNo,
+      userId: userId || 0,
+      details: { journalType: entry.journalType },
+    });
 
     await this.journalRepo.remove(entry);
   }

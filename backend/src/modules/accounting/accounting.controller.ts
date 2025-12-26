@@ -27,7 +27,7 @@ import { OutstandingStatus } from './entities/ar-ap-outstanding.entity';
 @ApiTags('Accounting')
 @ApiBearerAuth()
 @UseGuards(JwtAuthGuard)
-@Controller('accounting')
+@Controller('api/accounting')
 export class AccountingController {
   constructor(
     private readonly coaService: ChartOfAccountService,
@@ -83,8 +83,8 @@ export class AccountingController {
 
   @Delete('chart-of-accounts/:id')
   @ApiOperation({ summary: 'Delete account' })
-  async deleteAccount(@Param('id', ParseIntPipe) id: number) {
-    await this.coaService.delete(id);
+  async deleteAccount(@Param('id', ParseIntPipe) id: number, @CurrentUser() user: any) {
+    await this.coaService.delete(id, user?.id);
     return { message: 'Account deleted successfully' };
   }
 
@@ -155,8 +155,8 @@ export class AccountingController {
 
   @Delete('journal-entries/:id')
   @ApiOperation({ summary: 'Delete draft journal entry' })
-  async deleteJournalEntry(@Param('id', ParseIntPipe) id: number) {
-    await this.journalService.delete(id);
+  async deleteJournalEntry(@Param('id', ParseIntPipe) id: number, @CurrentUser() user: any) {
+    await this.journalService.delete(id, user?.id);
     return { message: 'Journal entry deleted successfully' };
   }
 
@@ -209,8 +209,8 @@ export class AccountingController {
 
   @Delete('payment-receipts/:id')
   @ApiOperation({ summary: 'Delete draft payment receipt' })
-  async deletePaymentReceipt(@Param('id', ParseIntPipe) id: number) {
-    await this.paymentReceiptService.delete(id);
+  async deletePaymentReceipt(@Param('id', ParseIntPipe) id: number, @CurrentUser() user: any) {
+    await this.paymentReceiptService.delete(id, user?.id);
     return { message: 'Payment receipt deleted successfully' };
   }
 
@@ -263,8 +263,8 @@ export class AccountingController {
 
   @Delete('payment-vouchers/:id')
   @ApiOperation({ summary: 'Delete draft payment voucher' })
-  async deletePaymentVoucher(@Param('id', ParseIntPipe) id: number) {
-    await this.paymentVoucherService.delete(id);
+  async deletePaymentVoucher(@Param('id', ParseIntPipe) id: number, @CurrentUser() user: any) {
+    await this.paymentVoucherService.delete(id, user?.id);
     return { message: 'Payment voucher deleted successfully' };
   }
 
@@ -300,8 +300,8 @@ export class AccountingController {
 
   @Delete('bank-accounts/:id')
   @ApiOperation({ summary: 'Delete bank account' })
-  async deleteBankAccount(@Param('id', ParseIntPipe) id: number) {
-    await this.bankService.delete(id);
+  async deleteBankAccount(@Param('id', ParseIntPipe) id: number, @CurrentUser() user: any) {
+    await this.bankService.delete(id, user?.id);
     return { message: 'Bank account deleted successfully' };
   }
 

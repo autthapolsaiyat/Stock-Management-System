@@ -4,6 +4,7 @@ import { Repository } from 'typeorm';
 import { BankAccountEntity, BankAccountType } from '../entities/bank-account.entity';
 import { ChartOfAccountEntity } from '../entities/chart-of-account.entity';
 import { CreateBankAccountDto, UpdateBankAccountDto } from '../dto/bank-account.dto';
+import { AuditLogService } from '../../audit-log/audit-log.service';
 
 @Injectable()
 export class BankAccountService {
@@ -12,6 +13,7 @@ export class BankAccountService {
     private bankRepo: Repository<BankAccountEntity>,
     @InjectRepository(ChartOfAccountEntity)
     private coaRepo: Repository<ChartOfAccountEntity>,
+    private auditLogService: AuditLogService,
   ) {}
 
   async findAll(): Promise<BankAccountEntity[]> {
@@ -65,7 +67,19 @@ export class BankAccountService {
       updatedBy: userId,
     });
 
-    return this.bankRepo.save(bank);
+    const saved = await this.bankRepo.save(bank);
+
+    // Audit Log
+    await this.auditLogService.log({
+      module: 'BANK_ACCOUNT',
+      action: 'CREATE',
+      documentId: saved.id,
+      documentNo: saved.code,
+      userId: userId || 0,
+      details: { name: saved.name, bankName: saved.bankName },
+    });
+
+    return saved;
   }
 
   async update(id: number, dto: UpdateBankAccountDto, userId?: number): Promise<BankAccountEntity> {
@@ -76,16 +90,37 @@ export class BankAccountService {
       await this.bankRepo.update({}, { isDefault: false });
     }
 
+    const oldData = { ...bank };
     Object.assign(bank, dto);
     bank.updatedBy = userId;
 
-    return this.bankRepo.save(bank);
+    const saved = await this.bankRepo.save(bank);
+
+    // Audit Log
+    await this.auditLogService.log({
+      module: 'BANK_ACCOUNT',
+      action: 'UPDATE',
+      documentId: saved.id,
+      documentNo: saved.code,
+      userId: userId || 0,
+      details: { oldData, newData: dto },
+    });
+
+    return saved;
   }
 
-  async delete(id: number): Promise<void> {
+  async delete(id: number, userId?: number): Promise<void> {
     const bank = await this.findById(id);
-    
-    // TODO: Check if bank has transactions
+
+    // Audit Log
+    await this.auditLogService.log({
+      module: 'BANK_ACCOUNT',
+      action: 'DELETE',
+      documentId: bank.id,
+      documentNo: bank.code,
+      userId: userId || 0,
+      details: { name: bank.name },
+    });
 
     await this.bankRepo.remove(bank);
   }

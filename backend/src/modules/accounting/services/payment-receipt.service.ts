@@ -10,6 +10,7 @@ import { JournalEntryEntity, JournalType, JournalStatus, ReferenceType } from '.
 import { JournalEntryLineEntity } from '../entities/journal-entry-line.entity';
 import { CreatePaymentReceiptDto } from '../dto/payment.dto';
 import { DocNumberingService } from '../../doc-numbering/doc-numbering.service';
+import { AuditLogService } from '../../audit-log/audit-log.service';
 
 @Injectable()
 export class PaymentReceiptService {
@@ -30,6 +31,7 @@ export class PaymentReceiptService {
     private journalLineRepo: Repository<JournalEntryLineEntity>,
     private docNumberingService: DocNumberingService,
     private dataSource: DataSource,
+    private auditLogService: AuditLogService,
   ) {}
 
   async findAll(params?: {
@@ -193,6 +195,17 @@ export class PaymentReceiptService {
       }
 
       await queryRunner.commitTransaction();
+
+      // Audit Log
+      await this.auditLogService.log({
+        module: 'PAYMENT_RECEIPT',
+        action: 'CREATE',
+        documentId: savedReceipt.id,
+        documentNo: savedReceipt.docNo,
+        userId: userId || 0,
+        details: { customerName, netAmount },
+      });
+
       return this.findById(savedReceipt.id);
     } catch (error) {
       await queryRunner.rollbackTransaction();
@@ -253,6 +266,17 @@ export class PaymentReceiptService {
       await queryRunner.manager.save(receipt);
 
       await queryRunner.commitTransaction();
+
+      // Audit Log
+      await this.auditLogService.log({
+        module: 'PAYMENT_RECEIPT',
+        action: 'POST',
+        documentId: receipt.id,
+        documentNo: receipt.docNo,
+        userId: userId || 0,
+        details: { customerName: receipt.customerName, netAmount: receipt.netAmount, journalDocNo: receipt.journalDocNo },
+      });
+
       return this.findById(id);
     } catch (error) {
       await queryRunner.rollbackTransaction();
@@ -435,6 +459,17 @@ export class PaymentReceiptService {
       await queryRunner.manager.save(receipt);
 
       await queryRunner.commitTransaction();
+
+      // Audit Log
+      await this.auditLogService.log({
+        module: 'PAYMENT_RECEIPT',
+        action: 'CANCEL',
+        documentId: receipt.id,
+        documentNo: receipt.docNo,
+        userId: userId || 0,
+        details: { reason },
+      });
+
       return this.findById(id);
     } catch (error) {
       await queryRunner.rollbackTransaction();
@@ -444,12 +479,22 @@ export class PaymentReceiptService {
     }
   }
 
-  async delete(id: number): Promise<void> {
+  async delete(id: number, userId?: number): Promise<void> {
     const receipt = await this.findById(id);
 
     if (receipt.status !== PaymentStatus.DRAFT) {
       throw new BadRequestException('Can only delete DRAFT payment receipts');
     }
+
+    // Audit Log
+    await this.auditLogService.log({
+      module: 'PAYMENT_RECEIPT',
+      action: 'DELETE',
+      documentId: receipt.id,
+      documentNo: receipt.docNo,
+      userId: userId || 0,
+      details: { customerName: receipt.customerName },
+    });
 
     await this.receiptRepo.remove(receipt);
   }

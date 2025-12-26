@@ -3,12 +3,14 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { ChartOfAccountEntity, AccountType, AccountGroup, BalanceType } from '../entities/chart-of-account.entity';
 import { CreateChartOfAccountDto, UpdateChartOfAccountDto } from '../dto/chart-of-account.dto';
+import { AuditLogService } from '../../audit-log/audit-log.service';
 
 @Injectable()
 export class ChartOfAccountService {
   constructor(
     @InjectRepository(ChartOfAccountEntity)
     private coaRepo: Repository<ChartOfAccountEntity>,
+    private auditLogService: AuditLogService,
   ) {}
 
   async findAll(): Promise<ChartOfAccountEntity[]> {
@@ -104,7 +106,19 @@ export class ChartOfAccountService {
       updatedBy: userId,
     });
 
-    return this.coaRepo.save(account);
+    const saved = await this.coaRepo.save(account);
+
+    // Audit Log
+    await this.auditLogService.log({
+      module: 'CHART_OF_ACCOUNT',
+      action: 'CREATE',
+      documentId: saved.id,
+      documentNo: saved.code,
+      userId: userId || 0,
+      details: { name: saved.name, accountType: saved.accountType },
+    });
+
+    return saved;
   }
 
   async update(id: number, dto: UpdateChartOfAccountDto, userId?: number): Promise<ChartOfAccountEntity> {
@@ -114,13 +128,26 @@ export class ChartOfAccountService {
       throw new BadRequestException('Cannot modify system account');
     }
 
+    const oldData = { ...account };
     Object.assign(account, dto);
     account.updatedBy = userId;
 
-    return this.coaRepo.save(account);
+    const saved = await this.coaRepo.save(account);
+
+    // Audit Log
+    await this.auditLogService.log({
+      module: 'CHART_OF_ACCOUNT',
+      action: 'UPDATE',
+      documentId: saved.id,
+      documentNo: saved.code,
+      userId: userId || 0,
+      details: { oldData, newData: dto },
+    });
+
+    return saved;
   }
 
-  async delete(id: number): Promise<void> {
+  async delete(id: number, userId?: number): Promise<void> {
     const account = await this.findById(id);
 
     if (account.isSystem) {
@@ -133,7 +160,15 @@ export class ChartOfAccountService {
       throw new BadRequestException('Cannot delete account with sub-accounts');
     }
 
-    // TODO: Check if account has transactions
+    // Audit Log
+    await this.auditLogService.log({
+      module: 'CHART_OF_ACCOUNT',
+      action: 'DELETE',
+      documentId: account.id,
+      documentNo: account.code,
+      userId: userId || 0,
+      details: { name: account.name, accountType: account.accountType },
+    });
 
     await this.coaRepo.remove(account);
   }
