@@ -101,7 +101,7 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
 
   // Check if user is account-only (accounting menu only)
   const isAccountOnly = (): boolean => {
-    const accountRoles = ['ACCOUNT', 'ACCOUNTANT', 'FINANCE'];
+    const accountRoles = ['ACCOUNT', 'ACCOUNTANT', 'ACCOUNTING', 'FINANCE'];
     return user?.roles?.some(r => accountRoles.includes(r)) && 
            !user?.roles?.includes('ADMIN') && 
            !user?.roles?.includes('SUPER_ADMIN') &&
@@ -110,7 +110,7 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
 
   // Check if user has access to accounting module
   const hasAccountAccess = (): boolean => {
-    const accountRoles = ['ACCOUNT', 'ACCOUNTANT', 'FINANCE', 'ADMIN', 'SUPER_ADMIN', 'MANAGER'];
+    const accountRoles = ['ACCOUNT', 'ACCOUNTANT', 'ACCOUNTING', 'FINANCE', 'ADMIN', 'SUPER_ADMIN', 'MANAGER'];
     return user?.roles?.some(r => accountRoles.includes(r)) || false;
   };
 

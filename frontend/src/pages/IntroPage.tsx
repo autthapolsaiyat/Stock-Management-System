@@ -42,7 +42,7 @@ const IntroPage = () => {
   );
   const isStock = isSuperAdmin || user?.roles?.some((r: string) => ['ADMIN', 'STOCK', 'WAREHOUSE', 'MANAGER'].includes(r));
   const isPurchase = isSuperAdmin || user?.roles?.some((r: string) => ['ADMIN', 'PURCHASE', 'MANAGER'].includes(r));
-  const isAccount = isSuperAdmin || user?.roles?.some((r: string) => ['ADMIN', 'ACCOUNT', 'ACCOUNTANT', 'FINANCE', 'MANAGER'].includes(r));
+  const isAccount = isSuperAdmin || user?.roles?.some((r: string) => ['ADMIN', 'ACCOUNT', 'ACCOUNTANT', 'ACCOUNTING', 'FINANCE', 'MANAGER'].includes(r));
 
   useEffect(() => {
     const handleResize = () => setIsMobile(window.innerWidth < 768);
