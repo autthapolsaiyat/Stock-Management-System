@@ -48,7 +48,7 @@ const BankReconciliationPage: React.FC = () => {
   const [selectedBankId, setSelectedBankId] = useState<number | null>(null);
   const [asOfDate, setAsOfDate] = useState(dayjs());
   const [bookItems, setBookItems] = useState<ReconciliationItem[]>([]);
-  const [bankItems, setBankItems] = useState<ReconciliationItem[]>([]);
+  const [, setBankItems] = useState<ReconciliationItem[]>([]);
   const [summary, setSummary] = useState<ReconciliationSummary | null>(null);
   const [loading, setLoading] = useState(false);
   const [selectedBookIds, setSelectedBookIds] = useState<number[]>([]);
@@ -206,8 +206,6 @@ const BankReconciliationPage: React.FC = () => {
       ),
     },
   ];
-
-  const selectedBank = bankAccounts.find(b => b.id === selectedBankId);
 
   return (
     <div style={{ padding: 24 }}>

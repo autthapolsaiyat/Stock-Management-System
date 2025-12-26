@@ -566,7 +566,7 @@ const PaymentReceiptPage: React.FC = () => {
         <PaymentReceiptPrintPreview
           open={printModalVisible}
           onClose={() => setPrintModalVisible(false)}
-          paymentReceipt={selectedReceipt}
+          receipt={selectedReceipt}
         />
       )}
     </div>

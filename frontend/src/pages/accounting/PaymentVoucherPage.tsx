@@ -565,7 +565,7 @@ const PaymentVoucherPage: React.FC = () => {
         <PaymentVoucherPrintPreview
           open={printModalVisible}
           onClose={() => setPrintModalVisible(false)}
-          paymentVoucher={selectedVoucher}
+          voucher={selectedVoucher}
         />
       )}
     </div>

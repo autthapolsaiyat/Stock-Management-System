@@ -136,8 +136,6 @@ const GeneralLedgerPage: React.FC = () => {
     },
   ];
 
-  const selectedAccount = accounts.find(a => a.id === selectedAccountId);
-
   return (
     <div style={{ padding: 24 }}>
       <Row justify="space-between" align="middle" style={{ marginBottom: 16 }}>
@@ -290,16 +288,13 @@ const GeneralLedgerPage: React.FC = () => {
         <GeneralLedgerPrintPreview
           open={printModalVisible}
           onClose={() => setPrintModalVisible(false)}
-          ledgerData={{
-            account: ledgerData.account,
+          account={ledgerData.account}
+          transactions={ledgerData.transactions}
+          dateRange={{
             startDate: dateRange[0].format('YYYY-MM-DD'),
             endDate: dateRange[1].format('YYYY-MM-DD'),
-            openingBalance: ledgerData.openingBalance,
-            transactions: ledgerData.transactions,
-            closingBalance: ledgerData.closingBalance,
-            totalDebit: ledgerData.totalDebit,
-            totalCredit: ledgerData.totalCredit,
           }}
+          openingBalance={ledgerData.openingBalance}
         />
       )}
     </div>
