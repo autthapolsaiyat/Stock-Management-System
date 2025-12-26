@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { Modal, Button, Spin, Radio, Space, Checkbox, Divider, Switch } from 'antd';
+import { Modal, Button, Spin, Radio, Space, Checkbox, Divider } from 'antd';
 import { PrinterOutlined, SettingOutlined } from '@ant-design/icons';
 import { systemSettingsApi } from '../../services/api';
 
@@ -105,7 +105,7 @@ const TaxInvoicePrintPreview: React.FC<TaxInvoicePrintPreviewProps> = ({
     }
   };
 
-  const generateInvoiceHTML = (copyConfig: typeof COPY_COLORS.ORIGINAL, pageBreak: string, isOriginal: boolean) => {
+  const generateInvoiceHTML = (copyConfig: typeof COPY_COLORS.ORIGINAL, pageBreak: string) => {
     const items = invoice?.items || invoice?.lines || [];
     
     // Badge HTML based on style
