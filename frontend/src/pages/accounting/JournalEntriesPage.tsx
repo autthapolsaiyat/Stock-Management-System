@@ -5,9 +5,10 @@ import {
 } from 'antd';
 import {
   PlusOutlined, DeleteOutlined, EyeOutlined, CheckOutlined,
-  CloseOutlined, UndoOutlined, BookOutlined
+  CloseOutlined, UndoOutlined, BookOutlined, PrinterOutlined
 } from '@ant-design/icons';
 import { journalEntriesApi, chartOfAccountsApi } from '../../services/api';
+import { JournalVoucherPrintPreview } from '../../components/print';
 import dayjs from 'dayjs';
 
 const { Title, Text } = Typography;
@@ -69,6 +70,7 @@ const JournalEntriesPage: React.FC = () => {
   const [modalVisible, setModalVisible] = useState(false);
   const [viewModalVisible, setViewModalVisible] = useState(false);
   const [selectedEntry, setSelectedEntry] = useState<JournalEntry | null>(null);
+  const [printModalVisible, setPrintModalVisible] = useState(false);
   const [form] = Form.useForm();
   const [lines, setLines] = useState<any[]>([
     { lineNo: 1, accountId: undefined, description: '', debitAmount: 0, creditAmount: 0 },
@@ -292,10 +294,15 @@ const JournalEntriesPage: React.FC = () => {
     {
       title: 'จัดการ',
       key: 'action',
-      width: 150,
+      width: 180,
       render: (_: unknown, record: JournalEntry) => (
         <Space>
           <Button type="text" icon={<EyeOutlined />} onClick={() => handleView(record)} />
+          <Button 
+            type="text" 
+            icon={<PrinterOutlined />} 
+            onClick={() => { setSelectedEntry(record); setPrintModalVisible(true); }} 
+          />
           {record.status === 'DRAFT' && (
             <>
               <Popconfirm title="ต้องการบันทึกรายการนี้?" onConfirm={() => handlePost(record.id)}>
@@ -600,6 +607,13 @@ const JournalEntriesPage: React.FC = () => {
           </>
         )}
       </Modal>
+
+      {/* Print Modal */}
+      <JournalVoucherPrintPreview
+        open={printModalVisible}
+        onClose={() => setPrintModalVisible(false)}
+        journalEntry={selectedEntry}
+      />
     </div>
   );
 };

@@ -1,11 +1,12 @@
 import React, { useState, useEffect } from 'react';
 import {
-  Card, Table, Typography, Row, Col, DatePicker, Tabs, Button, Space, Statistic
+  Card, Table, Typography, Row, Col, DatePicker, Tabs, Button, Space, Divider, Statistic
 } from 'antd';
 import {
   FileTextOutlined, LineChartOutlined, BankOutlined, PrinterOutlined
 } from '@ant-design/icons';
 import { financialReportsApi } from '../../services/api';
+import { FinancialReportPrintPreview } from '../../components/print';
 import dayjs from 'dayjs';
 
 const { Title, Text } = Typography;
@@ -45,6 +46,8 @@ const FinancialReportsPage: React.FC = () => {
   const [startDate, setStartDate] = useState(dayjs().startOf('year'));
   const [endDate, setEndDate] = useState(dayjs());
   const [asOfDate, setAsOfDate] = useState(dayjs());
+  const [printModalVisible, setPrintModalVisible] = useState(false);
+  const [printReportType, setPrintReportType] = useState<'TRIAL_BALANCE' | 'PROFIT_LOSS' | 'BALANCE_SHEET'>('TRIAL_BALANCE');
   
   const [trialBalance, setTrialBalance] = useState<{ details: TrialBalanceRow[]; totals: any } | null>(null);
   const [profitLoss, setProfitLoss] = useState<ProfitLossData | null>(null);
@@ -408,7 +411,19 @@ const FinancialReportsPage: React.FC = () => {
           <Title level={4} style={{ margin: 0 }}>รายงานการเงิน</Title>
         </Col>
         <Col>
-          <Button icon={<PrinterOutlined />} onClick={() => window.print()}>
+          <Button 
+            icon={<PrinterOutlined />} 
+            onClick={() => {
+              if (activeTab === 'trial-balance') {
+                setPrintReportType('TRIAL_BALANCE');
+              } else if (activeTab === 'profit-loss') {
+                setPrintReportType('PROFIT_LOSS');
+              } else {
+                setPrintReportType('BALANCE_SHEET');
+              }
+              setPrintModalVisible(true);
+            }}
+          >
             พิมพ์
           </Button>
         </Col>
@@ -457,6 +472,35 @@ const FinancialReportsPage: React.FC = () => {
           items={tabItems}
         />
       </Card>
+
+      {/* Print Modal */}
+      <FinancialReportPrintPreview
+        open={printModalVisible}
+        onClose={() => setPrintModalVisible(false)}
+        reportType={printReportType}
+        reportData={
+          printReportType === 'TRIAL_BALANCE' 
+            ? { accounts: trialBalance?.details || [], totals: trialBalance?.totals || {} }
+            : printReportType === 'PROFIT_LOSS'
+            ? { 
+                revenues: profitLoss?.revenue?.details || [], 
+                expenses: profitLoss?.expense?.details || [],
+                totalRevenue: profitLoss?.revenue?.total || 0,
+                totalExpense: profitLoss?.expense?.total || 0,
+                netProfit: profitLoss?.netProfit || 0
+              }
+            : {
+                assets: balanceSheet?.assets?.details || [],
+                liabilities: balanceSheet?.liabilities?.details || [],
+                equity: balanceSheet?.equity?.details || [],
+                totalAssets: balanceSheet?.assets?.total || 0,
+                totalLiabilities: balanceSheet?.liabilities?.total || 0,
+                totalEquity: balanceSheet?.equity?.total || 0
+              }
+        }
+        dateRange={{ startDate: startDate.format('YYYY-MM-DD'), endDate: endDate.format('YYYY-MM-DD') }}
+        asOfDate={asOfDate.format('YYYY-MM-DD')}
+      />
     </div>
   );
 };
