@@ -1,4 +1,4 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import { Injectable, NotFoundException, ConflictException, BadRequestException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { CustomerEntity } from './entities/customer.entity';
@@ -47,25 +47,42 @@ export class CustomerService {
   }
 
   async create(dto: any, ctx?: AuditContext) {
-    const customer = this.customerRepository.create({ ...dto, isActive: true });
-    const savedCustomer = await this.customerRepository.save(customer);
-    const saved = Array.isArray(savedCustomer) ? savedCustomer[0] : savedCustomer;
-    
-    if (ctx) {
-      await this.auditLogService.log({
-        module: 'CUSTOMER',
-        action: 'CREATE',
-        documentId: saved.id,
-        documentNo: saved.code,
-        userId: ctx.userId,
-        userName: ctx.userName,
-        ipAddress: ctx.ipAddress,
-        userAgent: ctx.userAgent,
-        details: { name: saved.name, code: saved.code },
+    // Check for duplicate code
+    if (dto.code) {
+      const existing = await this.customerRepository.findOne({ 
+        where: { code: dto.code } 
       });
+      if (existing) {
+        throw new ConflictException(`รหัสลูกค้า "${dto.code}" มีอยู่ในระบบแล้ว`);
+      }
     }
-    
-    return saved;
+
+    try {
+      const customer = this.customerRepository.create({ ...dto, isActive: true });
+      const savedCustomer = await this.customerRepository.save(customer);
+      const saved = Array.isArray(savedCustomer) ? savedCustomer[0] : savedCustomer;
+      
+      if (ctx) {
+        await this.auditLogService.log({
+          module: 'CUSTOMER',
+          action: 'CREATE',
+          documentId: saved.id,
+          documentNo: saved.code,
+          userId: ctx.userId,
+          userName: ctx.userName,
+          ipAddress: ctx.ipAddress,
+          userAgent: ctx.userAgent,
+          details: { name: saved.name, code: saved.code },
+        });
+      }
+      
+      return saved;
+    } catch (error: any) {
+      if (error.code === '23505') { // PostgreSQL unique violation
+        throw new ConflictException(`รหัสลูกค้า "${dto.code}" มีอยู่ในระบบแล้ว`);
+      }
+      throw error;
+    }
   }
 
   async update(id: number, dto: any, ctx?: AuditContext) {
