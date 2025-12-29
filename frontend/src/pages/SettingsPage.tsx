@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
-import { Tabs, Table, Button, Card, Space, message, Modal, Form, Input, Popconfirm, InputNumber, Tag, Switch, Row, Col, Divider } from 'antd';
-import { PlusOutlined, EditOutlined, DeleteOutlined, SettingOutlined, AppstoreOutlined, ScissorOutlined, FileTextOutlined, ToolOutlined, BellOutlined, FileProtectOutlined, GlobalOutlined } from '@ant-design/icons';
-import { productsApi, unitsApi, systemSettingsApi } from '../services/api';
+import { Tabs, Table, Button, Card, Space, message, Modal, Form, Input, Popconfirm, InputNumber, Tag, Switch, Row, Col, Divider, Upload, Image } from 'antd';
+import { PlusOutlined, EditOutlined, DeleteOutlined, SettingOutlined, AppstoreOutlined, ScissorOutlined, FileTextOutlined, ToolOutlined, BellOutlined, FileProtectOutlined, GlobalOutlined, UploadOutlined } from '@ant-design/icons';
+import { productsApi, unitsApi, systemSettingsApi, uploadApi } from '../services/api';
 import { ProductCategory } from '../types';
 import { useBranding } from '../contexts/BrandingContext';
 
@@ -44,6 +44,8 @@ const SettingsPage: React.FC = () => {
   // System Settings state
   const [loadingSystemSettings, setLoadingSystemSettings] = useState(false);
   const [systemSettingsForm] = Form.useForm();
+  const [systemLogoUrl, setSystemLogoUrl] = useState<string>('');
+  const [uploadingSystemLogo, setUploadingSystemLogo] = useState(false);
 
   useEffect(() => {
     loadCategories();
@@ -208,6 +210,7 @@ const SettingsPage: React.FC = () => {
       systemSettingsForm.setFieldsValue({
         // System Branding
         SYSTEM_NAME: settingsMap.SYSTEM_NAME || 'SVS Business Suite',
+        SYSTEM_LOGO_URL: settingsMap.SYSTEM_LOGO_URL || '',
         // Document Prefixes
         DOC_PREFIX_QT: settingsMap.DOC_PREFIX_QT || 'QT',
         DOC_PREFIX_PO: settingsMap.DOC_PREFIX_PO || 'PO',
@@ -219,10 +222,15 @@ const SettingsPage: React.FC = () => {
         ALERT_REORDER_ENABLED: settingsMap.ALERT_REORDER_ENABLED !== 'false',
         ALERT_EXPIRY_ENABLED: settingsMap.ALERT_EXPIRY_ENABLED !== 'false',
       });
+      // Set logo URL for preview
+      if (settingsMap.SYSTEM_LOGO_URL) {
+        setSystemLogoUrl(settingsMap.SYSTEM_LOGO_URL);
+      }
     } catch (error) {
       // Use defaults
       systemSettingsForm.setFieldsValue({
         SYSTEM_NAME: 'SVS Business Suite',
+        SYSTEM_LOGO_URL: '',
         DOC_PREFIX_QT: 'QT',
         DOC_PREFIX_PO: 'PO',
         DOC_PREFIX_GR: 'GR',
@@ -237,11 +245,29 @@ const SettingsPage: React.FC = () => {
     }
   };
 
+  // Upload System Logo
+  const handleUploadSystemLogo = async (file: File) => {
+    setUploadingSystemLogo(true);
+    try {
+      const res = await uploadApi.uploadImage(file);
+      const url = res.data.url;
+      setSystemLogoUrl(url);
+      systemSettingsForm.setFieldValue('SYSTEM_LOGO_URL', url);
+      message.success('อัพโหลดโลโก้สำเร็จ');
+    } catch (error) {
+      message.error('อัพโหลดโลโก้ไม่สำเร็จ');
+    } finally {
+      setUploadingSystemLogo(false);
+    }
+    return false; // Prevent default upload
+  };
+
   const handleSaveSystemSettings = async (values: any) => {
     setLoadingSystemSettings(true);
     try {
       const settings = [
         { key: 'SYSTEM_NAME', value: values.SYSTEM_NAME || 'SVS Business Suite' },
+        { key: 'SYSTEM_LOGO_URL', value: values.SYSTEM_LOGO_URL || '' },
         { key: 'DOC_PREFIX_QT', value: values.DOC_PREFIX_QT || 'QT' },
         { key: 'DOC_PREFIX_PO', value: values.DOC_PREFIX_PO || 'PO' },
         { key: 'DOC_PREFIX_GR', value: values.DOC_PREFIX_GR || 'GR' },
@@ -399,11 +425,11 @@ const SettingsPage: React.FC = () => {
                 <GlobalOutlined /> ข้อมูลระบบ
               </h3>
               <p style={{ margin: '4px 0 16px', color: 'rgba(255,255,255,0.5)', fontSize: 13 }}>
-                ตั้งค่าชื่อระบบที่จะแสดงในหน้า Login และ Menu
+                ตั้งค่าชื่อและโลโก้ระบบที่จะแสดงในหน้า Login และ Menu
               </p>
             </div>
             
-            <Row gutter={16}>
+            <Row gutter={24}>
               <Col span={12}>
                 <Form.Item 
                   label="ชื่อระบบ" 
@@ -412,6 +438,41 @@ const SettingsPage: React.FC = () => {
                 >
                   <Input placeholder="SVS Business Suite" />
                 </Form.Item>
+              </Col>
+              <Col span={12}>
+                <Form.Item 
+                  label="โลโก้ระบบ" 
+                  name="SYSTEM_LOGO_URL"
+                  tooltip="ขนาดแนะนำ: 200x200 px, รูปแบบ PNG หรือ JPG พื้นหลังโปร่งใส"
+                  extra={<span style={{ color: 'rgba(255,255,255,0.45)', fontSize: 12 }}>ขนาดแนะนำ: 200x200 px (PNG พื้นหลังโปร่งใส)</span>}
+                >
+                  <Input placeholder="URL โลโก้" />
+                </Form.Item>
+                <div style={{ display: 'flex', alignItems: 'flex-start', gap: 16, marginTop: -8 }}>
+                  {systemLogoUrl && (
+                    <div style={{ 
+                      border: '1px solid rgba(255,255,255,0.1)', 
+                      borderRadius: 8, 
+                      padding: 8,
+                      background: 'rgba(255,255,255,0.05)'
+                    }}>
+                      <Image 
+                        src={systemLogoUrl} 
+                        alt="System Logo" 
+                        style={{ maxHeight: 80, maxWidth: 80, objectFit: 'contain' }} 
+                      />
+                    </div>
+                  )}
+                  <Upload
+                    accept="image/*"
+                    showUploadList={false}
+                    beforeUpload={handleUploadSystemLogo}
+                  >
+                    <Button icon={<UploadOutlined />} loading={uploadingSystemLogo}>
+                      อัพโหลดโลโก้ใหม่
+                    </Button>
+                  </Upload>
+                </div>
               </Col>
             </Row>
 

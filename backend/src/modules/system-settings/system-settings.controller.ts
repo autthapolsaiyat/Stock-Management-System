@@ -21,12 +21,18 @@ export class SystemSettingsController {
       // Use default
     }
     
-    // ดึงโลโก้จาก COMPANY_LOGO_URL (หน้าตั้งค่าบริษัท)
+    // ดึงโลโก้จาก SYSTEM_LOGO_URL ก่อน ถ้าไม่มีค่อยดึงจาก COMPANY_LOGO_URL
     try {
-      const logoSetting = await this.settingsService.findByKey('COMPANY_LOGO_URL');
+      const logoSetting = await this.settingsService.findByKey('SYSTEM_LOGO_URL');
       if (logoSetting?.settingValue) systemLogo = logoSetting.settingValue;
     } catch (e) {
-      // Use default
+      // ถ้าไม่มี SYSTEM_LOGO_URL ลองดึง COMPANY_LOGO_URL
+      try {
+        const companyLogo = await this.settingsService.findByKey('COMPANY_LOGO_URL');
+        if (companyLogo?.settingValue) systemLogo = companyLogo.settingValue;
+      } catch (e2) {
+        // Use default
+      }
     }
     
     return { systemName, systemLogo };
