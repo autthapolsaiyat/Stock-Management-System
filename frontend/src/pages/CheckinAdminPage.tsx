@@ -9,17 +9,6 @@ import dayjs from 'dayjs';
 
 const { Title, Text } = Typography;
 
-interface CheckinSettings {
-  clockInTime: string;
-  clockOutTime: string;
-  gracePeriodMinutes: number;
-  lineNotifyToken: string;
-  notifyOnCheckin: boolean;
-  notifyOnCheckout: boolean;
-  notifyOnLate: boolean;
-  notifyDailySummary: boolean;
-  dailySummaryTime: string;
-}
 
 const CheckinAdminPage: React.FC = () => {
   const [form] = Form.useForm();
