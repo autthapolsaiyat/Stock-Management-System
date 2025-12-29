@@ -278,15 +278,16 @@ export const userSettingsApi = {
 
 // Upload API
 export const uploadApi = {
-  uploadImage: (file: File) => {
+  uploadImage: (file: File, folder: string = 'system') => {
     const formData = new FormData();
     formData.append('file', file);
-    return api.post('/api/upload/image', formData, {
+    formData.append('folder', folder);
+    return api.post('/api/upload', formData, {
       headers: { 'Content-Type': 'multipart/form-data' },
     });
   },
   uploadBase64: (base64: string, folder: string) => 
-    api.post('/api/upload/base64', { base64, folder }),
+    api.post('/api/upload/base64', { image: base64, folder }),
 };
 
 // ==================== ACCOUNTING APIs ====================
