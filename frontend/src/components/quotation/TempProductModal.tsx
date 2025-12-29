@@ -1,9 +1,15 @@
-import React, { useState } from 'react';
-import { Modal, Form, Input, InputNumber, Select, Row, Col, Tag, message } from 'antd';
+import React, { useState, useEffect } from 'react';
+import { Modal, Form, Input, InputNumber, Select, Row, Col, Tag, message, Spin } from 'antd';
 import { InfoCircleOutlined } from '@ant-design/icons';
+import { unitsApi } from '../../services/api';
 
 const { TextArea } = Input;
-const { Option } = Select;
+
+interface Unit {
+  id: number;
+  code: string;
+  name: string;
+}
 
 interface TempProductModalProps {
   open: boolean;
@@ -15,6 +21,34 @@ const TempProductModal: React.FC<TempProductModalProps> = ({ open, onClose, onAd
   const [form] = Form.useForm();
   const [saving, setSaving] = useState(false);
   const [marginPreview, setMarginPreview] = useState<number>(0);
+  const [units, setUnits] = useState<Unit[]>([]);
+  const [loadingUnits, setLoadingUnits] = useState(false);
+
+  useEffect(() => {
+    if (open) {
+      loadUnits();
+    }
+  }, [open]);
+
+  const loadUnits = async () => {
+    setLoadingUnits(true);
+    try {
+      const response = await unitsApi.getAll();
+      setUnits(response.data || []);
+    } catch (error) {
+      console.error('Error loading units:', error);
+      // Fallback to default units if API fails
+      setUnits([
+        { id: 1, code: 'ea', name: 'ชิ้น (ea)' },
+        { id: 2, code: 'set', name: 'ชุด (set)' },
+        { id: 3, code: 'box', name: 'กล่อง (box)' },
+        { id: 4, code: 'pack', name: 'แพ็ค (pack)' },
+        { id: 5, code: 'unit', name: 'หน่วย (unit)' },
+      ]);
+    } finally {
+      setLoadingUnits(false);
+    }
+  };
 
   const handleCostChange = (cost: number | null) => {
     const suggestedPrice = (cost || 0) * 1.3;
@@ -136,12 +170,22 @@ const TempProductModal: React.FC<TempProductModalProps> = ({ open, onClose, onAd
               rules={[{ required: true, message: 'กรุณาเลือกหน่วย' }]}
               initialValue="ea"
             >
-              <Select>
-                <Option value="ea">ชิ้น (ea)</Option>
-                <Option value="set">ชุด (set)</Option>
-                <Option value="box">กล่อง (box)</Option>
-                <Option value="pack">แพ็ค (pack)</Option>
-                <Option value="unit">หน่วย (unit)</Option>
+              <Select
+                showSearch
+                placeholder="เลือกหน่วย"
+                optionFilterProp="children"
+                filterOption={(input, option) =>
+                  (option?.children as unknown as string)?.toLowerCase().includes(input.toLowerCase()) ||
+                  (option?.value as string)?.toLowerCase().includes(input.toLowerCase())
+                }
+                loading={loadingUnits}
+                notFoundContent={loadingUnits ? <Spin size="small" /> : 'ไม่พบหน่วย'}
+              >
+                {units.map(unit => (
+                  <Select.Option key={unit.id} value={unit.code || unit.name}>
+                    {unit.name}
+                  </Select.Option>
+                ))}
               </Select>
             </Form.Item>
           </Col>
