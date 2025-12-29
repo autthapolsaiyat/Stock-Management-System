@@ -12,11 +12,19 @@ export class SystemSettingsController {
   @Get('public/branding')
   async getPublicBranding() {
     let systemName = 'SVS Business Suite';
+    let systemSubtitle = '';
     let systemLogo = '/icons/icon-192x192.png';
     
     try {
       const nameSetting = await this.settingsService.findByKey('SYSTEM_NAME');
       if (nameSetting?.settingValue) systemName = nameSetting.settingValue;
+    } catch (e) {
+      // Use default
+    }
+    
+    try {
+      const subtitleSetting = await this.settingsService.findByKey('SYSTEM_SUBTITLE');
+      if (subtitleSetting?.settingValue) systemSubtitle = subtitleSetting.settingValue;
     } catch (e) {
       // Use default
     }
@@ -35,7 +43,7 @@ export class SystemSettingsController {
       }
     }
     
-    return { systemName, systemLogo };
+    return { systemName, systemSubtitle, systemLogo };
   }
 
   @ApiBearerAuth()

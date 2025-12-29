@@ -210,6 +210,7 @@ const SettingsPage: React.FC = () => {
       systemSettingsForm.setFieldsValue({
         // System Branding
         SYSTEM_NAME: settingsMap.SYSTEM_NAME || 'SVS Business Suite',
+        SYSTEM_SUBTITLE: settingsMap.SYSTEM_SUBTITLE || '',
         SYSTEM_LOGO_URL: settingsMap.SYSTEM_LOGO_URL || '',
         // Document Prefixes
         DOC_PREFIX_QT: settingsMap.DOC_PREFIX_QT || 'QT',
@@ -230,6 +231,7 @@ const SettingsPage: React.FC = () => {
       // Use defaults
       systemSettingsForm.setFieldsValue({
         SYSTEM_NAME: 'SVS Business Suite',
+        SYSTEM_SUBTITLE: '',
         SYSTEM_LOGO_URL: '',
         DOC_PREFIX_QT: 'QT',
         DOC_PREFIX_PO: 'PO',
@@ -267,6 +269,7 @@ const SettingsPage: React.FC = () => {
     try {
       const settings = [
         { key: 'SYSTEM_NAME', value: values.SYSTEM_NAME || 'SVS Business Suite' },
+        { key: 'SYSTEM_SUBTITLE', value: values.SYSTEM_SUBTITLE || '' },
         { key: 'SYSTEM_LOGO_URL', value: values.SYSTEM_LOGO_URL || '' },
         { key: 'DOC_PREFIX_QT', value: values.DOC_PREFIX_QT || 'QT' },
         { key: 'DOC_PREFIX_PO', value: values.DOC_PREFIX_PO || 'PO' },
@@ -473,6 +476,18 @@ const SettingsPage: React.FC = () => {
                     </Button>
                   </Upload>
                 </div>
+              </Col>
+            </Row>
+            
+            <Row gutter={24} style={{ marginTop: 16 }}>
+              <Col span={24}>
+                <Form.Item 
+                  label="คำอธิบายระบบ" 
+                  name="SYSTEM_SUBTITLE"
+                  tooltip="ข้อความที่จะแสดงใต้ชื่อระบบในหน้า Intro"
+                >
+                  <Input placeholder="ระบบจัดการธุรกิจ แสงวิทย์ ซายน์" />
+                </Form.Item>
               </Col>
             </Row>
 

@@ -10,11 +10,13 @@ import {
 } from '@ant-design/icons';
 import { QRCodeSVG } from 'qrcode.react';
 import { useAuth } from '../contexts/AuthContext';
+import { useBranding } from '../contexts/BrandingContext';
 import api from '../services/api';
 
 const IntroPage = () => {
   const navigate = useNavigate();
   const { user, logout } = useAuth();
+  const { systemName, systemSubtitle, systemLogo } = useBranding();
   const [darkMode, setDarkMode] = useState(() => localStorage.getItem('darkMode') === 'true');
   const [profileModalOpen, setProfileModalOpen] = useState(false);
   const [cardFlipped, setCardFlipped] = useState(false);
@@ -128,11 +130,11 @@ const IntroPage = () => {
         <div style={{ maxWidth: 1400, margin: '0 auto', display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 16 }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: isMobile ? 10 : 14 }}>
             <div style={{ width: isMobile ? 40 : 48, height: isMobile ? 40 : 48, borderRadius: 12, overflow: 'hidden', background: '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center', boxShadow: '0 2px 8px rgba(0,0,0,0.1)' }}>
-              <img src="/icons/icon-96x96.png" alt="SVS" style={{ width: '100%', height: '100%', objectFit: 'contain' }} onError={(e) => { e.currentTarget.style.display = 'none'; e.currentTarget.parentElement!.innerHTML = '<span style="color:#22c55e;font-weight:700;font-size:16px">SVS</span>'; }} />
+              <img src={systemLogo} alt="Logo" style={{ width: '100%', height: '100%', objectFit: 'contain' }} onError={(e) => { e.currentTarget.style.display = 'none'; e.currentTarget.parentElement!.innerHTML = `<span style="color:#22c55e;font-weight:700;font-size:16px">${systemName.substring(0, 3).toUpperCase()}</span>`; }} />
             </div>
             <div>
-              <h1 style={{ fontSize: isMobile ? 18 : 22, fontWeight: 700, color: '#22c55e', margin: 0, lineHeight: 1.2 }}>{isMobile ? 'SVS' : 'SVS Business Suite'}</h1>
-              {!isMobile && <p style={{ fontSize: 11, color: darkMode ? 'rgba(255,255,255,0.5)' : '#6b7280', margin: 0 }}>ระบบจัดการธุรกิจ แสงวิทย์ ซายน์</p>}
+              <h1 style={{ fontSize: isMobile ? 18 : 22, fontWeight: 700, color: '#22c55e', margin: 0, lineHeight: 1.2 }}>{isMobile ? systemName.substring(0, 3).toUpperCase() : systemName}</h1>
+              {!isMobile && systemSubtitle && <p style={{ fontSize: 11, color: darkMode ? 'rgba(255,255,255,0.5)' : '#6b7280', margin: 0 }}>{systemSubtitle}</p>}
             </div>
           </div>
           <div style={{ display: 'flex', alignItems: 'center', gap: isMobile ? 10 : 16 }}>
