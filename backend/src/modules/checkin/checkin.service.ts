@@ -1,0 +1,591 @@
+import { Injectable, BadRequestException } from '@nestjs/common';
+import { InjectRepository } from '@nestjs/typeorm';
+import { Repository, Between } from 'typeorm';
+import { CheckinRecordEntity, CheckinStatus } from './entities/checkin-record.entity';
+import { LeaveRecordEntity, LeaveType, LeaveDuration, LeaveStatus } from './entities/leave-record.entity';
+import { ClockInDto, ClockOutDto, CreateLeaveDto, UpdateLeaveDto, CheckinSettingsDto } from './dto';
+import { SystemSettingsService } from '../system-settings/system-settings.service';
+import axios from 'axios';
+
+@Injectable()
+export class CheckinService {
+  constructor(
+    @InjectRepository(CheckinRecordEntity)
+    private readonly checkinRepo: Repository<CheckinRecordEntity>,
+    @InjectRepository(LeaveRecordEntity)
+    private readonly leaveRepo: Repository<LeaveRecordEntity>,
+    private readonly settingsService: SystemSettingsService,
+  ) {}
+
+  // ==================== CLOCK IN/OUT ====================
+
+  async clockIn(userId: number, dto: ClockInDto) {
+    const today = new Date();
+    const dateStr = today.toISOString().split('T')[0];
+
+    // Check if already clocked in today
+    let record = await this.checkinRepo.findOne({
+      where: { userId, checkinDate: dateStr as any },
+    });
+
+    if (record?.clockInTime) {
+      throw new BadRequestException('คุณได้เช็คอินเข้างานวันนี้แล้ว');
+    }
+
+    // Get settings
+    const clockInTime = await this.getSetting('CHECKIN_CLOCK_IN_TIME', '09:00');
+    const gracePeriod = parseInt(await this.getSetting('CHECKIN_GRACE_PERIOD', '15'));
+
+    // Calculate if late
+    const [hours, minutes] = clockInTime.split(':').map(Number);
+    const expectedTime = new Date(today);
+    expectedTime.setHours(hours, minutes + gracePeriod, 0, 0);
+
+    const isLate = today > expectedTime;
+    let lateMinutes = 0;
+    if (isLate) {
+      lateMinutes = Math.floor((today.getTime() - expectedTime.getTime()) / 60000) + gracePeriod;
+    }
+
+    if (!record) {
+      record = this.checkinRepo.create({
+        userId,
+        checkinDate: dateStr as any,
+      });
+    }
+
+    record.clockInTime = today;
+    record.clockInStatus = isLate ? CheckinStatus.LATE : CheckinStatus.NORMAL;
+    record.clockInLateMinutes = lateMinutes;
+    record.clockInLatitude = dto.latitude;
+    record.clockInLongitude = dto.longitude;
+    record.clockInNote = dto.note;
+
+    await this.checkinRepo.save(record);
+
+    // Send LINE notification
+    await this.sendCheckinNotification(userId, record, 'IN');
+
+    return record;
+  }
+
+  async clockOut(userId: number, dto: ClockOutDto) {
+    const today = new Date();
+    const dateStr = today.toISOString().split('T')[0];
+
+    // Check if clocked in today
+    const record = await this.checkinRepo.findOne({
+      where: { userId, checkinDate: dateStr as any },
+    });
+
+    if (!record?.clockInTime) {
+      throw new BadRequestException('คุณยังไม่ได้เช็คอินเข้างานวันนี้');
+    }
+
+    if (record.clockOutTime) {
+      throw new BadRequestException('คุณได้เช็คออกวันนี้แล้ว');
+    }
+
+    // Get settings
+    const clockOutTime = await this.getSetting('CHECKIN_CLOCK_OUT_TIME', '18:00');
+
+    // Calculate if early or OT
+    const [hours, minutes] = clockOutTime.split(':').map(Number);
+    const expectedTime = new Date(today);
+    expectedTime.setHours(hours, minutes, 0, 0);
+
+    const isEarly = today < expectedTime;
+    let earlyMinutes = 0;
+    let otHours = 0;
+
+    if (isEarly) {
+      earlyMinutes = Math.floor((expectedTime.getTime() - today.getTime()) / 60000);
+    } else {
+      otHours = Math.round((today.getTime() - expectedTime.getTime()) / 3600000 * 100) / 100;
+    }
+
+    record.clockOutTime = today;
+    record.clockOutStatus = isEarly ? CheckinStatus.EARLY : CheckinStatus.NORMAL;
+    record.clockOutEarlyMinutes = earlyMinutes;
+    record.clockOutLatitude = dto.latitude;
+    record.clockOutLongitude = dto.longitude;
+    record.clockOutNote = dto.note;
+    record.otHours = otHours;
+
+    await this.checkinRepo.save(record);
+
+    // Send LINE notification
+    await this.sendCheckinNotification(userId, record, 'OUT');
+
+    return record;
+  }
+
+  async getTodayStatus(userId: number) {
+    const today = new Date();
+    const dateStr = today.toISOString().split('T')[0];
+
+    const record = await this.checkinRepo.findOne({
+      where: { userId, checkinDate: dateStr as any },
+    });
+
+    const clockInTime = await this.getSetting('CHECKIN_CLOCK_IN_TIME', '09:00');
+    const clockOutTime = await this.getSetting('CHECKIN_CLOCK_OUT_TIME', '18:00');
+    const gracePeriod = parseInt(await this.getSetting('CHECKIN_GRACE_PERIOD', '15'));
+
+    return {
+      date: dateStr,
+      clockInTime,
+      clockOutTime,
+      gracePeriod,
+      record,
+    };
+  }
+
+  async getHistory(userId: number, limit = 10) {
+    return this.checkinRepo.find({
+      where: { userId },
+      order: { checkinDate: 'DESC' },
+      take: limit,
+    });
+  }
+
+  // ==================== LEAVE MANAGEMENT ====================
+
+  async createLeave(userId: number, dto: CreateLeaveDto) {
+    const leaveDays = dto.leaveDuration === LeaveDuration.FULL ? 1 : 0.5;
+
+    const leave = this.leaveRepo.create({
+      userId,
+      leaveDate: dto.leaveDate as any,
+      leaveType: dto.leaveType,
+      leaveDuration: dto.leaveDuration || LeaveDuration.FULL,
+      leaveDays,
+      reason: dto.reason,
+      status: LeaveStatus.APPROVED, // Auto-approve for now
+    });
+
+    return this.leaveRepo.save(leave);
+  }
+
+  async updateLeave(id: number, dto: UpdateLeaveDto) {
+    const leave = await this.leaveRepo.findOneBy({ id });
+    if (!leave) {
+      throw new BadRequestException('ไม่พบข้อมูลการลา');
+    }
+
+    if (dto.leaveDuration) {
+      leave.leaveDays = dto.leaveDuration === LeaveDuration.FULL ? 1 : 0.5;
+    }
+
+    Object.assign(leave, dto);
+    return this.leaveRepo.save(leave);
+  }
+
+  async deleteLeave(id: number) {
+    const leave = await this.leaveRepo.findOneBy({ id });
+    if (!leave) {
+      throw new BadRequestException('ไม่พบข้อมูลการลา');
+    }
+    return this.leaveRepo.remove(leave);
+  }
+
+  async getLeavesByUser(userId: number, year: number, month: number) {
+    const startDate = new Date(year, month - 1, 1);
+    const endDate = new Date(year, month, 0);
+
+    return this.leaveRepo.find({
+      where: {
+        userId,
+        leaveDate: Between(startDate, endDate),
+      },
+      order: { leaveDate: 'ASC' },
+    });
+  }
+
+  // ==================== MONTHLY REPORT ====================
+
+  async getMonthlyReport(year: number, month: number) {
+    const startDate = new Date(year, month - 1, 1);
+    const endDate = new Date(year, month, 0);
+
+    // Get all checkin records for the month
+    const checkinRecords = await this.checkinRepo.find({
+      where: {
+        checkinDate: Between(startDate, endDate),
+      },
+      relations: ['user'],
+    });
+
+    // Get all leave records for the month
+    const leaveRecords = await this.leaveRepo.find({
+      where: {
+        leaveDate: Between(startDate, endDate),
+      },
+      relations: ['user'],
+    });
+
+    // Group by user
+    const userStats = new Map<number, any>();
+
+    // Process checkin records
+    for (const record of checkinRecords) {
+      if (!userStats.has(record.userId)) {
+        userStats.set(record.userId, {
+          userId: record.userId,
+          fullName: record.user?.fullName || '',
+          nickname: (record.user as any)?.nickname || '',
+          lateHours: 0,
+          earlyLeaveCount: 0,
+          earlyLeaveHours: 0,
+          workDays: 0,
+          otHours: 0,
+          vacation: 0,
+          personal: 0,
+          sick: 0,
+          maternity: 0,
+          ordination: 0,
+          sickHalf: 0,
+          personalHalf: 0,
+          totalLeaveDays: 0,
+        });
+      }
+
+      const stat = userStats.get(record.userId);
+
+      if (record.clockInTime) {
+        stat.workDays++;
+        if (record.clockInStatus === CheckinStatus.LATE) {
+          stat.lateHours += record.clockInLateMinutes / 60;
+        }
+      }
+
+      if (record.clockOutTime && record.clockOutStatus === CheckinStatus.EARLY) {
+        stat.earlyLeaveCount++;
+        stat.earlyLeaveHours += record.clockOutEarlyMinutes / 60;
+      }
+
+      stat.otHours += record.otHours || 0;
+    }
+
+    // Process leave records
+    for (const leave of leaveRecords) {
+      if (!userStats.has(leave.userId)) {
+        userStats.set(leave.userId, {
+          userId: leave.userId,
+          fullName: leave.user?.fullName || '',
+          nickname: (leave.user as any)?.nickname || '',
+          lateHours: 0,
+          earlyLeaveCount: 0,
+          earlyLeaveHours: 0,
+          workDays: 0,
+          otHours: 0,
+          vacation: 0,
+          personal: 0,
+          sick: 0,
+          maternity: 0,
+          ordination: 0,
+          sickHalf: 0,
+          personalHalf: 0,
+          totalLeaveDays: 0,
+        });
+      }
+
+      const stat = userStats.get(leave.userId);
+
+      const isHalf = leave.leaveDuration !== LeaveDuration.FULL;
+
+      switch (leave.leaveType) {
+        case LeaveType.VACATION:
+          stat.vacation += leave.leaveDays;
+          break;
+        case LeaveType.PERSONAL:
+          if (isHalf) {
+            stat.personalHalf += 1;
+          } else {
+            stat.personal += leave.leaveDays;
+          }
+          break;
+        case LeaveType.SICK:
+          if (isHalf) {
+            stat.sickHalf += 1;
+          } else {
+            stat.sick += leave.leaveDays;
+          }
+          break;
+        case LeaveType.MATERNITY:
+          stat.maternity += leave.leaveDays;
+          break;
+        case LeaveType.ORDINATION:
+          stat.ordination += leave.leaveDays;
+          break;
+      }
+
+      stat.totalLeaveDays += leave.leaveDays;
+    }
+
+    // Convert to array and calculate totals
+    const report = Array.from(userStats.values()).map((stat, index) => ({
+      ...stat,
+      index: index + 1,
+      lateHours: Math.round(stat.lateHours * 10) / 10,
+      otHours: Math.round(stat.otHours * 10) / 10,
+    }));
+
+    // Calculate totals
+    const totals = {
+      totalEmployees: report.length,
+      totalLateHours: report.reduce((sum, r) => sum + r.lateHours, 0),
+      totalEarlyLeave: report.reduce((sum, r) => sum + r.earlyLeaveCount, 0),
+      totalVacation: report.reduce((sum, r) => sum + r.vacation, 0),
+      totalPersonal: report.reduce((sum, r) => sum + r.personal, 0),
+      totalSick: report.reduce((sum, r) => sum + r.sick, 0),
+      totalMaternity: report.reduce((sum, r) => sum + r.maternity, 0),
+      totalOrdination: report.reduce((sum, r) => sum + r.ordination, 0),
+      totalSickHalf: report.reduce((sum, r) => sum + r.sickHalf, 0),
+      totalPersonalHalf: report.reduce((sum, r) => sum + r.personalHalf, 0),
+      totalLeaveDays: report.reduce((sum, r) => sum + r.totalLeaveDays, 0),
+      totalWorkDays: report.reduce((sum, r) => sum + r.workDays, 0),
+      totalOtHours: report.reduce((sum, r) => sum + r.otHours, 0),
+    };
+
+    return { report, totals };
+  }
+
+  async getMonthlySummary(userId: number, year: number, month: number) {
+    const startDate = new Date(year, month - 1, 1);
+    const endDate = new Date(year, month, 0);
+
+    const checkinRecords = await this.checkinRepo.find({
+      where: {
+        userId,
+        checkinDate: Between(startDate, endDate),
+      },
+    });
+
+    const leaveRecords = await this.leaveRepo.find({
+      where: {
+        userId,
+        leaveDate: Between(startDate, endDate),
+      },
+    });
+
+    const workDays = checkinRecords.filter(r => r.clockInTime).length;
+    const lateDays = checkinRecords.filter(r => r.clockInStatus === CheckinStatus.LATE).length;
+    const earlyLeaveDays = checkinRecords.filter(r => r.clockOutStatus === CheckinStatus.EARLY).length;
+    const leaveDays = leaveRecords.reduce((sum, r) => sum + Number(r.leaveDays), 0);
+
+    return {
+      workDays,
+      lateDays,
+      earlyLeaveDays,
+      leaveDays,
+    };
+  }
+
+  // ==================== SETTINGS ====================
+
+  async getSettings() {
+    const keys = [
+      'CHECKIN_CLOCK_IN_TIME',
+      'CHECKIN_CLOCK_OUT_TIME',
+      'CHECKIN_GRACE_PERIOD',
+      'CHECKIN_LINE_TOKEN',
+      'CHECKIN_NOTIFY_ON_CHECKIN',
+      'CHECKIN_NOTIFY_ON_CHECKOUT',
+      'CHECKIN_NOTIFY_ON_LATE',
+      'CHECKIN_NOTIFY_DAILY_SUMMARY',
+      'CHECKIN_DAILY_SUMMARY_TIME',
+    ];
+
+    const settings: Record<string, string> = {};
+    for (const key of keys) {
+      settings[key] = await this.getSetting(key, '');
+    }
+
+    return {
+      clockInTime: settings.CHECKIN_CLOCK_IN_TIME || '09:00',
+      clockOutTime: settings.CHECKIN_CLOCK_OUT_TIME || '18:00',
+      gracePeriodMinutes: parseInt(settings.CHECKIN_GRACE_PERIOD) || 15,
+      lineNotifyToken: settings.CHECKIN_LINE_TOKEN || '',
+      notifyOnCheckin: settings.CHECKIN_NOTIFY_ON_CHECKIN !== 'false',
+      notifyOnCheckout: settings.CHECKIN_NOTIFY_ON_CHECKOUT !== 'false',
+      notifyOnLate: settings.CHECKIN_NOTIFY_ON_LATE !== 'false',
+      notifyDailySummary: settings.CHECKIN_NOTIFY_DAILY_SUMMARY !== 'false',
+      dailySummaryTime: settings.CHECKIN_DAILY_SUMMARY_TIME || '18:30',
+    };
+  }
+
+  async updateSettings(dto: CheckinSettingsDto) {
+    const settings = [
+      { key: 'CHECKIN_CLOCK_IN_TIME', value: dto.clockInTime },
+      { key: 'CHECKIN_CLOCK_OUT_TIME', value: dto.clockOutTime },
+      { key: 'CHECKIN_GRACE_PERIOD', value: dto.gracePeriodMinutes?.toString() },
+      { key: 'CHECKIN_LINE_TOKEN', value: dto.lineNotifyToken },
+      { key: 'CHECKIN_NOTIFY_ON_CHECKIN', value: dto.notifyOnCheckin?.toString() },
+      { key: 'CHECKIN_NOTIFY_ON_CHECKOUT', value: dto.notifyOnCheckout?.toString() },
+      { key: 'CHECKIN_NOTIFY_ON_LATE', value: dto.notifyOnLate?.toString() },
+      { key: 'CHECKIN_NOTIFY_DAILY_SUMMARY', value: dto.notifyDailySummary?.toString() },
+      { key: 'CHECKIN_DAILY_SUMMARY_TIME', value: dto.dailySummaryTime },
+    ].filter(s => s.value !== undefined);
+
+    for (const setting of settings) {
+      await this.settingsService.upsert(setting.key, setting.value, 0, 'CHECKIN');
+    }
+
+    return this.getSettings();
+  }
+
+  // ==================== LINE NOTIFY ====================
+
+  async sendLineNotify(message: string) {
+    const token = await this.getSetting('CHECKIN_LINE_TOKEN', '');
+    if (!token) return;
+
+    try {
+      await axios.post(
+        'https://notify-api.line.me/api/notify',
+        `message=${encodeURIComponent(message)}`,
+        {
+          headers: {
+            'Content-Type': 'application/x-www-form-urlencoded',
+            'Authorization': `Bearer ${token}`,
+          },
+        },
+      );
+    } catch (error) {
+      console.error('LINE Notify error:', error.message);
+    }
+  }
+
+  async testLineNotify() {
+    const message = `
+🔔 ทดสอบการแจ้งเตือน
+📅 ${new Date().toLocaleDateString('th-TH')}
+⏰ ${new Date().toLocaleTimeString('th-TH')}
+✅ ระบบ Check-in พร้อมใช้งาน`;
+
+    await this.sendLineNotify(message);
+    return { success: true, message: 'ส่งข้อความทดสอบสำเร็จ' };
+  }
+
+  private async sendCheckinNotification(userId: number, record: CheckinRecordEntity, type: 'IN' | 'OUT') {
+    const settings = await this.getSettings();
+
+    if (type === 'IN' && !settings.notifyOnCheckin) return;
+    if (type === 'OUT' && !settings.notifyOnCheckout) return;
+
+    // Get user info
+    const user = await this.checkinRepo.manager.findOne('UserEntity', {
+      where: { id: userId },
+    }) as any;
+
+    const nickname = user?.nickname ? ` (${user.nickname})` : '';
+    const fullName = user?.fullName || 'Unknown';
+
+    let message = '';
+
+    if (type === 'IN') {
+      const isLate = record.clockInStatus === CheckinStatus.LATE;
+      const emoji = isLate ? '🔴' : '🟢';
+      const status = isLate ? `สาย ${record.clockInLateMinutes} นาที` : 'ปกติ';
+
+      message = `
+${emoji} เช็คอินเข้างาน${isLate ? ' (สาย!)' : ''}
+👤 ${fullName}${nickname}
+⏰ ${record.clockInTime.toLocaleTimeString('th-TH')}
+${record.clockInNote ? `📝 ${record.clockInNote}` : ''}
+✅ สถานะ: ${status}`;
+
+      // Send late notification if configured
+      if (isLate && settings.notifyOnLate) {
+        // Already included in above message
+      }
+    } else {
+      const otHours = record.otHours > 0 ? `\n⏱️ OT: ${record.otHours} ชม.` : '';
+
+      message = `
+🌙 เช็คออก
+👤 ${fullName}${nickname}
+⏰ ${record.clockOutTime.toLocaleTimeString('th-TH')}
+${record.clockOutNote ? `📝 ${record.clockOutNote}` : ''}${otHours}`;
+    }
+
+    await this.sendLineNotify(message.trim());
+  }
+
+  async sendDailySummary() {
+    const settings = await this.getSettings();
+    if (!settings.notifyDailySummary) return;
+
+    const today = new Date();
+    const dateStr = today.toISOString().split('T')[0];
+
+    const records = await this.checkinRepo.find({
+      where: { checkinDate: dateStr as any },
+      relations: ['user'],
+    });
+
+    const leaves = await this.leaveRepo.find({
+      where: { leaveDate: dateStr as any },
+      relations: ['user'],
+    });
+
+    const normalCount = records.filter(r => r.clockInStatus === CheckinStatus.NORMAL).length;
+    const lateRecords = records.filter(r => r.clockInStatus === CheckinStatus.LATE);
+    const notCheckedOut = records.filter(r => r.clockInTime && !r.clockOutTime);
+
+    let message = `
+📊 สรุปการเข้างาน
+📅 ${today.toLocaleDateString('th-TH', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}
+
+✅ เข้างานปกติ: ${normalCount} คน
+⏰ มาสาย: ${lateRecords.length} คน`;
+
+    if (lateRecords.length > 0) {
+      const lateList = lateRecords.map(r => {
+        const nickname = (r.user as any)?.nickname || r.user?.fullName || '';
+        return `  - ${nickname} (${r.clockInLateMinutes} นาที)`;
+      }).join('\n');
+      message += `\n${lateList}`;
+    }
+
+    message += `\n🏖️ ลา: ${leaves.length} คน`;
+    if (leaves.length > 0) {
+      const leaveTypes: Record<string, string> = {
+        VACATION: 'พักร้อน',
+        PERSONAL: 'กิจส่วนตัว',
+        SICK: 'ป่วย',
+        MATERNITY: 'คลอด',
+        ORDINATION: 'อุปสมบท',
+      };
+      const leaveList = leaves.map(l => {
+        const nickname = (l.user as any)?.nickname || l.user?.fullName || '';
+        return `  - ${nickname} (${leaveTypes[l.leaveType]})`;
+      }).join('\n');
+      message += `\n${leaveList}`;
+    }
+
+    if (notCheckedOut.length > 0) {
+      message += `\n🚪 ยังไม่เช็คออก: ${notCheckedOut.length} คน`;
+      const notOutList = notCheckedOut.map(r => {
+        const nickname = (r.user as any)?.nickname || r.user?.fullName || '';
+        return `  - ${nickname}`;
+      }).join('\n');
+      message += `\n${notOutList}`;
+    }
+
+    await this.sendLineNotify(message.trim());
+    return { success: true };
+  }
+
+  // ==================== HELPERS ====================
+
+  private async getSetting(key: string, defaultValue: string): Promise<string> {
+    try {
+      const setting = await this.settingsService.findByKey(key);
+      return setting?.settingValue || defaultValue;
+    } catch {
+      return defaultValue;
+    }
+  }
+}

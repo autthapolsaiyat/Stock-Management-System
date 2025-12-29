@@ -37,6 +37,9 @@ import ExpiryAlertPage from './pages/ExpiryAlertPage';
 import SerialNumberPage from './pages/SerialNumberPage';
 import BarcodeScannerPage from './pages/BarcodeScannerPage';
 import SettingsPage from './pages/SettingsPage';
+import CheckinPage from './pages/CheckinPage';
+import CheckinAdminPage from './pages/CheckinAdminPage';
+import CheckinReportPage from './pages/CheckinReportPage';
 import { useAuth } from './contexts/AuthContext';
 
 // Accounting Pages
@@ -205,6 +208,11 @@ const App: React.FC = () => {
         <Route path="accounting/vat-report" element={<AccountRoute><VatReportPage /></AccountRoute>} />
         <Route path="accounting/fixed-assets" element={<AccountRoute><FixedAssetPage /></AccountRoute>} />
         <Route path="accounting/cash-flow" element={<AccountRoute><CashFlowPage /></AccountRoute>} />
+
+        {/* Check-in */}
+        <Route path="checkin" element={<CheckinPage />} />
+        <Route path="checkin/report" element={<CheckinReportPage />} />
+        <Route path="checkin/admin" element={<CheckinAdminPage />} />
         
         {/* Settings */}
         <Route path="settings" element={<SettingsPage />} />

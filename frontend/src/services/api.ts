@@ -488,3 +488,43 @@ export const cashFlowApi = {
   getByActivity: (activity: 'operating' | 'investing' | 'financing', startDate: string, endDate: string) =>
     api.get(`/api/accounting/cash-flow/${activity}`, { params: { startDate, endDate } }),
 };
+
+// ==================== CHECKIN APIs ====================
+
+export const checkinApi = {
+  // Clock In/Out
+  clockIn: (data: { latitude?: number; longitude?: number; note?: string }) =>
+    api.post('/api/checkin/clock-in', data),
+  clockOut: (data: { latitude?: number; longitude?: number; note?: string }) =>
+    api.post('/api/checkin/clock-out', data),
+  getTodayStatus: () =>
+    api.get('/api/checkin/today'),
+  getHistory: (limit = 10) =>
+    api.get('/api/checkin/history', { params: { limit } }),
+  getMonthlySummary: (year?: number, month?: number) =>
+    api.get('/api/checkin/monthly-summary', { params: { year, month } }),
+
+  // Leave
+  createLeave: (data: { leaveDate: string; leaveType: string; leaveDuration?: string; reason?: string }) =>
+    api.post('/api/checkin/leave', data),
+  updateLeave: (id: number, data: any) =>
+    api.put(`/api/checkin/leave/${id}`, data),
+  deleteLeave: (id: number) =>
+    api.delete(`/api/checkin/leave/${id}`),
+  getMyLeaves: (year?: number, month?: number) =>
+    api.get('/api/checkin/leave', { params: { year, month } }),
+
+  // Admin: Report
+  getMonthlyReport: (year: number, month: number) =>
+    api.get('/api/checkin/report/monthly', { params: { year, month } }),
+
+  // Admin: Settings
+  getSettings: () =>
+    api.get('/api/checkin/settings'),
+  updateSettings: (data: any) =>
+    api.put('/api/checkin/settings', data),
+  testLineNotify: () =>
+    api.post('/api/checkin/settings/test-line'),
+  sendDailySummary: () =>
+    api.post('/api/checkin/settings/send-daily-summary'),
+};

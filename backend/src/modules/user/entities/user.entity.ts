@@ -26,6 +26,9 @@ export class UserEntity {
   fullName: string;
 
   @Column({ nullable: true })
+  nickname: string;
+
+  @Column({ nullable: true })
   email: string;
 
   @Column({ name: 'is_active', default: true })

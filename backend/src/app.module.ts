@@ -29,6 +29,7 @@ import { StockAdjustmentModule } from './modules/stock-adjustment/stock-adjustme
 import { StockCountModule } from './modules/stock-count/stock-count.module';
 import { AuditLogModule } from './modules/audit-log/audit-log.module';
 import { AccountingModule } from './modules/accounting/accounting.module';
+import { CheckinModule } from './modules/checkin/checkin.module';
 
 @Module({
   imports: [
@@ -76,6 +77,7 @@ import { AccountingModule } from './modules/accounting/accounting.module';
     StockCountModule,
     AuditLogModule,
     AccountingModule,
+    CheckinModule,
   ],
 })
 export class AppModule {}
