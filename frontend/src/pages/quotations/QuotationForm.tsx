@@ -1332,19 +1332,34 @@ const QuotationForm: React.FC = () => {
               if (!customer) return null;
               return (
                 <div style={{ marginTop: 16 }}>
-                  <div style={{ fontWeight: 500, marginBottom: 8 }}>📋 ข้อมูลผู้ติดต่อ:</div>
+                  <div style={{ fontWeight: 500, marginBottom: 8 }}>📋 ข้อมูลลูกค้าที่เลือก:</div>
                   <div style={{ 
                     background: 'var(--bg-card, #f5f5f5)', 
                     border: '1px solid var(--border-color, #e8e8e8)',
                     borderRadius: 8, 
                     padding: 12
                   }}>
+                    {/* ที่อยู่ */}
+                    {customer.address && (
+                      <div style={{ fontSize: 13, marginBottom: 8, padding: 8, background: 'rgba(0,0,0,0.03)', borderRadius: 6 }}>
+                        <span style={{ opacity: 0.7 }}>📍 ที่อยู่: </span>
+                        <span style={{ whiteSpace: 'pre-wrap' }}>{customer.address}</span>
+                      </div>
+                    )}
+                    {/* ผู้ติดต่อ */}
                     <div style={{ fontSize: 13 }}>
-                      <span style={{ opacity: 0.7 }}>👤 </span>
+                      <span style={{ opacity: 0.7 }}>👤 ผู้ติดต่อ: </span>
                       <strong>{customer.contactPerson || '-'}</strong>
                       {customer.contactPhone && <span style={{ marginLeft: 16, opacity: 0.7 }}>📞 {customer.contactPhone}</span>}
                       {customer.contactEmail && <span style={{ marginLeft: 16, opacity: 0.7 }}>📧 {customer.contactEmail}</span>}
                     </div>
+                    {/* เครดิต */}
+                    {(customer.creditLimit || customer.creditTermDays) && (
+                      <div style={{ fontSize: 12, marginTop: 8, opacity: 0.7 }}>
+                        💳 เครดิต {customer.creditTermDays || 0} วัน
+                        {customer.creditLimit && ` | วงเงิน ฿${Number(customer.creditLimit).toLocaleString()}`}
+                      </div>
+                    )}
                   </div>
                 </div>
               );

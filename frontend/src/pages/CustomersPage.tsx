@@ -274,6 +274,21 @@ const CustomersPage: React.FC = () => {
             </Form.Item>
           </Space>
 
+          <div style={{ background: 'var(--bg-secondary)', padding: 16, borderRadius: 8, marginBottom: 16 }}>
+            <div style={{ fontWeight: 600, marginBottom: 12, color: 'var(--text-primary)' }}>👤 ข้อมูลผู้ติดต่อ</div>
+            <Form.Item name="contactPerson" label="ชื่อผู้ติดต่อ">
+              <Input placeholder="ชื่อผู้ติดต่อ" />
+            </Form.Item>
+            <Space style={{ width: '100%' }} size={16}>
+              <Form.Item name="contactPhone" label="เบอร์โทรผู้ติดต่อ" style={{ flex: 1 }}>
+                <Input placeholder="เบอร์โทรผู้ติดต่อ" />
+              </Form.Item>
+              <Form.Item name="contactEmail" label="อีเมลผู้ติดต่อ" style={{ flex: 1 }}>
+                <Input placeholder="อีเมลผู้ติดต่อ" />
+              </Form.Item>
+            </Space>
+          </div>
+
           <Form.Item style={{ marginBottom: 0, marginTop: 24 }}>
             <Space style={{ width: '100%', justifyContent: 'flex-end' }}>
               <Button onClick={() => setModalVisible(false)}>ยกเลิก</Button>
