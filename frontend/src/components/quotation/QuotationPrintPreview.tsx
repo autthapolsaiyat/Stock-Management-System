@@ -310,7 +310,9 @@ const QuotationPrintPreview: React.FC<QuotationPrintPreviewProps> = ({
                 <tr key={idx}>
                   <td style={{ border: '1px solid #000', padding: 6, textAlign: 'center', verticalAlign: 'top' }}>{idx + 1}</td>
                   <td style={{ border: '1px solid #000', padding: 6, textAlign: 'center', verticalAlign: 'top' }}>{Number(item.qty).toLocaleString()} {item.unit}</td>
-                  <td style={{ border: '1px solid #000', padding: 6, fontSize: 11, verticalAlign: 'top' }}>{item.itemCode}</td>
+                  <td style={{ border: '1px solid #000', padding: 6, fontSize: 11, verticalAlign: 'top' }}>
+                    {item.itemCode?.startsWith('TEMP-') ? '-' : item.itemCode}
+                  </td>
                   <td style={{ border: '1px solid #000', padding: 6, verticalAlign: 'top' }}>
                     <div style={{ fontWeight: 500 }}>{item.itemName}</div>
                     {item.itemDescription && (
