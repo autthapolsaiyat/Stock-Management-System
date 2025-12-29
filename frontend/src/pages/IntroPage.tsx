@@ -133,7 +133,7 @@ const IntroPage = () => {
               <img src={systemLogo} alt="Logo" style={{ width: '100%', height: '100%', objectFit: 'contain' }} onError={(e) => { e.currentTarget.style.display = 'none'; e.currentTarget.parentElement!.innerHTML = `<span style="color:#22c55e;font-weight:700;font-size:16px">${systemName.substring(0, 3).toUpperCase()}</span>`; }} />
             </div>
             <div>
-              <h1 style={{ fontSize: isMobile ? 18 : 22, fontWeight: 700, color: '#22c55e', margin: 0, lineHeight: 1.2 }}>{isMobile ? systemName.substring(0, 3).toUpperCase() : systemName}</h1>
+              <h1 className="text-gradient" style={{ fontSize: isMobile ? 18 : 22, fontWeight: 700, margin: 0, lineHeight: 1.2 }}>{isMobile ? systemName.substring(0, 3).toUpperCase() : systemName}</h1>
               {!isMobile && systemSubtitle && <p style={{ fontSize: 11, color: darkMode ? 'rgba(255,255,255,0.5)' : '#6b7280', margin: 0 }}>{systemSubtitle}</p>}
             </div>
           </div>
