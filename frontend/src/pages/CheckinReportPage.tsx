@@ -2,8 +2,10 @@ import React, { useState, useEffect } from 'react';
 import { Card, Table, Row, Col, Typography, Statistic, DatePicker, Button, Space, Input, message } from 'antd';
 import { 
   FileTextOutlined, DownloadOutlined, SearchOutlined,
-  TeamOutlined, ClockCircleOutlined, CalendarOutlined
+  TeamOutlined, ClockCircleOutlined, CalendarOutlined,
+  HomeOutlined, ArrowLeftOutlined
 } from '@ant-design/icons';
+import { useNavigate } from 'react-router-dom';
 import { checkinApi } from '../services/api';
 import dayjs from 'dayjs';
 import * as XLSX from 'xlsx';
@@ -47,6 +49,7 @@ interface ReportTotals {
 }
 
 const CheckinReportPage: React.FC = () => {
+  const navigate = useNavigate();
   const [loading, setLoading] = useState(true);
   const [selectedMonth, setSelectedMonth] = useState(dayjs());
   const [searchText, setSearchText] = useState('');
@@ -226,39 +229,70 @@ const CheckinReportPage: React.FC = () => {
   ];
 
   return (
-    <div style={{ padding: '24px' }}>
-      {/* Header */}
-      <Row justify="space-between" align="middle" style={{ marginBottom: 24 }}>
-        <Col>
-          <Title level={2} style={{ margin: 0 }}>
-            <FileTextOutlined /> รายงานการขาด ลา มาสาย
-          </Title>
-        </Col>
-        <Col>
-          <Space>
-            <DatePicker
-              picker="month"
-              value={selectedMonth}
-              onChange={(date) => date && setSelectedMonth(date)}
-              format="MMMM YYYY"
-              allowClear={false}
-            />
-            <Input
-              placeholder="ค้นหาชื่อ..."
-              prefix={<SearchOutlined />}
-              value={searchText}
-              onChange={(e) => setSearchText(e.target.value)}
-              style={{ width: 200 }}
-            />
-            <Button
-              type="primary"
-              icon={<DownloadOutlined />}
-              onClick={exportToExcel}
-            >
-              Export Excel
-            </Button>
-          </Space>
-        </Col>
+    <div style={{ 
+      minHeight: '100vh', 
+      background: 'linear-gradient(135deg, #0f172a 0%, #1e293b 100%)',
+      paddingBottom: 24
+    }}>
+      {/* Header Bar */}
+      <div style={{ 
+        background: 'rgba(15, 23, 42, 0.95)',
+        borderBottom: '1px solid rgba(255,255,255,0.1)',
+        padding: '12px 24px',
+        display: 'flex',
+        justifyContent: 'space-between',
+        alignItems: 'center',
+        position: 'sticky',
+        top: 0,
+        zIndex: 100
+      }}>
+        <Button 
+          type="text" 
+          icon={<ArrowLeftOutlined />} 
+          onClick={() => navigate('/checkin')}
+          style={{ color: '#fff' }}
+        >
+          กลับ
+        </Button>
+        <Title level={4} style={{ margin: 0, color: '#fff' }}>
+          <FileTextOutlined /> รายงานการขาด ลา มาสาย
+        </Title>
+        <Button 
+          type="text" 
+          icon={<HomeOutlined />} 
+          onClick={() => navigate('/intro')}
+          style={{ color: '#fff' }}
+        >
+          หน้าหลัก
+        </Button>
+      </div>
+
+      <div style={{ padding: '24px' }}>
+      {/* Filter Row */}
+      <Row justify="end" style={{ marginBottom: 24 }}>
+        <Space>
+          <DatePicker
+            picker="month"
+            value={selectedMonth}
+            onChange={(date) => date && setSelectedMonth(date)}
+            format="MMMM YYYY"
+            allowClear={false}
+          />
+          <Input
+            placeholder="ค้นหาชื่อ..."
+            prefix={<SearchOutlined />}
+            value={searchText}
+            onChange={(e) => setSearchText(e.target.value)}
+            style={{ width: 200 }}
+          />
+          <Button
+            type="primary"
+            icon={<DownloadOutlined />}
+            onClick={exportToExcel}
+          >
+            Export Excel
+          </Button>
+        </Space>
       </Row>
 
       {/* Summary Stats */}
@@ -385,6 +419,7 @@ const CheckinReportPage: React.FC = () => {
           ) : null}
         />
       </Card>
+      </div>
     </div>
   );
 };

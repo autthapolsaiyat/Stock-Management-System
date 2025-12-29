@@ -2,15 +2,17 @@ import React, { useState, useEffect } from 'react';
 import { Card, Form, Input, InputNumber, Switch, Button, Row, Col, Typography, message, Divider, TimePicker, Space } from 'antd';
 import { 
   SettingOutlined, ClockCircleOutlined, BellOutlined, 
-  SaveOutlined, SendOutlined, MessageOutlined
+  SaveOutlined, SendOutlined, MessageOutlined, HomeOutlined,
+  ArrowLeftOutlined
 } from '@ant-design/icons';
+import { useNavigate } from 'react-router-dom';
 import { checkinApi } from '../services/api';
 import dayjs from 'dayjs';
 
 const { Title, Text } = Typography;
 
-
 const CheckinAdminPage: React.FC = () => {
+  const navigate = useNavigate();
   const [form] = Form.useForm();
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
@@ -86,10 +88,45 @@ const CheckinAdminPage: React.FC = () => {
   };
 
   return (
-    <div style={{ padding: '24px', maxWidth: 900, margin: '0 auto' }}>
-      <Title level={2} style={{ marginBottom: 24 }}>
-        <SettingOutlined /> ตั้งค่าระบบ Check-in
-      </Title>
+    <div style={{ 
+      minHeight: '100vh', 
+      background: 'linear-gradient(135deg, #0f172a 0%, #1e293b 100%)',
+      paddingBottom: 24
+    }}>
+      {/* Header Bar */}
+      <div style={{ 
+        background: 'rgba(15, 23, 42, 0.95)',
+        borderBottom: '1px solid rgba(255,255,255,0.1)',
+        padding: '12px 24px',
+        display: 'flex',
+        justifyContent: 'space-between',
+        alignItems: 'center',
+        position: 'sticky',
+        top: 0,
+        zIndex: 100
+      }}>
+        <Button 
+          type="text" 
+          icon={<ArrowLeftOutlined />} 
+          onClick={() => navigate('/checkin')}
+          style={{ color: '#fff' }}
+        >
+          กลับ
+        </Button>
+        <Title level={4} style={{ margin: 0, color: '#fff' }}>
+          <SettingOutlined /> ตั้งค่าระบบ Check-in
+        </Title>
+        <Button 
+          type="text" 
+          icon={<HomeOutlined />} 
+          onClick={() => navigate('/intro')}
+          style={{ color: '#fff' }}
+        >
+          หน้าหลัก
+        </Button>
+      </div>
+
+      <div style={{ padding: '24px', maxWidth: 900, margin: '0 auto' }}>
 
       <Form
         form={form}
@@ -255,6 +292,7 @@ const CheckinAdminPage: React.FC = () => {
           บันทึกตั้งค่า
         </Button>
       </Form>
+      </div>
     </div>
   );
 };

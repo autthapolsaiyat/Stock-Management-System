@@ -147,6 +147,23 @@ const App: React.FC = () => {
         </ProtectedRoute>
       } />
 
+      {/* Check-in - No Layout (standalone pages) */}
+      <Route path="/checkin" element={
+        <ProtectedRoute>
+          <CheckinPage />
+        </ProtectedRoute>
+      } />
+      <Route path="/checkin/report" element={
+        <ProtectedRoute>
+          <CheckinReportPage />
+        </ProtectedRoute>
+      } />
+      <Route path="/checkin/admin" element={
+        <ProtectedRoute>
+          <CheckinAdminPage />
+        </ProtectedRoute>
+      } />
+
       {/* Protected Routes */}
       <Route
         path="/"
@@ -208,11 +225,6 @@ const App: React.FC = () => {
         <Route path="accounting/vat-report" element={<AccountRoute><VatReportPage /></AccountRoute>} />
         <Route path="accounting/fixed-assets" element={<AccountRoute><FixedAssetPage /></AccountRoute>} />
         <Route path="accounting/cash-flow" element={<AccountRoute><CashFlowPage /></AccountRoute>} />
-
-        {/* Check-in */}
-        <Route path="checkin" element={<CheckinPage />} />
-        <Route path="checkin/report" element={<CheckinReportPage />} />
-        <Route path="checkin/admin" element={<CheckinAdminPage />} />
         
         {/* Settings */}
         <Route path="settings" element={<SettingsPage />} />

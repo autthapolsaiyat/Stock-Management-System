@@ -3,9 +3,12 @@ import { Card, Button, Row, Col, Typography, Space, message, Input, Statistic, L
 import { 
   LoginOutlined, LogoutOutlined, ClockCircleOutlined, 
   CalendarOutlined, CheckCircleOutlined, WarningOutlined,
-  HistoryOutlined, FileTextOutlined
+  HistoryOutlined, FileTextOutlined, HomeOutlined, SettingOutlined,
+  BarChartOutlined
 } from '@ant-design/icons';
+import { useNavigate } from 'react-router-dom';
 import { checkinApi } from '../services/api';
+import { useAuth } from '../contexts/AuthContext';
 
 const { Title, Text } = Typography;
 const { TextArea } = Input;
@@ -40,6 +43,8 @@ interface MonthlySummary {
 }
 
 const CheckinPage: React.FC = () => {
+  const navigate = useNavigate();
+  const { user } = useAuth();
   const [loading, setLoading] = useState(true);
   const [checkingIn, setCheckingIn] = useState(false);
   const [checkingOut, setCheckingOut] = useState(false);
@@ -180,12 +185,67 @@ const CheckinPage: React.FC = () => {
   const hasClockIn = !!record?.clockInTime;
   const hasClockOut = !!record?.clockOutTime;
 
+  // Check if user is admin
+  const isAdmin = user?.roles?.some((r: string) => 
+    ['ADMIN', 'SUPER_ADMIN', 'MANAGER', 'HR'].includes(r)
+  );
+
   return (
-    <div style={{ padding: '24px', maxWidth: 800, margin: '0 auto' }}>
-      {/* Header */}
-      <Title level={2} style={{ marginBottom: 24 }}>
-        <ClockCircleOutlined /> Check-in
-      </Title>
+    <div style={{ 
+      minHeight: '100vh', 
+      background: 'linear-gradient(135deg, #0f172a 0%, #1e293b 100%)',
+      paddingBottom: 24
+    }}>
+      {/* Header Bar */}
+      <div style={{ 
+        background: 'rgba(15, 23, 42, 0.95)',
+        borderBottom: '1px solid rgba(255,255,255,0.1)',
+        padding: '12px 24px',
+        display: 'flex',
+        justifyContent: 'space-between',
+        alignItems: 'center',
+        position: 'sticky',
+        top: 0,
+        zIndex: 100
+      }}>
+        <Space>
+          <Button 
+            type="text" 
+            icon={<HomeOutlined />} 
+            onClick={() => navigate('/intro')}
+            style={{ color: '#fff' }}
+          >
+            หน้าหลัก
+          </Button>
+        </Space>
+        <Title level={4} style={{ margin: 0, color: '#fff' }}>
+          <ClockCircleOutlined /> ระบบเช็คอิน
+        </Title>
+        <Space>
+          {isAdmin && (
+            <>
+              <Button 
+                type="text" 
+                icon={<BarChartOutlined />} 
+                onClick={() => navigate('/checkin/report')}
+                style={{ color: '#fff' }}
+              >
+                รายงาน
+              </Button>
+              <Button 
+                type="text" 
+                icon={<SettingOutlined />} 
+                onClick={() => navigate('/checkin/admin')}
+                style={{ color: '#fff' }}
+              >
+                ตั้งค่า
+              </Button>
+            </>
+          )}
+        </Space>
+      </div>
+
+      <div style={{ padding: '24px', maxWidth: 800, margin: '0 auto' }}>
 
       {/* Current Time Card */}
       <Card 
@@ -384,6 +444,7 @@ const CheckinPage: React.FC = () => {
           locale={{ emptyText: 'ยังไม่มีประวัติ' }}
         />
       </Card>
+      </div>
     </div>
   );
 };
