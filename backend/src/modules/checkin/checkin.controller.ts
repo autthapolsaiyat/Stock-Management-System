@@ -35,25 +35,29 @@ export class CheckinController {
   @Post('clock-in')
   @ApiOperation({ summary: 'Clock in for today' })
   async clockIn(@Request() req, @Body() dto: ClockInDto) {
-    return this.checkinService.clockIn(req.user.id, dto);
+    const userId = req.user.userId || req.user.id || req.user.sub;
+    return this.checkinService.clockIn(userId, dto);
   }
 
   @Post('clock-out')
   @ApiOperation({ summary: 'Clock out for today' })
   async clockOut(@Request() req, @Body() dto: ClockOutDto) {
-    return this.checkinService.clockOut(req.user.id, dto);
+    const userId = req.user.userId || req.user.id || req.user.sub;
+    return this.checkinService.clockOut(userId, dto);
   }
 
   @Get('today')
   @ApiOperation({ summary: 'Get today status' })
   async getTodayStatus(@Request() req) {
-    return this.checkinService.getTodayStatus(req.user.id);
+    const userId = req.user.userId || req.user.id || req.user.sub;
+    return this.checkinService.getTodayStatus(userId);
   }
 
   @Get('history')
   @ApiOperation({ summary: 'Get checkin history' })
   async getHistory(@Request() req, @Query('limit') limit?: number) {
-    return this.checkinService.getHistory(req.user.id, limit || 10);
+    const userId = req.user.userId || req.user.id || req.user.sub;
+    return this.checkinService.getHistory(userId, limit || 10);
   }
 
   @Get('monthly-summary')
@@ -63,10 +67,11 @@ export class CheckinController {
     @Query('year') year: number,
     @Query('month') month: number,
   ) {
+    const userId = req.user.userId || req.user.id || req.user.sub;
     const now = new Date();
     const y = year || now.getFullYear();
     const m = month || now.getMonth() + 1;
-    return this.checkinService.getMonthlySummary(req.user.id, y, m);
+    return this.checkinService.getMonthlySummary(userId, y, m);
   }
 
   // ==================== LEAVE ====================
@@ -74,7 +79,8 @@ export class CheckinController {
   @Post('leave')
   @ApiOperation({ summary: 'Create leave request' })
   async createLeave(@Request() req, @Body() dto: CreateLeaveDto) {
-    return this.checkinService.createLeave(req.user.id, dto);
+    const userId = req.user.userId || req.user.id || req.user.sub;
+    return this.checkinService.createLeave(userId, dto);
   }
 
   @Put('leave/:id')
@@ -96,10 +102,11 @@ export class CheckinController {
     @Query('year') year: number,
     @Query('month') month: number,
   ) {
+    const userId = req.user.userId || req.user.id || req.user.sub;
     const now = new Date();
     const y = year || now.getFullYear();
     const m = month || now.getMonth() + 1;
-    return this.checkinService.getLeavesByUser(req.user.id, y, m);
+    return this.checkinService.getLeavesByUser(userId, y, m);
   }
 
   // ==================== ADMIN: REPORT ====================
