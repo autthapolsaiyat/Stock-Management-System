@@ -245,9 +245,8 @@ const QuotationPrintPreview: React.FC<QuotationPrintPreviewProps> = ({
               <tr>
                 <td style={{ width: '60%', verticalAlign: 'top', border: '1px solid #000', padding: 8 }}>
                   <div><strong>เรื่อง</strong> เสนอราคา</div>
-                  <div><strong>เรียน</strong> {customer?.contactPerson || quotation.contactPerson || customer?.name || '-'}</div>
-                  <div><strong>ที่อยู่</strong> {customer?.name || quotation.customerName || '-'}</div>
-                  <div style={{ paddingLeft: 30 }}>{customer?.address || quotation.customerAddress || '-'}</div>
+                  <div><strong>เรียน</strong> {customer?.contactPerson || quotation.contactPerson || customer?.name || quotation.customerName || '-'}</div>
+                  <div><strong>ที่อยู่</strong> {customer?.address || quotation.customerAddress || '-'}</div>
                   <div style={{ marginTop: 5 }}>
                     <strong>E-mail :</strong> {customer?.email || customer?.contactEmail || quotation.contactEmail || '-'}
                   </div>
