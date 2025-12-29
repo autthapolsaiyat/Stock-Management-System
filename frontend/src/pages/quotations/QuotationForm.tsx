@@ -81,7 +81,12 @@ const QuotationForm: React.FC = () => {
   });
 
   useEffect(() => { loadInitialData(); }, []);
-  useEffect(() => { if (isEdit && id) loadQuotation(parseInt(id)); }, [id, isEdit]);
+  useEffect(() => { 
+    // Wait for customers to load before loading quotation
+    if (isEdit && id && customers.length > 0) {
+      loadQuotation(parseInt(id)); 
+    }
+  }, [id, isEdit, customers.length]);
   useEffect(() => { calculateSummary(); }, [items]);
 
   // Handle paste from clipboard for images
@@ -175,6 +180,26 @@ const QuotationForm: React.FC = () => {
       });
       setItems(data.items || []);
       setImages(data.images || []);
+      
+      // Set customer if exists
+      if (data.customerId) {
+        const customer = customers.find(c => c.id === data.customerId);
+        if (customer) {
+          setSelectedCustomer(customer);
+          setSelectedCustomerId(customer.id);
+        } else {
+          // If customer not in list yet, create from quotation data
+          setSelectedCustomer({
+            id: data.customerId,
+            name: data.customerName,
+            address: data.customerAddress,
+            contactPerson: data.contactPerson,
+            contactPhone: data.contactPhone,
+            contactEmail: data.contactEmail,
+          });
+          setSelectedCustomerId(data.customerId);
+        }
+      }
     } catch (error) {
       message.error('ไม่สามารถโหลดข้อมูลได้');
     } finally {
