@@ -9,7 +9,7 @@ const LoginPage: React.FC = () => {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string>('');
   const { login } = useAuth();
-  const { systemName } = useBranding();
+  const { systemName, systemLogo } = useBranding();
   const navigate = useNavigate();
 
   const onFinish = async (values: { username: string; password: string }) => {
@@ -51,12 +51,13 @@ const LoginPage: React.FC = () => {
         {/* Logo */}
         <div style={{ textAlign: 'center', marginBottom: 32 }}>
           <img 
-            src="/icons/icon-192x192.png" 
+            src={systemLogo} 
             alt="Logo" 
             style={{ 
               width: 80, 
               height: 80, 
               marginBottom: 16,
+              objectFit: 'contain',
               filter: 'drop-shadow(0 4px 20px rgba(124,58,237,0.3))'
             }} 
           />

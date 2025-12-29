@@ -11,12 +11,25 @@ export class SystemSettingsController {
   // Public endpoint - ไม่ต้อง login สำหรับหน้า Login
   @Get('public/branding')
   async getPublicBranding() {
-    const systemName = await this.settingsService.findByKey('SYSTEM_NAME');
-    const systemLogo = await this.settingsService.findByKey('SYSTEM_LOGO');
-    return {
-      systemName: systemName?.settingValue || 'SVS Business Suite',
-      systemLogo: systemLogo?.settingValue || '/logo.png',
-    };
+    let systemName = 'SVS Business Suite';
+    let systemLogo = '/icons/icon-192x192.png';
+    
+    try {
+      const nameSetting = await this.settingsService.findByKey('SYSTEM_NAME');
+      if (nameSetting?.settingValue) systemName = nameSetting.settingValue;
+    } catch (e) {
+      // Use default
+    }
+    
+    // ดึงโลโก้จาก COMPANY_LOGO_URL (หน้าตั้งค่าบริษัท)
+    try {
+      const logoSetting = await this.settingsService.findByKey('COMPANY_LOGO_URL');
+      if (logoSetting?.settingValue) systemLogo = logoSetting.settingValue;
+    } catch (e) {
+      // Use default
+    }
+    
+    return { systemName, systemLogo };
   }
 
   @ApiBearerAuth()
