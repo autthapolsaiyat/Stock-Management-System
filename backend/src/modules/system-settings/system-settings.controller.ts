@@ -14,8 +14,8 @@ export class SystemSettingsController {
     const systemName = await this.settingsService.findByKey('SYSTEM_NAME');
     const systemLogo = await this.settingsService.findByKey('SYSTEM_LOGO');
     return {
-      systemName: systemName?.value || 'SVS Business Suite',
-      systemLogo: systemLogo?.value || '/logo.png',
+      systemName: systemName?.settingValue || 'SVS Business Suite',
+      systemLogo: systemLogo?.settingValue || '/logo.png',
     };
   }
 
