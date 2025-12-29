@@ -8,6 +8,7 @@ import App from './App'
 import { AuthProvider } from './contexts/AuthContext'
 import { ActiveQuotationProvider } from './contexts/ActiveQuotationContext'
 import { ThemeProvider, useTheme } from './contexts/ThemeContext'
+import { BrandingProvider } from './contexts/BrandingContext'
 import { registerSW } from 'virtual:pwa-register'
 import './styles/global.css'
 
@@ -180,12 +181,14 @@ const ThemedApp: React.FC = () => {
 
   return (
     <ConfigProvider theme={currentTheme} locale={thTH}>
-      <AuthProvider>
-        <ActiveQuotationProvider>
-          <PWAUpdatePopup />
-          <App />
-        </ActiveQuotationProvider>
-      </AuthProvider>
+      <BrandingProvider>
+        <AuthProvider>
+          <ActiveQuotationProvider>
+            <PWAUpdatePopup />
+            <App />
+          </ActiveQuotationProvider>
+        </AuthProvider>
+      </BrandingProvider>
     </ConfigProvider>
   );
 };

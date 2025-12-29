@@ -4,32 +4,51 @@ import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { SystemSettingsService } from './system-settings.service';
 
 @ApiTags('System Settings')
-@ApiBearerAuth()
-@UseGuards(JwtAuthGuard)
 @Controller('system-settings')
 export class SystemSettingsController {
   constructor(private readonly settingsService: SystemSettingsService) {}
 
+  // Public endpoint - ไม่ต้อง login สำหรับหน้า Login
+  @Get('public/branding')
+  async getPublicBranding() {
+    const systemName = await this.settingsService.findByKey('SYSTEM_NAME');
+    const systemLogo = await this.settingsService.findByKey('SYSTEM_LOGO');
+    return {
+      systemName: systemName?.value || 'SVS Business Suite',
+      systemLogo: systemLogo?.value || '/logo.png',
+    };
+  }
+
+  @ApiBearerAuth()
+  @UseGuards(JwtAuthGuard)
   @Get()
   findAll() {
     return this.settingsService.findAll();
   }
 
+  @ApiBearerAuth()
+  @UseGuards(JwtAuthGuard)
   @Get('category/:category')
   findByCategory(@Param('category') category: string) {
     return this.settingsService.findByCategory(category);
   }
 
+  @ApiBearerAuth()
+  @UseGuards(JwtAuthGuard)
   @Get('key/:key')
   findByKey(@Param('key') key: string) {
     return this.settingsService.findByKey(key);
   }
 
+  @ApiBearerAuth()
+  @UseGuards(JwtAuthGuard)
   @Put('key/:key')
   update(@Param('key') key: string, @Body('value') value: string, @Request() req: any) {
     return this.settingsService.update(key, value, req.user.sub);
   }
 
+  @ApiBearerAuth()
+  @UseGuards(JwtAuthGuard)
   @Put('bulk')
   async updateBulk(@Body() body: { settings: { key: string; value: any }[] }, @Request() req: any) {
     const results = [];

@@ -3,11 +3,13 @@ import { useNavigate } from 'react-router-dom';
 import { Form, Input, Button, Card, Alert } from 'antd';
 import { UserOutlined, LockOutlined } from '@ant-design/icons';
 import { useAuth } from '../contexts/AuthContext';
+import { useBranding } from '../contexts/BrandingContext';
 
 const LoginPage: React.FC = () => {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string>('');
   const { login } = useAuth();
+  const { systemName } = useBranding();
   const navigate = useNavigate();
 
   const onFinish = async (values: { username: string; password: string }) => {
@@ -50,7 +52,7 @@ const LoginPage: React.FC = () => {
         <div style={{ textAlign: 'center', marginBottom: 32 }}>
           <img 
             src="/icons/icon-192x192.png" 
-            alt="SVS Logo" 
+            alt="Logo" 
             style={{ 
               width: 80, 
               height: 80, 
@@ -66,7 +68,7 @@ const LoginPage: React.FC = () => {
               marginBottom: 0,
             }}
           >
-            SVS Business Suite
+            {systemName}
           </h1>
         </div>
 

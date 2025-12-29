@@ -40,6 +40,7 @@ import {
 import { useAuth } from '../contexts/AuthContext';
 import { SettingOutlined } from '@ant-design/icons';
 import { useTheme } from '../contexts/ThemeContext';
+import { useBranding } from '../contexts/BrandingContext';
 import FloatingFlowProgress from '../components/FloatingFlowProgress';
 import FloatingHomeButton from '../components/FloatingHomeButton';
 
@@ -57,6 +58,7 @@ const MainLayout: React.FC = () => {
   const location = useLocation();
   const { user, logout, isSalesOnly, isAccountOnly, getQuotationType } = useAuth();
   const { mode, toggleTheme } = useTheme();
+  const { systemName } = useBranding();
 
   const salesOnly = isSalesOnly();
   const accountOnly = isAccountOnly();
@@ -283,11 +285,11 @@ const MainLayout: React.FC = () => {
         >
           {collapsed ? (
             <span className="text-gradient" style={{ fontSize: 24, fontWeight: 700 }}>
-              SVS
+              {systemName.substring(0, 3).toUpperCase()}
             </span>
           ) : (
-            <span className="text-gradient" style={{ fontSize: 20, fontWeight: 600 }}>
-              SVS Stock
+            <span className="text-gradient" style={{ fontSize: 18, fontWeight: 600 }}>
+              {systemName}
             </span>
           )}
         </div>

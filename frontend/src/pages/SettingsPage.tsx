@@ -1,8 +1,9 @@
 import React, { useEffect, useState } from 'react';
 import { Tabs, Table, Button, Card, Space, message, Modal, Form, Input, Popconfirm, InputNumber, Tag, Switch, Row, Col, Divider } from 'antd';
-import { PlusOutlined, EditOutlined, DeleteOutlined, SettingOutlined, AppstoreOutlined, ScissorOutlined, FileTextOutlined, ToolOutlined, BellOutlined, FileProtectOutlined } from '@ant-design/icons';
+import { PlusOutlined, EditOutlined, DeleteOutlined, SettingOutlined, AppstoreOutlined, ScissorOutlined, FileTextOutlined, ToolOutlined, BellOutlined, FileProtectOutlined, GlobalOutlined } from '@ant-design/icons';
 import { productsApi, unitsApi, systemSettingsApi } from '../services/api';
 import { ProductCategory } from '../types';
+import { useBranding } from '../contexts/BrandingContext';
 
 interface Unit {
   id: number;
@@ -20,6 +21,7 @@ interface SystemSetting {
 
 const SettingsPage: React.FC = () => {
   const [activeTab, setActiveTab] = useState('categories');
+  const { refreshBranding } = useBranding();
   
   // Categories state
   const [categories, setCategories] = useState<ProductCategory[]>([]);
@@ -204,6 +206,8 @@ const SettingsPage: React.FC = () => {
         settingsMap[s.settingKey] = s.settingValue;
       });
       systemSettingsForm.setFieldsValue({
+        // System Branding
+        SYSTEM_NAME: settingsMap.SYSTEM_NAME || 'SVS Business Suite',
         // Document Prefixes
         DOC_PREFIX_QT: settingsMap.DOC_PREFIX_QT || 'QT',
         DOC_PREFIX_PO: settingsMap.DOC_PREFIX_PO || 'PO',
@@ -218,6 +222,7 @@ const SettingsPage: React.FC = () => {
     } catch (error) {
       // Use defaults
       systemSettingsForm.setFieldsValue({
+        SYSTEM_NAME: 'SVS Business Suite',
         DOC_PREFIX_QT: 'QT',
         DOC_PREFIX_PO: 'PO',
         DOC_PREFIX_GR: 'GR',
@@ -236,6 +241,7 @@ const SettingsPage: React.FC = () => {
     setLoadingSystemSettings(true);
     try {
       const settings = [
+        { key: 'SYSTEM_NAME', value: values.SYSTEM_NAME || 'SVS Business Suite' },
         { key: 'DOC_PREFIX_QT', value: values.DOC_PREFIX_QT || 'QT' },
         { key: 'DOC_PREFIX_PO', value: values.DOC_PREFIX_PO || 'PO' },
         { key: 'DOC_PREFIX_GR', value: values.DOC_PREFIX_GR || 'GR' },
@@ -248,6 +254,8 @@ const SettingsPage: React.FC = () => {
       
       await systemSettingsApi.updateBulk(settings);
       message.success('บันทึกตั้งค่าระบบสำเร็จ');
+      // Refresh branding context
+      await refreshBranding();
     } catch (error) {
       message.error('ไม่สามารถบันทึกตั้งค่าระบบได้');
     } finally {
@@ -385,6 +393,30 @@ const SettingsPage: React.FC = () => {
       children: (
         <Card className="card-holo">
           <Form form={systemSettingsForm} layout="vertical" onFinish={handleSaveSystemSettings}>
+            {/* System Branding Section */}
+            <div style={{ marginBottom: 24 }}>
+              <h3 style={{ margin: 0, display: 'flex', alignItems: 'center', gap: 8 }}>
+                <GlobalOutlined /> ข้อมูลระบบ
+              </h3>
+              <p style={{ margin: '4px 0 16px', color: 'rgba(255,255,255,0.5)', fontSize: 13 }}>
+                ตั้งค่าชื่อระบบที่จะแสดงในหน้า Login และ Menu
+              </p>
+            </div>
+            
+            <Row gutter={16}>
+              <Col span={12}>
+                <Form.Item 
+                  label="ชื่อระบบ" 
+                  name="SYSTEM_NAME"
+                  tooltip="ชื่อที่จะแสดงในหน้า Login และ Sidebar"
+                >
+                  <Input placeholder="SVS Business Suite" />
+                </Form.Item>
+              </Col>
+            </Row>
+
+            <Divider />
+
             {/* Document Prefix Section */}
             <div style={{ marginBottom: 24 }}>
               <h3 style={{ margin: 0, display: 'flex', alignItems: 'center', gap: 8 }}>

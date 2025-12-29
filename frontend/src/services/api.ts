@@ -134,6 +134,8 @@ export const systemSettingsApi = {
   getByKey: (key: string) => api.get(`/api/system-settings/key/${key}`),
   update: (key: string, value: any) => api.put(`/api/system-settings/key/${key}`, { value }),
   updateBulk: (settings: { key: string; value: any }[]) => api.put('/api/system-settings/bulk', { settings }),
+  // Public endpoint - ไม่ต้อง login
+  getPublicBranding: () => api.get('/api/system-settings/public/branding'),
 };
 
 // Purchase Orders API
