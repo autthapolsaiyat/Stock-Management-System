@@ -26,7 +26,7 @@ const LEAVE_TYPES = [
 
 // Work types for bulk
 const BULK_WORK_TYPES = [
-  { value: 'WORK_REMOTE', label: '🚗 ไปทำงานต่างจังหวัด', isWork: true },
+  { value: 'WORK_REMOTE', label: '🚗 ไปทำงานนอกสถานที่', isWork: true },
   { value: 'VACATION', label: '🏖️ ลาพักร้อน', isWork: false },
   { value: 'PERSONAL', label: '👤 ลากิจส่วนตัว', isWork: false },
   { value: 'SICK', label: '🏥 ลาป่วย', isWork: false },
@@ -240,7 +240,7 @@ const CheckinPage: React.FC = () => {
           endDate: leaveDateRange[1].format('YYYY-MM-DD'),
           note: leaveReason || 'ไปทำงานต่างจังหวัด',
         });
-        message.success(result.data.message || 'บันทึกการทำงานต่างจังหวัดสำเร็จ');
+        message.success(result.data.message || 'บันทึกการทำงานนอกสถานที่สำเร็จ');
       } else {
         // ลาหลายวัน - สร้าง leave records
         const result = await checkinApi.createBulkLeave({
@@ -522,7 +522,7 @@ const CheckinPage: React.FC = () => {
               onClick={() => setShowBulkLeaveModal(true)}
               style={{ height: 48, background: 'rgba(139, 92, 246, 0.1)', borderColor: '#8b5cf6', color: '#8b5cf6' }}
             >
-              📆 ต่างจังหวัด/ลาหลายวัน
+              📆 นอกสถานที่/ลาหลายวัน
             </Button>
           </Col>
         </Row>
@@ -647,7 +647,7 @@ const CheckinPage: React.FC = () => {
 
       {/* Modal: ลาหลายวัน */}
       <Modal
-        title={<><CalendarOutlined /> ไปต่างจังหวัด / ลาหลายวัน</>}
+        title={<><CalendarOutlined /> นอกสถานที่ / ลาหลายวัน</>}
         open={showBulkLeaveModal}
         onCancel={() => {
           setShowBulkLeaveModal(false);

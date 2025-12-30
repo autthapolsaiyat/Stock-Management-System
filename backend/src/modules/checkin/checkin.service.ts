@@ -295,7 +295,7 @@ export class CheckinService {
           clockInTime: clockIn,
           clockInStatus: CheckinStatus.NORMAL,
           clockInLateMinutes: 0,
-          clockInNote: dto.note || 'ไปทำงานต่างจังหวัด',
+          clockInNote: dto.note || 'ไปทำงานนอกสถานที่',
           clockOutTime: clockOut,
           clockOutStatus: CheckinStatus.NORMAL,
           clockOutEarlyMinutes: 0,
@@ -314,7 +314,7 @@ export class CheckinService {
     await this.checkinRepo.save(records);
     
     return {
-      message: `บันทึกการทำงานต่างจังหวัดสำเร็จ ${records.length} วัน`,
+      message: `บันทึกการทำงานนอกสถานที่สำเร็จ ${records.length} วัน`,
       totalDays: records.length,
     };
   }
