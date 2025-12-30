@@ -503,26 +503,26 @@ const CheckinPage: React.FC = () => {
 
         {/* Leave Buttons */}
         <Row gutter={12}>
-          <Col span={12}>
+          <Col xs={12} sm={12}>
             <Button
               size="large"
               block
               icon={<FormOutlined />}
               onClick={() => setShowTodayLeaveModal(true)}
-              style={{ height: 48, background: 'rgba(249, 115, 22, 0.1)', borderColor: '#f97316', color: '#f97316' }}
+              style={{ height: 48, background: 'rgba(249, 115, 22, 0.1)', borderColor: '#f97316', color: '#f97316', fontSize: 14, padding: '0 8px' }}
             >
-              📋 ลางานวันนี้
+              📋 ลาวันนี้
             </Button>
           </Col>
-          <Col span={12}>
+          <Col xs={12} sm={12}>
             <Button
               size="large"
               block
               icon={<CalendarOutlined />}
               onClick={() => setShowBulkLeaveModal(true)}
-              style={{ height: 48, background: 'rgba(139, 92, 246, 0.1)', borderColor: '#8b5cf6', color: '#8b5cf6' }}
+              style={{ height: 48, background: 'rgba(139, 92, 246, 0.1)', borderColor: '#8b5cf6', color: '#8b5cf6', fontSize: 14, padding: '0 8px' }}
             >
-              📆 นอกสถานที่/ลาหลายวัน
+              📆 นอกสถานที่/ลา
             </Button>
           </Col>
         </Row>
