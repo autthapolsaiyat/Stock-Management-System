@@ -45,6 +45,7 @@ const IntroPage = () => {
   const isStock = isSuperAdmin || user?.roles?.some((r: string) => ['ADMIN', 'STOCK', 'WAREHOUSE', 'MANAGER'].includes(r));
   const isPurchase = isSuperAdmin || user?.roles?.some((r: string) => ['ADMIN', 'PURCHASE', 'MANAGER'].includes(r));
   const isAccount = isSuperAdmin || user?.roles?.some((r: string) => ['ADMIN', 'ACCOUNT', 'ACCOUNTANT', 'ACCOUNTING', 'FINANCE', 'MANAGER'].includes(r));
+  const isBasicOnly = user?.roles?.length === 1 && user?.roles?.includes('BASIC');
 
   useEffect(() => {
     const handleResize = () => setIsMobile(window.innerWidth < 768);
@@ -95,7 +96,7 @@ const IntroPage = () => {
 
   const userMenuItems = [
     { key: 'profile', icon: <UserOutlined />, label: 'โปรไฟล์', onClick: () => navigate('/profile') },
-    { key: 'settings', icon: <SettingOutlined />, label: 'ตั้งค่า', onClick: () => navigate('/settings') },
+    ...(!isBasicOnly ? [{ key: 'settings', icon: <SettingOutlined />, label: 'ตั้งค่า', onClick: () => navigate('/settings') }] : []),
     { type: 'divider' as const },
     { key: 'logout', icon: <LogoutOutlined />, label: 'ออกจากระบบ', onClick: handleLogout, danger: true },
   ];
