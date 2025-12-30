@@ -30,9 +30,9 @@ const IntroPage = () => {
   const [poStats, setPoStats] = useState({ total: 0, pending: 0, totalAmount: 0 });
   const [accountingStats, setAccountingStats] = useState({ journalEntries: 0, pendingPayments: 0, pendingReceipts: 0, totalAR: 0, totalAP: 0 });
   const [profile, setProfile] = useState<any>({});
+  const [checkInStats, setCheckInStats] = useState({ present: 0, leave: 0, month: '' });
   
-  const checkInStats = { present: 18, leave: 2, month: 'ธ.ค. 2568' };
-  const repairStats = { waiting: 5, inProgress: 3, completed: 12 };
+  const repairStats = { waiting: 0, inProgress: 0, completed: 0 };
   const salesStats = { monthly: 2500000, compared: 12.5, target: 75 };
   const contractStats = { expiring30: 20, totalValue: 10000000, nextExpiry: '15 ม.ค. 68' };
 
@@ -60,6 +60,23 @@ const IntroPage = () => {
     setLoading(true);
     try {
       try { const r = await api.get('/api/user-settings/profile'); setProfile(r.data || {}); } catch {}
+      
+      // Fetch check-in stats for current month
+      try {
+        const now = new Date();
+        const year = now.getFullYear();
+        const month = now.getMonth() + 1;
+        const r = await api.get(`/api/checkin/monthly-report?year=${year}&month=${month}`);
+        const myRecord = r.data?.find((x: any) => x.userId === user?.id);
+        const thaiMonths = ['ม.ค.', 'ก.พ.', 'มี.ค.', 'เม.ย.', 'พ.ค.', 'มิ.ย.', 'ก.ค.', 'ส.ค.', 'ก.ย.', 'ต.ค.', 'พ.ย.', 'ธ.ค.'];
+        const thaiYear = year + 543;
+        setCheckInStats({
+          present: myRecord?.workDays || 0,
+          leave: myRecord?.leaveDays || 0,
+          month: `${thaiMonths[month - 1]} ${thaiYear}`
+        });
+      } catch {}
+      
       if (isSales) { try { const r = await api.get('/quotations'); const q = r.data || []; setQuotationStats({ total: q.length, ordered: q.filter((x: any) => x.status === 'ORDERED' || x.status === 'CONFIRMED').length, totalAmount: q.reduce((s: number, x: any) => s + (x.totalAmount || 0), 0) }); } catch {} }
       if (isAdmin) { try { const [u, ro] = await Promise.all([api.get('/users'), api.get('/roles')]); setAdminStats({ users: u.data?.length || 0, roles: ro.data?.length || 0, logs: 0 }); } catch {} }
       if (isManager) { try { const [p, s] = await Promise.all([api.get('/api/products'), api.get('/api/stock/balance')]); setDashboardStats({ stockValue: (s.data || []).reduce((sum: number, x: any) => sum + ((x.quantity || 0) * (x.avgCost || 0)), 0), products: p.data?.length || 0, categories: new Set(p.data?.map((x: any) => x.category?.id)).size }); } catch {} }
@@ -237,11 +254,11 @@ const IntroPage = () => {
             </div>
           )}
 
-          {/* Card 6: ติดตามงานซ่อม */}
-          <div onClick={() => message.info('🚧 ฟีเจอร์ติดตามงานซ่อมกำลังพัฒนา เร็วๆ นี้!')} style={cardStyle}>
+          {/* Card 6: งานซ่อมบำรุง */}
+          <div onClick={() => message.info('🚧 ฟีเจอร์งานซ่อมบำรุงกำลังพัฒนา เร็วๆ นี้!')} style={cardStyle}>
             <Badge text="เร็วๆ นี้" gradient="linear-gradient(135deg, #f59e0b, #d97706)" />
             <CardIcon gradient="linear-gradient(135deg, #ec4899, #db2777)" icon={<ToolOutlined />} />
-            <h3 style={{ fontSize: 18, fontWeight: 600, color: darkMode ? '#fff' : '#1f2937', marginBottom: 4, textAlign: 'center' }}>ติดตามงานซ่อม</h3>
+            <h3 style={{ fontSize: 18, fontWeight: 600, color: darkMode ? '#fff' : '#1f2937', marginBottom: 4, textAlign: 'center' }}>งานซ่อมบำรุง</h3>
             <p style={{ fontSize: 12, color: darkMode ? 'rgba(255,255,255,0.5)' : '#9ca3af', marginBottom: 16, textAlign: 'center' }}>จัดการงานซ่อมบำรุง</p>
             <StatsBox>
               <StatRow icon="🔴" label="รอดำเนินการ" value={`${repairStats.waiting} งาน`} color="#ef4444" />
