@@ -110,17 +110,17 @@ const BasicProfilePage = () => {
           }}>
             <div style={{ marginBottom: 12 }}>
               <span style={{ color: '#6b7280', fontSize: 12 }}>ชื่อ-นามสกุล</span>
-              <div style={{ fontWeight: 500 }}>{user?.fullName || '-'}</div>
+              <div style={{ fontWeight: 500, color: '#1f2937' }}>{user?.fullName || '-'}</div>
             </div>
             
             <div style={{ marginBottom: 12 }}>
               <span style={{ color: '#6b7280', fontSize: 12 }}>ชื่อผู้ใช้</span>
-              <div style={{ fontWeight: 500 }}>{user?.username || '-'}</div>
+              <div style={{ fontWeight: 500, color: '#1f2937' }}>{user?.username || '-'}</div>
             </div>
             
             <div>
               <span style={{ color: '#6b7280', fontSize: 12 }}>อีเมล</span>
-              <div style={{ fontWeight: 500 }}>{user?.email || '-'}</div>
+              <div style={{ fontWeight: 500, color: '#1f2937' }}>{user?.email || '-'}</div>
             </div>
           </div>
         </div>
