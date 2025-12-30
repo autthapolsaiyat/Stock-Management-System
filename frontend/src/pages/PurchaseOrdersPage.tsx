@@ -18,20 +18,31 @@ const PurchaseOrdersPage: React.FC = () => {
   const [editingOrder, setEditingOrder] = useState<PurchaseOrder | null>(null);
   const [items, setItems] = useState<any[]>([{ productId: undefined, qty: 1, unitPrice: 0 }]);
   const [form] = Form.useForm();
+  
+  // Quick Add Product
+  const [productModalVisible, setProductModalVisible] = useState(false);
+  const [productForm] = Form.useForm();
+  const [savingProduct, setSavingProduct] = useState(false);
+  const [categories, setCategories] = useState<any[]>([]);
+  const [units, setUnits] = useState<any[]>([]);
 
   useEffect(() => { loadData(); }, []);
 
   const loadData = async () => {
     setLoading(true);
     try {
-      const [poRes, suppRes, prodRes] = await Promise.all([
+      const [poRes, suppRes, prodRes, catRes, unitRes] = await Promise.all([
         purchaseOrdersApi.getAll(),
         suppliersApi.getAll(),
         productsApi.getAll(),
+        productsApi.getCategories().catch(() => ({ data: [] })),
+        productsApi.getUnits().catch(() => ({ data: [] })),
       ]);
       setOrders(poRes.data || []);
       setSuppliers(suppRes.data || []);
       setProducts(prodRes.data || []);
+      setCategories(catRes.data || []);
+      setUnits(unitRes.data || []);
     } catch (error) {
       message.error('ไม่สามารถโหลดข้อมูลได้');
     } finally {
@@ -131,6 +142,48 @@ const PurchaseOrdersPage: React.FC = () => {
     setItems(newItems);
   };
 
+  // Quick Add Product
+  const handleOpenProductModal = () => {
+    productForm.resetFields();
+    setProductModalVisible(true);
+  };
+
+  const handleCreateProduct = async (values: any) => {
+    setSavingProduct(true);
+    try {
+      const res = await productsApi.create({
+        ...values,
+        isActive: true,
+      });
+      message.success('เพิ่มสินค้าใหม่สำเร็จ');
+      
+      // Reload products and auto-select new product
+      const prodRes = await productsApi.getAll();
+      setProducts(prodRes.data || []);
+      
+      // Auto add to last empty item or create new item
+      const newProductId = res.data?.id;
+      if (newProductId) {
+        const emptyItemIndex = items.findIndex(i => !i.productId);
+        if (emptyItemIndex >= 0) {
+          updateItem(emptyItemIndex, 'productId', newProductId);
+          const product = prodRes.data?.find((p: any) => p.id === newProductId);
+          if (product) {
+            const newItems = [...items];
+            newItems[emptyItemIndex].unitPrice = product.standardCost || values.standardCost || 0;
+            setItems(newItems);
+          }
+        }
+      }
+      
+      setProductModalVisible(false);
+    } catch (error: any) {
+      message.error(error.response?.data?.message || 'ไม่สามารถเพิ่มสินค้าได้');
+    } finally {
+      setSavingProduct(false);
+    }
+  };
+
   // Bug #2 Fix: Calculate total in real-time
   const totalAmount = useMemo(() => {
     return items.reduce((sum, item) => sum + (item.qty || 0) * (item.unitPrice || 0), 0);
@@ -198,7 +251,12 @@ const PurchaseOrdersPage: React.FC = () => {
           </Space>
 
           <div style={{ marginBottom: 16 }}>
-            <label style={{ color: '#e5e7eb', display: 'block', marginBottom: 8 }}>รายการสินค้า</label>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 }}>
+              <label style={{ color: '#e5e7eb' }}>รายการสินค้า</label>
+              <Button type="link" icon={<PlusOutlined />} onClick={handleOpenProductModal} style={{ padding: 0 }}>
+                เพิ่มสินค้าใหม่
+              </Button>
+            </div>
             {items.map((item, idx) => (
               <Space key={idx} style={{ width: '100%', marginBottom: 8 }} align="center">
                 <Select
@@ -265,6 +323,84 @@ const PurchaseOrdersPage: React.FC = () => {
             />
           </div>
         )}
+      </Modal>
+
+      {/* Quick Add Product Modal */}
+      <Modal
+        title="➕ เพิ่มสินค้าใหม่"
+        open={productModalVisible}
+        onCancel={() => setProductModalVisible(false)}
+        footer={null}
+        width={500}
+      >
+        <Form form={productForm} layout="vertical" onFinish={handleCreateProduct}>
+          <Form.Item
+            name="code"
+            label="รหัสสินค้า"
+            rules={[{ required: true, message: 'กรุณากรอกรหัสสินค้า' }]}
+          >
+            <Input placeholder="เช่น PRD-001" />
+          </Form.Item>
+
+          <Form.Item
+            name="name"
+            label="ชื่อสินค้า"
+            rules={[{ required: true, message: 'กรุณากรอกชื่อสินค้า' }]}
+          >
+            <Input placeholder="ชื่อสินค้า" />
+          </Form.Item>
+
+          <Space style={{ width: '100%' }} size={16}>
+            <Form.Item name="categoryId" label="หมวดหมู่" style={{ flex: 1 }}>
+              <Select
+                placeholder="เลือกหมวดหมู่"
+                allowClear
+                options={categories.map((c: any) => ({ value: c.id, label: c.name }))}
+              />
+            </Form.Item>
+
+            <Form.Item name="unitId" label="หน่วยนับ" style={{ flex: 1 }}>
+              <Select
+                placeholder="เลือกหน่วย"
+                allowClear
+                options={units.map((u: any) => ({ value: u.id, label: u.name }))}
+              />
+            </Form.Item>
+          </Space>
+
+          <Space style={{ width: '100%' }} size={16}>
+            <Form.Item name="standardCost" label="ราคาทุน" style={{ flex: 1 }}>
+              <InputNumber
+                min={0}
+                style={{ width: '100%' }}
+                placeholder="0.00"
+                formatter={value => `${value}`.replace(/\B(?=(\d{3})+(?!\d))/g, ',')}
+              />
+            </Form.Item>
+
+            <Form.Item name="sellingPrice" label="ราคาขาย" style={{ flex: 1 }}>
+              <InputNumber
+                min={0}
+                style={{ width: '100%' }}
+                placeholder="0.00"
+                formatter={value => `${value}`.replace(/\B(?=(\d{3})+(?!\d))/g, ',')}
+              />
+            </Form.Item>
+          </Space>
+
+          <Form.Item name="description" label="รายละเอียด">
+            <Input.TextArea rows={2} placeholder="รายละเอียดสินค้า (ถ้ามี)" />
+          </Form.Item>
+
+          <Form.Item style={{ marginBottom: 0, marginTop: 16 }}>
+            <Space style={{ width: '100%', justifyContent: 'flex-end' }}>
+              <Button onClick={() => setProductModalVisible(false)}>ยกเลิก</Button>
+              <Button type="primary" htmlType="submit" loading={savingProduct} style={{ background: '#10b981', borderColor: '#10b981' }}>
+                เพิ่มสินค้า
+              </Button>
+            </Space>
+          </Form.Item>
+        </Form>
       </Modal>
     </div>
   );
