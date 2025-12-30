@@ -164,7 +164,12 @@ export class CheckinService {
       status: LeaveStatus.APPROVED, // Auto-approve for now
     });
 
-    return this.leaveRepo.save(leave);
+    const savedLeave = await this.leaveRepo.save(leave);
+    
+    // Send LINE notification
+    await this.sendLeaveNotification(userId, savedLeave);
+    
+    return savedLeave;
   }
 
   async updateLeave(id: number, dto: UpdateLeaveDto) {
@@ -239,6 +244,9 @@ export class CheckinService {
     
     await this.leaveRepo.save(leaves);
     
+    // Send LINE notification
+    await this.sendBulkNotification(userId, 'LEAVE', dto.startDate, dto.endDate, leaves.length, dto.leaveType, dto.reason);
+    
     return {
       message: `สร้างรายการลาสำเร็จ ${leaves.length} วัน`,
       totalDays: leaves.length,
@@ -312,6 +320,9 @@ export class CheckinService {
     }
     
     await this.checkinRepo.save(records);
+    
+    // Send LINE notification
+    await this.sendBulkNotification(userId, 'WORK', dto.startDate, dto.endDate, records.length, undefined, dto.note);
     
     return {
       message: `บันทึกการทำงานนอกสถานที่สำเร็จ ${records.length} วัน`,
@@ -609,102 +620,119 @@ export class CheckinService {
       where: { id: userId },
     }) as any;
 
-    const nickname = user?.nickname ? ` (${user.nickname})` : '';
-    const fullName = user?.fullName || 'Unknown';
+    const nickname = user?.nickname || user?.fullName || 'Unknown';
+    const username = user?.username || '';
+    const dateStr = new Date().toLocaleDateString('th-TH', { day: '2-digit', month: '2-digit', year: 'numeric' }).replace(/\//g, '/');
 
     let message = '';
 
     if (type === 'IN') {
       const isLate = record.clockInStatus === CheckinStatus.LATE;
-      const emoji = isLate ? '🔴' : '🟢';
-      const status = isLate ? `สาย ${record.clockInLateMinutes} นาที` : 'ปกติ';
+      const time = record.clockInTime.toLocaleTimeString('th-TH', { hour: '2-digit', minute: '2-digit', second: '2-digit' });
 
-      message = `
-${emoji} เช็คอินเข้างาน${isLate ? ' (สาย!)' : ''}
-👤 ${fullName}${nickname}
-⏰ ${record.clockInTime.toLocaleTimeString('th-TH')}
-${record.clockInNote ? `📝 ${record.clockInNote}` : ''}
-✅ สถานะ: ${status}`;
+      message = `😊 ${nickname}
+👤 ${username}
+📅 ${dateStr}
+⏰ ${time}
+🏢 Check IN${isLate ? `
+⚠️ สาย ${record.clockInLateMinutes} นาที` : ''}
+📍 ${record.clockInNote || 'ทำงานที่บริษัท'}`;
 
-      // Send late notification if configured
-      if (isLate && settings.notifyOnLate) {
-        // Already included in above message
-      }
     } else {
-      const otHours = record.otHours > 0 ? `\n⏱️ OT: ${record.otHours} ชม.` : '';
+      const time = record.clockOutTime.toLocaleTimeString('th-TH', { hour: '2-digit', minute: '2-digit', second: '2-digit' });
+      const otText = record.otHours > 0 ? `\n⏱️ OT ${record.otHours} ชม.` : '';
 
-      message = `
-🌙 เช็คออก
-👤 ${fullName}${nickname}
-⏰ ${record.clockOutTime.toLocaleTimeString('th-TH')}
-${record.clockOutNote ? `📝 ${record.clockOutNote}` : ''}${otHours}`;
+      message = `😊 ${nickname}
+👤 ${username}
+📅 ${dateStr}
+⏰ ${time}
+🏢 Check Out${otText}
+📍 ${record.clockOutNote || record.clockInNote || 'ทำงานที่บริษัท'}`;
     }
 
-    await this.sendLineNotify(message.trim());
+    await this.sendLineNotify(message);
+  }
+
+  private async sendLeaveNotification(userId: number, leave: LeaveRecordEntity) {
+    // Get user info
+    const user = await this.checkinRepo.manager.findOne('UserEntity', {
+      where: { id: userId },
+    }) as any;
+
+    const nickname = user?.nickname || user?.fullName || 'Unknown';
+    const username = user?.username || '';
+    const leaveDate = new Date(leave.leaveDate);
+    const dateStr = leaveDate.toLocaleDateString('th-TH', { day: '2-digit', month: '2-digit', year: 'numeric' });
+
+    const leaveTypeEmoji: Record<string, string> = {
+      VACATION: '🏖️ ลาพักร้อน',
+      PERSONAL: '👤 ลากิจส่วนตัว',
+      SICK: '🏥 ลาป่วย',
+      MATERNITY: '👶 ลาคลอด',
+      ORDINATION: '🙏 ลาอุปสมบท',
+    };
+
+    let durationText = '';
+    if (leave.leaveDuration === LeaveDuration.HALF_AM) {
+      durationText = ' (ครึ่งวันเช้า)';
+    } else if (leave.leaveDuration === LeaveDuration.HALF_PM) {
+      durationText = ' (ครึ่งวันบ่าย)';
+    }
+
+    const message = `😊 ${nickname}
+👤 ${username}
+📅 ${dateStr}
+${leaveTypeEmoji[leave.leaveType] || leave.leaveType}${durationText}${leave.reason ? `
+📝 ${leave.reason}` : ''}`;
+
+    await this.sendLineNotify(message);
+  }
+
+  private async sendBulkNotification(userId: number, type: 'LEAVE' | 'WORK', startDate: string, endDate: string, totalDays: number, leaveType?: string, reason?: string) {
+    // Get user info
+    const user = await this.checkinRepo.manager.findOne('UserEntity', {
+      where: { id: userId },
+    }) as any;
+
+    const nickname = user?.nickname || user?.fullName || 'Unknown';
+    const username = user?.username || '';
+    
+    const start = new Date(startDate);
+    const end = new Date(endDate);
+    const startStr = start.toLocaleDateString('th-TH', { day: '2-digit', month: '2-digit', year: 'numeric' });
+    const endStr = end.toLocaleDateString('th-TH', { day: '2-digit', month: '2-digit', year: 'numeric' });
+
+    let message = '';
+
+    if (type === 'WORK') {
+      message = `😊 ${nickname}
+👤 ${username}
+📅 ${startStr} - ${endStr}
+🚗 ทำงานนอกสถานที่${reason ? `
+📝 ${reason}` : ''}
+📊 รวม ${totalDays} วัน`;
+    } else {
+      const leaveTypeEmoji: Record<string, string> = {
+        VACATION: '🏖️ ลาพักร้อน',
+        PERSONAL: '👤 ลากิจส่วนตัว',
+        SICK: '🏥 ลาป่วย',
+        MATERNITY: '👶 ลาคลอด',
+        ORDINATION: '🙏 ลาอุปสมบท',
+      };
+
+      message = `😊 ${nickname}
+👤 ${username}
+📅 ${startStr} - ${endStr}
+${leaveTypeEmoji[leaveType || ''] || leaveType}${reason ? `
+📝 ${reason}` : ''}
+📊 รวม ${totalDays} วัน`;
+    }
+
+    await this.sendLineNotify(message);
   }
 
   async sendDailySummary() {
-    const settings = await this.getSettings();
-    if (!settings.notifyDailySummary) return;
-
-    const today = new Date();
-    const dateStr = today.toISOString().split('T')[0];
-
-    const records = await this.checkinRepo.find({
-      where: { checkinDate: dateStr as any },
-      relations: ['user'],
-    });
-
-    const leaves = await this.leaveRepo.find({
-      where: { leaveDate: dateStr as any },
-      relations: ['user'],
-    });
-
-    const normalCount = records.filter(r => r.clockInStatus === CheckinStatus.NORMAL).length;
-    const lateRecords = records.filter(r => r.clockInStatus === CheckinStatus.LATE);
-    const notCheckedOut = records.filter(r => r.clockInTime && !r.clockOutTime);
-
-    let message = `
-📊 สรุปการเข้างาน
-📅 ${today.toLocaleDateString('th-TH', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}
-
-✅ เข้างานปกติ: ${normalCount} คน
-⏰ มาสาย: ${lateRecords.length} คน`;
-
-    if (lateRecords.length > 0) {
-      const lateList = lateRecords.map(r => {
-        const nickname = (r.user as any)?.nickname || r.user?.fullName || '';
-        return `  - ${nickname} (${r.clockInLateMinutes} นาที)`;
-      }).join('\n');
-      message += `\n${lateList}`;
-    }
-
-    message += `\n🏖️ ลา: ${leaves.length} คน`;
-    if (leaves.length > 0) {
-      const leaveTypes: Record<string, string> = {
-        VACATION: 'พักร้อน',
-        PERSONAL: 'กิจส่วนตัว',
-        SICK: 'ป่วย',
-        MATERNITY: 'คลอด',
-        ORDINATION: 'อุปสมบท',
-      };
-      const leaveList = leaves.map(l => {
-        const nickname = (l.user as any)?.nickname || l.user?.fullName || '';
-        return `  - ${nickname} (${leaveTypes[l.leaveType]})`;
-      }).join('\n');
-      message += `\n${leaveList}`;
-    }
-
-    if (notCheckedOut.length > 0) {
-      message += `\n🚪 ยังไม่เช็คออก: ${notCheckedOut.length} คน`;
-      const notOutList = notCheckedOut.map(r => {
-        const nickname = (r.user as any)?.nickname || r.user?.fullName || '';
-        return `  - ${nickname}`;
-      }).join('\n');
-      message += `\n${notOutList}`;
-    }
-
-    await this.sendLineNotify(message.trim());
+    // Disabled - ไม่ส่งสรุปประจำวัน
     return { success: true };
   }
 
