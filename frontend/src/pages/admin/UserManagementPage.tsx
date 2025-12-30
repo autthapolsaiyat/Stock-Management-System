@@ -15,6 +15,7 @@ interface User {
   id: number;
   username: string;
   fullName: string;
+  nickname: string;
   email: string;
   isActive: boolean;
   roles: string[];
@@ -187,6 +188,7 @@ const UserManagementPage = () => {
     (user) =>
       user.username?.toLowerCase().includes(searchText.toLowerCase()) ||
       user.fullName?.toLowerCase().includes(searchText.toLowerCase()) ||
+      user.nickname?.toLowerCase().includes(searchText.toLowerCase()) ||
       user.email?.toLowerCase().includes(searchText.toLowerCase())
   );
 
@@ -211,7 +213,10 @@ const UserManagementPage = () => {
             icon={<UserOutlined />} 
           />
           <div>
-            <div style={{ fontWeight: 500 }}>{record.fullName}</div>
+            <div style={{ fontWeight: 500 }}>
+              {record.fullName}
+              {record.nickname && <Tag color="cyan" style={{ marginLeft: 8 }}>{record.nickname}</Tag>}
+            </div>
             <div style={{ fontSize: 12, color: '#6b7280' }}>@{record.username}</div>
           </div>
         </Space>
@@ -355,6 +360,9 @@ const UserManagementPage = () => {
             rules={[{ required: true, message: 'กรุณาระบุชื่อ-นามสกุล' }]}
           >
             <Input placeholder="นายสมชาย ใจดี" />
+          </Form.Item>
+          <Form.Item name="nickname" label="ชื่อเล่น">
+            <Input placeholder="เช่น บอย, แอน, เจ" />
           </Form.Item>
           <Form.Item name="email" label="อีเมล">
             <Input type="email" placeholder="email@example.com" />
