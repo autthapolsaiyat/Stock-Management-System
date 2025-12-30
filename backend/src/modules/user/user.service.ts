@@ -42,6 +42,7 @@ export class UserService {
       id: user.id,
       username: user.username,
       fullName: user.fullName,
+      nickname: user.nickname,
       email: user.email,
       isActive: user.isActive,
       roles: user.userRoles?.map(ur => ur.role?.code).filter(Boolean) || [],
