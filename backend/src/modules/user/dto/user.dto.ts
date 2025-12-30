@@ -15,6 +15,11 @@ export class CreateUserDto {
   @IsString()
   fullName: string;
 
+  @ApiPropertyOptional({ example: 'Johnny' })
+  @IsString()
+  @IsOptional()
+  nickname?: string;
+
   @ApiPropertyOptional({ example: 'john@example.com' })
   @IsEmail()
   @IsOptional()
@@ -36,6 +41,11 @@ export class UpdateUserDto {
   @IsString()
   @IsOptional()
   fullName?: string;
+
+  @ApiPropertyOptional()
+  @IsString()
+  @IsOptional()
+  nickname?: string;
 
   @ApiPropertyOptional()
   @IsEmail()

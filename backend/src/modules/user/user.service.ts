@@ -67,6 +67,7 @@ export class UserService {
       username: dto.username,
       passwordHash,
       fullName: dto.fullName,
+      nickname: dto.nickname,
       email: dto.email,
       isActive: true,
     });
@@ -88,7 +89,7 @@ export class UserService {
         userName: ctx.userName,
         ipAddress: ctx.ipAddress,
         userAgent: ctx.userAgent,
-        details: { fullName: savedUser.fullName, email: savedUser.email },
+        details: { fullName: savedUser.fullName, nickname: savedUser.nickname, email: savedUser.email },
       });
     }
 
@@ -99,6 +100,7 @@ export class UserService {
     const user = await this.findOne(id);
     
     if (dto.fullName) user.fullName = dto.fullName;
+    if (dto.nickname !== undefined) user.nickname = dto.nickname;
     if (dto.email !== undefined) user.email = dto.email;
     if (dto.isActive !== undefined) user.isActive = dto.isActive;
     if (dto.password) user.passwordHash = await bcrypt.hash(dto.password, 10);
@@ -120,7 +122,7 @@ export class UserService {
         userName: ctx.userName,
         ipAddress: ctx.ipAddress,
         userAgent: ctx.userAgent,
-        details: { fullName: user.fullName, isActive: user.isActive },
+        details: { fullName: user.fullName, nickname: user.nickname, isActive: user.isActive },
       });
     }
 

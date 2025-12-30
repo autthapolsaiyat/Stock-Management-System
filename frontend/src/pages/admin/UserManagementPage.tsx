@@ -113,6 +113,7 @@ const UserManagementPage = () => {
         // Update user
         await api.put(`/api/users/${selectedUser.id}`, {
           fullName: values.fullName,
+          nickname: values.nickname,
           email: values.email,
           isActive: values.isActive,
         });
@@ -126,6 +127,7 @@ const UserManagementPage = () => {
         await api.post('/api/users', { 
           username: values.username,
           fullName: values.fullName,
+          nickname: values.nickname,
           email: values.email,
           password: '123456',
           roleIds: values.roles ? roles.filter(r => values.roles.includes(r.code)).map(r => r.id) : [],
