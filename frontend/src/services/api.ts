@@ -529,4 +529,12 @@ export const checkinApi = {
     api.post('/api/checkin/settings/test-line'),
   sendDailySummary: () =>
     api.post('/api/checkin/settings/send-daily-summary'),
+
+  // Admin: Manage Records
+  getRecordsByDate: (date: string) =>
+    api.get('/api/checkin/admin/records', { params: { date } }),
+  deleteCheckinRecord: (id: number) =>
+    api.delete(`/api/checkin/admin/records/${id}`),
+  deleteLeaveRecordAdmin: (id: number) =>
+    api.delete(`/api/checkin/admin/leave/${id}`),
 };

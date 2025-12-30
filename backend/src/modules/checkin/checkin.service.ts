@@ -635,6 +635,57 @@ ${record.clockOutNote ? `📝 ${record.clockOutNote}` : ''}${otHours}`;
     return { success: true };
   }
 
+  // ==================== ADMIN: MANAGE RECORDS ====================
+
+  async getRecordsByDate(date: string) {
+    const records = await this.checkinRepo.find({
+      where: { checkinDate: date as any },
+      relations: ['user'],
+      order: { clockInTime: 'ASC' },
+    });
+
+    const leaves = await this.leaveRepo.find({
+      where: { leaveDate: date as any },
+      relations: ['user'],
+    });
+
+    return {
+      date,
+      checkinRecords: records.map(r => ({
+        id: r.id,
+        userId: r.userId,
+        userName: r.user ? `${r.user.firstName} ${r.user.lastName}` : 'Unknown',
+        nickname: r.user?.nickname || '',
+        clockInTime: r.clockInTime,
+        clockOutTime: r.clockOutTime,
+        clockInStatus: r.clockInStatus,
+        clockInLateMinutes: r.clockInLateMinutes,
+        clockOutStatus: r.clockOutStatus,
+        clockOutEarlyMinutes: r.clockOutEarlyMinutes,
+        otHours: r.otHours,
+      })),
+      leaveRecords: leaves.map(l => ({
+        id: l.id,
+        userId: l.userId,
+        userName: l.user ? `${l.user.firstName} ${l.user.lastName}` : 'Unknown',
+        nickname: l.user?.nickname || '',
+        leaveType: l.leaveType,
+        leaveDuration: l.leaveDuration,
+        leaveDays: l.leaveDays,
+        reason: l.reason,
+      })),
+    };
+  }
+
+  async deleteCheckinRecord(id: number) {
+    const record = await this.checkinRepo.findOneBy({ id });
+    if (!record) {
+      throw new BadRequestException('ไม่พบรายการเช็คอิน');
+    }
+    await this.checkinRepo.remove(record);
+    return { success: true, message: 'ลบรายการเช็คอินสำเร็จ' };
+  }
+
   // ==================== HELPERS ====================
 
   private async getSetting(key: string, defaultValue: string): Promise<string> {

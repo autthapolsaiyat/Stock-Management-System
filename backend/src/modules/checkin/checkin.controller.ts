@@ -165,4 +165,30 @@ export class CheckinController {
   async sendDailySummary() {
     return this.checkinService.sendDailySummary();
   }
+
+  // ==================== ADMIN: MANAGE RECORDS ====================
+
+  @Get('admin/records')
+  @UseGuards(RolesGuard)
+  @Roles('ADMIN', 'SUPER_ADMIN', 'MANAGER', 'HR')
+  @ApiOperation({ summary: 'Get all checkin records for a date (Admin)' })
+  async getRecordsByDate(@Query('date') date: string) {
+    return this.checkinService.getRecordsByDate(date);
+  }
+
+  @Delete('admin/records/:id')
+  @UseGuards(RolesGuard)
+  @Roles('ADMIN', 'SUPER_ADMIN')
+  @ApiOperation({ summary: 'Delete a checkin record (Admin)' })
+  async deleteCheckinRecord(@Param('id') id: number) {
+    return this.checkinService.deleteCheckinRecord(id);
+  }
+
+  @Delete('admin/leave/:id')
+  @UseGuards(RolesGuard)
+  @Roles('ADMIN', 'SUPER_ADMIN')
+  @ApiOperation({ summary: 'Delete a leave record (Admin)' })
+  async deleteLeaveRecordAdmin(@Param('id') id: number) {
+    return this.checkinService.deleteLeave(id);
+  }
 }

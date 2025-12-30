@@ -1,15 +1,40 @@
 import React, { useState, useEffect } from 'react';
-import { Card, Form, Input, InputNumber, Switch, Button, Row, Col, Typography, message, Divider, TimePicker, Space } from 'antd';
+import { Card, Form, Input, InputNumber, Switch, Button, Row, Col, Typography, message, Divider, TimePicker, Space, Tabs, DatePicker, Table, Tag, Popconfirm } from 'antd';
 import { 
   SettingOutlined, ClockCircleOutlined, BellOutlined, 
   SaveOutlined, SendOutlined, MessageOutlined, HomeOutlined,
-  ArrowLeftOutlined
+  ArrowLeftOutlined, DeleteOutlined, TeamOutlined
 } from '@ant-design/icons';
 import { useNavigate } from 'react-router-dom';
 import { checkinApi } from '../services/api';
 import dayjs from 'dayjs';
 
 const { Title, Text } = Typography;
+
+interface CheckinRecord {
+  id: number;
+  userId: number;
+  userName: string;
+  nickname: string;
+  clockInTime: string;
+  clockOutTime: string;
+  clockInStatus: string;
+  clockInLateMinutes: number;
+  clockOutStatus: string;
+  clockOutEarlyMinutes: number;
+  otHours: number;
+}
+
+interface LeaveRecord {
+  id: number;
+  userId: number;
+  userName: string;
+  nickname: string;
+  leaveType: string;
+  leaveDuration: string;
+  leaveDays: number;
+  reason: string;
+}
 
 const CheckinAdminPage: React.FC = () => {
   const navigate = useNavigate();
@@ -18,6 +43,12 @@ const CheckinAdminPage: React.FC = () => {
   const [saving, setSaving] = useState(false);
   const [testing, setTesting] = useState(false);
   const [sendingSummary, setSendingSummary] = useState(false);
+
+  // Manage records state
+  const [selectedDate, setSelectedDate] = useState(dayjs());
+  const [loadingRecords, setLoadingRecords] = useState(false);
+  const [checkinRecords, setCheckinRecords] = useState<CheckinRecord[]>([]);
+  const [leaveRecords, setLeaveRecords] = useState<LeaveRecord[]>([]);
 
   useEffect(() => {
     loadSettings();
@@ -87,6 +118,130 @@ const CheckinAdminPage: React.FC = () => {
     }
   };
 
+  // Load records by date
+  const loadRecordsByDate = async (date: dayjs.Dayjs) => {
+    setLoadingRecords(true);
+    try {
+      const res = await checkinApi.getRecordsByDate(date.format('YYYY-MM-DD'));
+      setCheckinRecords(res.data.checkinRecords || []);
+      setLeaveRecords(res.data.leaveRecords || []);
+    } catch (error) {
+      console.error('Load records error:', error);
+      setCheckinRecords([]);
+      setLeaveRecords([]);
+    } finally {
+      setLoadingRecords(false);
+    }
+  };
+
+  const handleDeleteCheckin = async (id: number) => {
+    try {
+      await checkinApi.deleteCheckinRecord(id);
+      message.success('ลบรายการเช็คอินสำเร็จ');
+      loadRecordsByDate(selectedDate);
+    } catch (error: any) {
+      message.error(error.response?.data?.message || 'เกิดข้อผิดพลาด');
+    }
+  };
+
+  const handleDeleteLeave = async (id: number) => {
+    try {
+      await checkinApi.deleteLeaveRecordAdmin(id);
+      message.success('ลบรายการลาสำเร็จ');
+      loadRecordsByDate(selectedDate);
+    } catch (error: any) {
+      message.error(error.response?.data?.message || 'เกิดข้อผิดพลาด');
+    }
+  };
+
+  const formatTime = (time: string) => {
+    if (!time) return '-';
+    return dayjs(time).format('HH:mm');
+  };
+
+  const leaveTypeLabels: Record<string, string> = {
+    VACATION: '🏖️ พักร้อน',
+    PERSONAL: '👤 กิจส่วนตัว',
+    SICK: '🏥 ป่วย',
+    MATERNITY: '👶 คลอด',
+    ORDINATION: '🙏 อุปสมบท',
+  };
+
+  const checkinColumns = [
+    { title: 'ชื่อ', dataIndex: 'userName', key: 'userName', 
+      render: (text: string, record: CheckinRecord) => (
+        <span>{text} {record.nickname && `(${record.nickname})`}</span>
+      )
+    },
+    { title: 'เข้างาน', dataIndex: 'clockInTime', key: 'clockInTime',
+      render: (time: string) => <Tag color="green">{formatTime(time)}</Tag>
+    },
+    { title: 'ออกงาน', dataIndex: 'clockOutTime', key: 'clockOutTime',
+      render: (time: string) => time ? <Tag color="blue">{formatTime(time)}</Tag> : '-'
+    },
+    { title: 'สถานะ', key: 'status',
+      render: (_: any, record: CheckinRecord) => (
+        record.clockInStatus === 'LATE' 
+          ? <Tag color="red">สาย {record.clockInLateMinutes} นาที</Tag>
+          : <Tag color="green">ปกติ</Tag>
+      )
+    },
+    { title: 'OT', dataIndex: 'otHours', key: 'otHours',
+      render: (hours: number) => hours > 0 ? <Tag color="purple">{hours} ชม.</Tag> : '-'
+    },
+    { title: 'จัดการ', key: 'action',
+      render: (_: any, record: CheckinRecord) => (
+        <Popconfirm
+          title="ยืนยันการลบ?"
+          description="ต้องการลบรายการเช็คอินนี้หรือไม่?"
+          onConfirm={() => handleDeleteCheckin(record.id)}
+          okText="ลบ"
+          cancelText="ยกเลิก"
+        >
+          <Button type="text" danger icon={<DeleteOutlined />} size="small">
+            ลบ
+          </Button>
+        </Popconfirm>
+      )
+    },
+  ];
+
+  const leaveColumns = [
+    { title: 'ชื่อ', dataIndex: 'userName', key: 'userName',
+      render: (text: string, record: LeaveRecord) => (
+        <span>{text} {record.nickname && `(${record.nickname})`}</span>
+      )
+    },
+    { title: 'ประเภท', dataIndex: 'leaveType', key: 'leaveType',
+      render: (type: string) => leaveTypeLabels[type] || type
+    },
+    { title: 'ระยะเวลา', dataIndex: 'leaveDuration', key: 'leaveDuration',
+      render: (duration: string) => {
+        if (duration === 'HALF_AM') return <Tag>ครึ่งวันเช้า</Tag>;
+        if (duration === 'HALF_PM') return <Tag>ครึ่งวันบ่าย</Tag>;
+        return <Tag color="blue">เต็มวัน</Tag>;
+      }
+    },
+    { title: 'เหตุผล', dataIndex: 'reason', key: 'reason',
+      render: (reason: string) => reason || '-'
+    },
+    { title: 'จัดการ', key: 'action',
+      render: (_: any, record: LeaveRecord) => (
+        <Popconfirm
+          title="ยืนยันการลบ?"
+          description="ต้องการลบรายการลานี้หรือไม่?"
+          onConfirm={() => handleDeleteLeave(record.id)}
+          okText="ลบ"
+          cancelText="ยกเลิก"
+        >
+          <Button type="text" danger icon={<DeleteOutlined />} size="small">
+            ลบ
+          </Button>
+        </Popconfirm>
+      )
+    },
+  ];
+
   return (
     <div style={{ 
       minHeight: '100vh', 
@@ -114,7 +269,7 @@ const CheckinAdminPage: React.FC = () => {
           กลับ
         </Button>
         <Title level={4} style={{ margin: 0, color: '#fff' }}>
-          <SettingOutlined /> ตั้งค่าระบบ Check-in
+          <SettingOutlined /> จัดการระบบ Check-in
         </Title>
         <Button 
           type="text" 
@@ -126,23 +281,30 @@ const CheckinAdminPage: React.FC = () => {
         </Button>
       </div>
 
-      <div style={{ padding: '24px', maxWidth: 900, margin: '0 auto' }}>
+      <div style={{ padding: '24px', maxWidth: 1000, margin: '0 auto' }}>
 
-      <Form
-        form={form}
-        layout="vertical"
-        onFinish={handleSave}
-      >
-        {/* Working Hours Settings */}
-        <Card 
-          title={<><ClockCircleOutlined /> ตั้งค่าเวลาทำงาน</>}
-          style={{ marginBottom: 24 }}
-          className="card-holo"
-          loading={loading}
-        >
-          <Row gutter={24}>
-            <Col span={8}>
-              <Form.Item
+      <Tabs
+        defaultActiveKey="settings"
+        items={[
+          {
+            key: 'settings',
+            label: <><SettingOutlined /> ตั้งค่า</>,
+            children: (
+              <Form
+                form={form}
+                layout="vertical"
+                onFinish={handleSave}
+              >
+                {/* Working Hours Settings */}
+                <Card 
+                  title={<><ClockCircleOutlined /> ตั้งค่าเวลาทำงาน</>}
+                  style={{ marginBottom: 24 }}
+                  className="card-holo"
+                  loading={loading}
+                >
+                  <Row gutter={24}>
+                    <Col span={8}>
+                      <Form.Item
                 label="เวลาเข้างาน"
                 name="clockInTime"
                 rules={[{ required: true, message: 'กรุณาระบุเวลา' }]}
@@ -291,7 +453,68 @@ const CheckinAdminPage: React.FC = () => {
         >
           บันทึกตั้งค่า
         </Button>
-      </Form>
+              </Form>
+            ),
+          },
+          {
+            key: 'records',
+            label: <><TeamOutlined /> จัดการรายการเช็คอิน</>,
+            children: (
+              <div>
+                <Card className="card-holo" style={{ marginBottom: 24 }}>
+                  <Space>
+                    <Text strong>เลือกวันที่:</Text>
+                    <DatePicker
+                      value={selectedDate}
+                      onChange={(date) => {
+                        if (date) {
+                          setSelectedDate(date);
+                          loadRecordsByDate(date);
+                        }
+                      }}
+                      format="DD/MM/YYYY"
+                    />
+                    <Button onClick={() => loadRecordsByDate(selectedDate)} loading={loadingRecords}>
+                      โหลดข้อมูล
+                    </Button>
+                  </Space>
+                </Card>
+
+                {/* Checkin Records */}
+                <Card 
+                  title={<><ClockCircleOutlined /> รายการเช็คอิน ({selectedDate.format('DD/MM/YYYY')})</>}
+                  className="card-holo"
+                  style={{ marginBottom: 24 }}
+                >
+                  <Table
+                    columns={checkinColumns}
+                    dataSource={checkinRecords}
+                    rowKey="id"
+                    loading={loadingRecords}
+                    pagination={false}
+                    locale={{ emptyText: 'ไม่มีรายการเช็คอิน' }}
+                  />
+                </Card>
+
+                {/* Leave Records */}
+                <Card 
+                  title={<>📋 รายการลา ({selectedDate.format('DD/MM/YYYY')})</>}
+                  className="card-holo"
+                >
+                  <Table
+                    columns={leaveColumns}
+                    dataSource={leaveRecords}
+                    rowKey="id"
+                    loading={loadingRecords}
+                    pagination={false}
+                    locale={{ emptyText: 'ไม่มีรายการลา' }}
+                  />
+                </Card>
+              </div>
+            ),
+          },
+        ]}
+      />
       </div>
     </div>
   );

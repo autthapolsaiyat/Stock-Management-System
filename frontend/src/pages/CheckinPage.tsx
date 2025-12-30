@@ -499,7 +499,7 @@ const CheckinPage: React.FC = () => {
               onClick={() => setShowBulkLeaveModal(true)}
               style={{ height: 48, background: 'rgba(139, 92, 246, 0.1)', borderColor: '#8b5cf6', color: '#8b5cf6' }}
             >
-              📆 ลาหลายวัน
+              📆 ต่างจังหวัด/ลาหลายวัน
             </Button>
           </Col>
         </Row>
