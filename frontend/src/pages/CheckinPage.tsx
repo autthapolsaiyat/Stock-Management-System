@@ -145,7 +145,7 @@ const CheckinPage: React.FC = () => {
       await checkinApi.clockIn({
         latitude: location?.latitude,
         longitude: location?.longitude,
-        note: note || undefined,
+        note: note || 'ทำงานที่บริษัท',
       });
       message.success('เช็คอินเข้างานสำเร็จ');
       setNote('');
@@ -458,7 +458,7 @@ const CheckinPage: React.FC = () => {
         <TextArea
           value={note}
           onChange={(e) => setNote(e.target.value)}
-          placeholder="เช่น วันนี้มีประชุมที่สยามกับลูกค้า"
+          placeholder="ค่าเริ่มต้น: ทำงานที่บริษัท"
           rows={2}
           style={{ marginTop: 8 }}
         />
