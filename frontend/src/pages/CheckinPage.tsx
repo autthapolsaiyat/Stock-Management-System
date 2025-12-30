@@ -1,17 +1,35 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { Card, Button, Row, Col, Typography, Space, message, Input, Statistic, List, Tag, Spin } from 'antd';
+import { Card, Button, Row, Col, Typography, Space, message, Input, Statistic, List, Tag, Spin, Modal, Radio, DatePicker } from 'antd';
 import { 
   LoginOutlined, LogoutOutlined, ClockCircleOutlined, 
   CalendarOutlined, CheckCircleOutlined, WarningOutlined,
   HistoryOutlined, FileTextOutlined, HomeOutlined, SettingOutlined,
-  BarChartOutlined
+  BarChartOutlined, FormOutlined
 } from '@ant-design/icons';
 import { useNavigate } from 'react-router-dom';
 import { checkinApi } from '../services/api';
 import { useAuth } from '../contexts/AuthContext';
+import dayjs from 'dayjs';
 
 const { Title, Text } = Typography;
 const { TextArea } = Input;
+const { RangePicker } = DatePicker;
+
+// Leave types
+const LEAVE_TYPES = [
+  { value: 'VACATION', label: '🏖️ ลาพักร้อน', duration: 'FULL' },
+  { value: 'PERSONAL', label: '👤 ลากิจส่วนตัว', duration: 'FULL' },
+  { value: 'SICK', label: '🏥 ลาป่วย', duration: 'FULL' },
+  { value: 'MATERNITY', label: '👶 ลาคลอด', duration: 'FULL' },
+  { value: 'ORDINATION', label: '🙏 ลาอุปสมบท', duration: 'FULL' },
+];
+
+const HALF_LEAVE_TYPES = [
+  { value: 'SICK_HALF_AM', label: '🏥 ลาป่วยครึ่งวัน (เช้า)', leaveType: 'SICK', duration: 'HALF_AM' },
+  { value: 'SICK_HALF_PM', label: '🏥 ลาป่วยครึ่งวัน (บ่าย)', leaveType: 'SICK', duration: 'HALF_PM' },
+  { value: 'PERSONAL_HALF_AM', label: '👤 ลากิจครึ่งวัน (เช้า)', leaveType: 'PERSONAL', duration: 'HALF_AM' },
+  { value: 'PERSONAL_HALF_PM', label: '👤 ลากิจครึ่งวัน (บ่าย)', leaveType: 'PERSONAL', duration: 'HALF_PM' },
+];
 
 interface CheckinRecord {
   id: number;
@@ -53,6 +71,14 @@ const CheckinPage: React.FC = () => {
   const [todayStatus, setTodayStatus] = useState<TodayStatus | null>(null);
   const [history, setHistory] = useState<CheckinRecord[]>([]);
   const [monthlySummary, setMonthlySummary] = useState<MonthlySummary | null>(null);
+
+  // Leave modal states
+  const [showTodayLeaveModal, setShowTodayLeaveModal] = useState(false);
+  const [showBulkLeaveModal, setShowBulkLeaveModal] = useState(false);
+  const [selectedLeaveType, setSelectedLeaveType] = useState<string>('');
+  const [leaveReason, setLeaveReason] = useState('');
+  const [leaveDateRange, setLeaveDateRange] = useState<[dayjs.Dayjs, dayjs.Dayjs] | null>(null);
+  const [submittingLeave, setSubmittingLeave] = useState(false);
 
   // Update clock every second
   useEffect(() => {
@@ -137,6 +163,81 @@ const CheckinPage: React.FC = () => {
       message.error(error.response?.data?.message || 'เกิดข้อผิดพลาด');
     } finally {
       setCheckingOut(false);
+    }
+  };
+
+  // Handle today leave submission
+  const handleSubmitTodayLeave = async () => {
+    if (!selectedLeaveType) {
+      message.warning('กรุณาเลือกประเภทการลา');
+      return;
+    }
+
+    setSubmittingLeave(true);
+    try {
+      const today = dayjs().format('YYYY-MM-DD');
+      
+      // Check if it's a half-day leave
+      const halfLeave = HALF_LEAVE_TYPES.find(t => t.value === selectedLeaveType);
+      
+      if (halfLeave) {
+        await checkinApi.createLeave({
+          leaveDate: today,
+          leaveType: halfLeave.leaveType,
+          leaveDuration: halfLeave.duration,
+          reason: leaveReason || undefined,
+        });
+      } else {
+        await checkinApi.createLeave({
+          leaveDate: today,
+          leaveType: selectedLeaveType,
+          leaveDuration: 'FULL',
+          reason: leaveReason || undefined,
+        });
+      }
+      
+      message.success('บันทึกการลาสำเร็จ');
+      setShowTodayLeaveModal(false);
+      setSelectedLeaveType('');
+      setLeaveReason('');
+      loadData();
+    } catch (error: any) {
+      message.error(error.response?.data?.message || 'เกิดข้อผิดพลาด');
+    } finally {
+      setSubmittingLeave(false);
+    }
+  };
+
+  // Handle bulk leave submission
+  const handleSubmitBulkLeave = async () => {
+    if (!selectedLeaveType) {
+      message.warning('กรุณาเลือกประเภทการลา');
+      return;
+    }
+    if (!leaveDateRange || !leaveDateRange[0] || !leaveDateRange[1]) {
+      message.warning('กรุณาเลือกช่วงวันที่');
+      return;
+    }
+
+    setSubmittingLeave(true);
+    try {
+      const result = await checkinApi.createBulkLeave({
+        startDate: leaveDateRange[0].format('YYYY-MM-DD'),
+        endDate: leaveDateRange[1].format('YYYY-MM-DD'),
+        leaveType: selectedLeaveType,
+        reason: leaveReason || undefined,
+      });
+      
+      message.success(result.data.message || 'บันทึกการลาสำเร็จ');
+      setShowBulkLeaveModal(false);
+      setSelectedLeaveType('');
+      setLeaveReason('');
+      setLeaveDateRange(null);
+      loadData();
+    } catch (error: any) {
+      message.error(error.response?.data?.message || 'เกิดข้อผิดพลาด');
+    } finally {
+      setSubmittingLeave(false);
     }
   };
 
@@ -376,6 +477,32 @@ const CheckinPage: React.FC = () => {
             <Title level={4} style={{ marginTop: 8 }}>เช็คอินวันนี้เสร็จสิ้น</Title>
           </div>
         )}
+
+        {/* Leave Buttons */}
+        <Row gutter={12}>
+          <Col span={12}>
+            <Button
+              size="large"
+              block
+              icon={<FormOutlined />}
+              onClick={() => setShowTodayLeaveModal(true)}
+              style={{ height: 48, background: 'rgba(249, 115, 22, 0.1)', borderColor: '#f97316', color: '#f97316' }}
+            >
+              📋 ลางานวันนี้
+            </Button>
+          </Col>
+          <Col span={12}>
+            <Button
+              size="large"
+              block
+              icon={<CalendarOutlined />}
+              onClick={() => setShowBulkLeaveModal(true)}
+              style={{ height: 48, background: 'rgba(139, 92, 246, 0.1)', borderColor: '#8b5cf6', color: '#8b5cf6' }}
+            >
+              📆 ลาหลายวัน
+            </Button>
+          </Col>
+        </Row>
       </Space>
 
       {/* Monthly Summary */}
@@ -445,6 +572,117 @@ const CheckinPage: React.FC = () => {
         />
       </Card>
       </div>
+
+      {/* Modal: ลางานวันนี้ */}
+      <Modal
+        title={<><FormOutlined /> ลางานวันนี้ ({dayjs().format('D MMMM YYYY')})</>}
+        open={showTodayLeaveModal}
+        onCancel={() => {
+          setShowTodayLeaveModal(false);
+          setSelectedLeaveType('');
+          setLeaveReason('');
+        }}
+        onOk={handleSubmitTodayLeave}
+        okText="✓ ยืนยันลา"
+        cancelText="ยกเลิก"
+        confirmLoading={submittingLeave}
+      >
+        <div style={{ padding: '16px 0' }}>
+          <Text strong>เลือกประเภทการลา:</Text>
+          <Radio.Group
+            value={selectedLeaveType}
+            onChange={(e) => setSelectedLeaveType(e.target.value)}
+            style={{ display: 'flex', flexDirection: 'column', gap: 12, marginTop: 16 }}
+          >
+            {LEAVE_TYPES.map(type => (
+              <Radio key={type.value} value={type.value} style={{ fontSize: 16 }}>
+                {type.label}
+              </Radio>
+            ))}
+            <div style={{ borderTop: '1px solid #333', margin: '8px 0', paddingTop: 8 }}>
+              <Text type="secondary" style={{ fontSize: 12 }}>ลาครึ่งวัน</Text>
+            </div>
+            {HALF_LEAVE_TYPES.map(type => (
+              <Radio key={type.value} value={type.value} style={{ fontSize: 16 }}>
+                {type.label}
+              </Radio>
+            ))}
+          </Radio.Group>
+          
+          <div style={{ marginTop: 24 }}>
+            <Text strong>📝 เหตุผล (ถ้ามี):</Text>
+            <TextArea
+              value={leaveReason}
+              onChange={(e) => setLeaveReason(e.target.value)}
+              placeholder="ระบุเหตุผลการลา..."
+              rows={2}
+              style={{ marginTop: 8 }}
+            />
+          </div>
+        </div>
+      </Modal>
+
+      {/* Modal: ลาหลายวัน */}
+      <Modal
+        title={<><CalendarOutlined /> ลาหลายวัน</>}
+        open={showBulkLeaveModal}
+        onCancel={() => {
+          setShowBulkLeaveModal(false);
+          setSelectedLeaveType('');
+          setLeaveReason('');
+          setLeaveDateRange(null);
+        }}
+        onOk={handleSubmitBulkLeave}
+        okText="✓ ยืนยันลา"
+        cancelText="ยกเลิก"
+        confirmLoading={submittingLeave}
+      >
+        <div style={{ padding: '16px 0' }}>
+          <div style={{ marginBottom: 16 }}>
+            <Text strong>ประเภทการลา:</Text>
+            <Radio.Group
+              value={selectedLeaveType}
+              onChange={(e) => setSelectedLeaveType(e.target.value)}
+              style={{ display: 'flex', flexDirection: 'column', gap: 8, marginTop: 8 }}
+            >
+              {LEAVE_TYPES.map(type => (
+                <Radio key={type.value} value={type.value}>
+                  {type.label}
+                </Radio>
+              ))}
+            </Radio.Group>
+          </div>
+          
+          <div style={{ marginBottom: 16 }}>
+            <Text strong>ช่วงวันที่ลา:</Text>
+            <div style={{ marginTop: 8 }}>
+              <RangePicker
+                value={leaveDateRange}
+                onChange={(dates) => setLeaveDateRange(dates as [dayjs.Dayjs, dayjs.Dayjs])}
+                format="DD/MM/YYYY"
+                style={{ width: '100%' }}
+                placeholder={['วันเริ่มต้น', 'วันสิ้นสุด']}
+              />
+            </div>
+            {leaveDateRange && leaveDateRange[0] && leaveDateRange[1] && (
+              <Text type="secondary" style={{ fontSize: 12, marginTop: 8, display: 'block' }}>
+                📊 รวม: {leaveDateRange[1].diff(leaveDateRange[0], 'day') + 1} วัน
+              </Text>
+            )}
+          </div>
+          
+          <div>
+            <Text strong>📝 เหตุผล (ถ้ามี):</Text>
+            <TextArea
+              value={leaveReason}
+              onChange={(e) => setLeaveReason(e.target.value)}
+              placeholder="เช่น ไปต่างจังหวัด, ลาพักร้อนประจำปี..."
+              rows={2}
+              style={{ marginTop: 8 }}
+            />
+          </div>
+        </div>
+      </Modal>
     </div>
   );
 };

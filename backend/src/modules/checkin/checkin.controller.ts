@@ -77,10 +77,17 @@ export class CheckinController {
   // ==================== LEAVE ====================
 
   @Post('leave')
-  @ApiOperation({ summary: 'Create leave request' })
+  @ApiOperation({ summary: 'Create leave request for single day' })
   async createLeave(@Request() req, @Body() dto: CreateLeaveDto) {
     const userId = req.user.userId || req.user.id || req.user.sub;
     return this.checkinService.createLeave(userId, dto);
+  }
+
+  @Post('leave/bulk')
+  @ApiOperation({ summary: 'Create leave request for multiple days' })
+  async createBulkLeave(@Request() req, @Body() dto: any) {
+    const userId = req.user.userId || req.user.id || req.user.sub;
+    return this.checkinService.createBulkLeave(userId, dto);
   }
 
   @Put('leave/:id')

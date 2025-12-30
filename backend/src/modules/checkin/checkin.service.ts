@@ -189,6 +189,63 @@ export class CheckinService {
     return this.leaveRepo.remove(leave);
   }
 
+  async createBulkLeave(userId: number, dto: { startDate: string; endDate: string; leaveType: LeaveType; reason?: string }) {
+    const start = new Date(dto.startDate);
+    const end = new Date(dto.endDate);
+    
+    // Validate date range
+    const diffDays = Math.ceil((end.getTime() - start.getTime()) / (1000 * 60 * 60 * 24)) + 1;
+    
+    if (diffDays <= 0) {
+      throw new BadRequestException('วันที่สิ้นสุดต้องมากกว่าหรือเท่ากับวันที่เริ่มต้น');
+    }
+    
+    // Limit for maternity/ordination: 120 days
+    if ((dto.leaveType === LeaveType.MATERNITY || dto.leaveType === LeaveType.ORDINATION) && diffDays > 120) {
+      throw new BadRequestException('ลาคลอด/อุปสมบท ไม่เกิน 120 วัน');
+    }
+    
+    // Create leave records for each day
+    const leaves: LeaveRecordEntity[] = [];
+    const currentDate = new Date(start);
+    
+    while (currentDate <= end) {
+      const dateStr = currentDate.toISOString().split('T')[0];
+      
+      // Check if already has leave on this date
+      const existing = await this.leaveRepo.findOne({
+        where: { userId, leaveDate: dateStr as any },
+      });
+      
+      if (!existing) {
+        const leave = this.leaveRepo.create({
+          userId,
+          leaveDate: dateStr as any,
+          leaveType: dto.leaveType,
+          leaveDuration: LeaveDuration.FULL,
+          leaveDays: 1,
+          reason: dto.reason,
+          status: LeaveStatus.APPROVED,
+        });
+        leaves.push(leave);
+      }
+      
+      currentDate.setDate(currentDate.getDate() + 1);
+    }
+    
+    if (leaves.length === 0) {
+      throw new BadRequestException('ไม่สามารถสร้างรายการลาได้ (อาจมีการลาในวันเหล่านี้แล้ว)');
+    }
+    
+    await this.leaveRepo.save(leaves);
+    
+    return {
+      message: `สร้างรายการลาสำเร็จ ${leaves.length} วัน`,
+      totalDays: leaves.length,
+      leaves,
+    };
+  }
+
   async getLeavesByUser(userId: number, year: number, month: number) {
     const startDate = new Date(year, month - 1, 1);
     const endDate = new Date(year, month, 0);

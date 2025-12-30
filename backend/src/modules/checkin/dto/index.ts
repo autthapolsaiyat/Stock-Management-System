@@ -121,6 +121,25 @@ export class CheckinSettingsDto {
   dailySummaryTime?: string;
 }
 
+export class CreateBulkLeaveDto {
+  @ApiProperty({ description: 'Start date (YYYY-MM-DD)' })
+  @IsDateString()
+  startDate: string;
+
+  @ApiProperty({ description: 'End date (YYYY-MM-DD)' })
+  @IsDateString()
+  endDate: string;
+
+  @ApiProperty({ enum: LeaveType, description: 'Type of leave' })
+  @IsEnum(LeaveType)
+  leaveType: LeaveType;
+
+  @ApiPropertyOptional({ description: 'Reason for leave' })
+  @IsOptional()
+  @IsString()
+  reason?: string;
+}
+
 export class MonthlyReportQueryDto {
   @ApiProperty({ description: 'Year', example: 2567 })
   @IsNumber()
