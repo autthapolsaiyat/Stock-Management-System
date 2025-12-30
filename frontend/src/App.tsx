@@ -40,6 +40,7 @@ import SettingsPage from './pages/SettingsPage';
 import CheckinPage from './pages/CheckinPage';
 import CheckinAdminPage from './pages/CheckinAdminPage';
 import CheckinReportPage from './pages/CheckinReportPage';
+import BasicProfilePage from './pages/BasicProfilePage';
 import { useAuth } from './contexts/AuthContext';
 
 // Accounting Pages
@@ -161,6 +162,13 @@ const App: React.FC = () => {
       <Route path="/checkin/admin" element={
         <ProtectedRoute>
           <CheckinAdminPage />
+        </ProtectedRoute>
+      } />
+
+      {/* Basic Profile - No Layout (standalone page for BASIC users) */}
+      <Route path="/basic-profile" element={
+        <ProtectedRoute>
+          <BasicProfilePage />
         </ProtectedRoute>
       } />
 

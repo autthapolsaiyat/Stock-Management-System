@@ -95,7 +95,7 @@ const IntroPage = () => {
   const handleLogout = () => { logout(); navigate('/login'); };
 
   const userMenuItems = [
-    { key: 'profile', icon: <UserOutlined />, label: 'โปรไฟล์', onClick: () => navigate('/profile') },
+    { key: 'profile', icon: <UserOutlined />, label: 'โปรไฟล์', onClick: () => navigate(isBasicOnly ? '/basic-profile' : '/profile') },
     ...(!isBasicOnly ? [{ key: 'settings', icon: <SettingOutlined />, label: 'ตั้งค่า', onClick: () => navigate('/settings') }] : []),
     { type: 'divider' as const },
     { key: 'logout', icon: <LogoutOutlined />, label: 'ออกจากระบบ', onClick: handleLogout, danger: true },

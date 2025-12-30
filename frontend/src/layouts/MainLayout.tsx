@@ -67,7 +67,7 @@ const MainLayout: React.FC = () => {
 
   // Redirect BASIC users to intro page
   React.useEffect(() => {
-    if (isBasicOnly && location.pathname !== '/intro' && location.pathname !== '/profile') {
+    if (isBasicOnly && location.pathname !== '/intro' && location.pathname !== '/basic-profile') {
       navigate('/intro');
     }
   }, [isBasicOnly, location.pathname, navigate]);
