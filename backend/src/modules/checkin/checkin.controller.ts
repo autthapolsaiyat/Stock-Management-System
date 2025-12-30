@@ -90,6 +90,13 @@ export class CheckinController {
     return this.checkinService.createBulkLeave(userId, dto);
   }
 
+  @Post('bulk')
+  @ApiOperation({ summary: 'Create checkin records for multiple days (work remote/travel)' })
+  async createBulkCheckin(@Request() req, @Body() dto: any) {
+    const userId = req.user.userId || req.user.id || req.user.sub;
+    return this.checkinService.createBulkCheckin(userId, dto);
+  }
+
   @Put('leave/:id')
   @ApiOperation({ summary: 'Update leave request' })
   async updateLeave(@Param('id') id: number, @Body() dto: UpdateLeaveDto) {

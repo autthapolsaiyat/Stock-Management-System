@@ -246,6 +246,79 @@ export class CheckinService {
     };
   }
 
+  async createBulkCheckin(userId: number, dto: { startDate: string; endDate: string; note?: string }) {
+    const start = new Date(dto.startDate);
+    const end = new Date(dto.endDate);
+    
+    // Validate date range
+    const diffDays = Math.ceil((end.getTime() - start.getTime()) / (1000 * 60 * 60 * 24)) + 1;
+    
+    if (diffDays <= 0) {
+      throw new BadRequestException('วันที่สิ้นสุดต้องมากกว่าหรือเท่ากับวันที่เริ่มต้น');
+    }
+    
+    if (diffDays > 120) {
+      throw new BadRequestException('ไม่สามารถบันทึกได้เกิน 120 วัน');
+    }
+    
+    // Get settings for work hours
+    const clockInTime = await this.getSetting('CHECKIN_CLOCK_IN_TIME', '09:00');
+    const clockOutTime = await this.getSetting('CHECKIN_CLOCK_OUT_TIME', '18:00');
+    
+    const [inHours, inMinutes] = clockInTime.split(':').map(Number);
+    const [outHours, outMinutes] = clockOutTime.split(':').map(Number);
+    
+    // Create checkin records for each day
+    const records: CheckinRecordEntity[] = [];
+    const currentDate = new Date(start);
+    
+    while (currentDate <= end) {
+      const dateStr = currentDate.toISOString().split('T')[0];
+      
+      // Check if already has checkin on this date
+      const existing = await this.checkinRepo.findOne({
+        where: { userId, checkinDate: dateStr as any },
+      });
+      
+      if (!existing) {
+        // Create clock in time
+        const clockIn = new Date(currentDate);
+        clockIn.setHours(inHours, inMinutes, 0, 0);
+        
+        // Create clock out time
+        const clockOut = new Date(currentDate);
+        clockOut.setHours(outHours, outMinutes, 0, 0);
+        
+        const record = this.checkinRepo.create({
+          userId,
+          checkinDate: dateStr as any,
+          clockInTime: clockIn,
+          clockInStatus: CheckinStatus.NORMAL,
+          clockInLateMinutes: 0,
+          clockInNote: dto.note || 'ไปทำงานต่างจังหวัด',
+          clockOutTime: clockOut,
+          clockOutStatus: CheckinStatus.NORMAL,
+          clockOutEarlyMinutes: 0,
+          otHours: 0,
+        });
+        records.push(record);
+      }
+      
+      currentDate.setDate(currentDate.getDate() + 1);
+    }
+    
+    if (records.length === 0) {
+      throw new BadRequestException('ไม่สามารถสร้างรายการได้ (อาจมีการเช็คอินในวันเหล่านี้แล้ว)');
+    }
+    
+    await this.checkinRepo.save(records);
+    
+    return {
+      message: `บันทึกการทำงานต่างจังหวัดสำเร็จ ${records.length} วัน`,
+      totalDays: records.length,
+    };
+  }
+
   async getLeavesByUser(userId: number, year: number, month: number) {
     const startDate = new Date(year, month - 1, 1);
     const endDate = new Date(year, month, 0);

@@ -24,6 +24,16 @@ const LEAVE_TYPES = [
   { value: 'ORDINATION', label: '🙏 ลาอุปสมบท', duration: 'FULL' },
 ];
 
+// Work types for bulk
+const BULK_WORK_TYPES = [
+  { value: 'WORK_REMOTE', label: '🚗 ไปทำงานต่างจังหวัด', isWork: true },
+  { value: 'VACATION', label: '🏖️ ลาพักร้อน', isWork: false },
+  { value: 'PERSONAL', label: '👤 ลากิจส่วนตัว', isWork: false },
+  { value: 'SICK', label: '🏥 ลาป่วย', isWork: false },
+  { value: 'MATERNITY', label: '👶 ลาคลอด', isWork: false },
+  { value: 'ORDINATION', label: '🙏 ลาอุปสมบท', isWork: false },
+];
+
 const HALF_LEAVE_TYPES = [
   { value: 'SICK_HALF_AM', label: '🏥 ลาป่วยครึ่งวัน (เช้า)', leaveType: 'SICK', duration: 'HALF_AM' },
   { value: 'SICK_HALF_PM', label: '🏥 ลาป่วยครึ่งวัน (บ่าย)', leaveType: 'SICK', duration: 'HALF_PM' },
@@ -211,7 +221,7 @@ const CheckinPage: React.FC = () => {
   // Handle bulk leave submission
   const handleSubmitBulkLeave = async () => {
     if (!selectedLeaveType) {
-      message.warning('กรุณาเลือกประเภทการลา');
+      message.warning('กรุณาเลือกประเภท');
       return;
     }
     if (!leaveDateRange || !leaveDateRange[0] || !leaveDateRange[1]) {
@@ -221,14 +231,27 @@ const CheckinPage: React.FC = () => {
 
     setSubmittingLeave(true);
     try {
-      const result = await checkinApi.createBulkLeave({
-        startDate: leaveDateRange[0].format('YYYY-MM-DD'),
-        endDate: leaveDateRange[1].format('YYYY-MM-DD'),
-        leaveType: selectedLeaveType,
-        reason: leaveReason || undefined,
-      });
+      const bulkType = BULK_WORK_TYPES.find(t => t.value === selectedLeaveType);
       
-      message.success(result.data.message || 'บันทึกการลาสำเร็จ');
+      if (bulkType?.isWork) {
+        // ไปทำงานต่างจังหวัด - สร้าง checkin records
+        const result = await checkinApi.createBulkCheckin({
+          startDate: leaveDateRange[0].format('YYYY-MM-DD'),
+          endDate: leaveDateRange[1].format('YYYY-MM-DD'),
+          note: leaveReason || 'ไปทำงานต่างจังหวัด',
+        });
+        message.success(result.data.message || 'บันทึกการทำงานต่างจังหวัดสำเร็จ');
+      } else {
+        // ลาหลายวัน - สร้าง leave records
+        const result = await checkinApi.createBulkLeave({
+          startDate: leaveDateRange[0].format('YYYY-MM-DD'),
+          endDate: leaveDateRange[1].format('YYYY-MM-DD'),
+          leaveType: selectedLeaveType,
+          reason: leaveReason || undefined,
+        });
+        message.success(result.data.message || 'บันทึกการลาสำเร็จ');
+      }
+      
       setShowBulkLeaveModal(false);
       setSelectedLeaveType('');
       setLeaveReason('');
@@ -624,7 +647,7 @@ const CheckinPage: React.FC = () => {
 
       {/* Modal: ลาหลายวัน */}
       <Modal
-        title={<><CalendarOutlined /> ลาหลายวัน</>}
+        title={<><CalendarOutlined /> ไปต่างจังหวัด / ลาหลายวัน</>}
         open={showBulkLeaveModal}
         onCancel={() => {
           setShowBulkLeaveModal(false);
@@ -633,19 +656,19 @@ const CheckinPage: React.FC = () => {
           setLeaveDateRange(null);
         }}
         onOk={handleSubmitBulkLeave}
-        okText="✓ ยืนยันลา"
+        okText="✓ ยืนยัน"
         cancelText="ยกเลิก"
         confirmLoading={submittingLeave}
       >
         <div style={{ padding: '16px 0' }}>
           <div style={{ marginBottom: 16 }}>
-            <Text strong>ประเภทการลา:</Text>
+            <Text strong>ประเภท:</Text>
             <Radio.Group
               value={selectedLeaveType}
               onChange={(e) => setSelectedLeaveType(e.target.value)}
               style={{ display: 'flex', flexDirection: 'column', gap: 8, marginTop: 8 }}
             >
-              {LEAVE_TYPES.map(type => (
+              {BULK_WORK_TYPES.map(type => (
                 <Radio key={type.value} value={type.value}>
                   {type.label}
                 </Radio>
@@ -654,7 +677,7 @@ const CheckinPage: React.FC = () => {
           </div>
           
           <div style={{ marginBottom: 16 }}>
-            <Text strong>ช่วงวันที่ลา:</Text>
+            <Text strong>ช่วงวันที่:</Text>
             <div style={{ marginTop: 8 }}>
               <RangePicker
                 value={leaveDateRange}
@@ -672,7 +695,7 @@ const CheckinPage: React.FC = () => {
           </div>
           
           <div>
-            <Text strong>📝 เหตุผล (ถ้ามี):</Text>
+            <Text strong>📝 หมายเหตุ (ถ้ามี):</Text>
             <TextArea
               value={leaveReason}
               onChange={(e) => setLeaveReason(e.target.value)}

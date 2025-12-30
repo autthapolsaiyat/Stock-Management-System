@@ -509,6 +509,8 @@ export const checkinApi = {
     api.post('/api/checkin/leave', data),
   createBulkLeave: (data: { startDate: string; endDate: string; leaveType: string; reason?: string }) =>
     api.post('/api/checkin/leave/bulk', data),
+  createBulkCheckin: (data: { startDate: string; endDate: string; note?: string }) =>
+    api.post('/api/checkin/bulk', data),
   updateLeave: (id: number, data: any) =>
     api.put(`/api/checkin/leave/${id}`, data),
   deleteLeave: (id: number) =>
