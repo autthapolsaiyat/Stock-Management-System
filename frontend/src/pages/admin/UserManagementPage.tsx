@@ -186,13 +186,16 @@ const UserManagementPage = () => {
     VIEWER: 'default',
   };
 
-  const filteredUsers = users.filter(
-    (user) =>
-      user.username?.toLowerCase().includes(searchText.toLowerCase()) ||
-      user.fullName?.toLowerCase().includes(searchText.toLowerCase()) ||
-      user.nickname?.toLowerCase().includes(searchText.toLowerCase()) ||
-      user.email?.toLowerCase().includes(searchText.toLowerCase())
-  );
+  const filteredUsers = users.filter((user) => {
+    if (!searchText) return true;
+    const search = searchText.toLowerCase();
+    return (
+      user.username?.toLowerCase().includes(search) ||
+      user.fullName?.toLowerCase().includes(search) ||
+      (user.nickname && user.nickname.toLowerCase().includes(search)) ||
+      user.email?.toLowerCase().includes(search)
+    );
+  });
 
   const columns = [
     {
