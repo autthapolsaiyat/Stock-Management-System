@@ -175,7 +175,6 @@ const IntroPage = () => {
 
           {/* Card 2: เช็คอิน */}
           <div onClick={() => navigate('/checkin')} style={cardStyle}>
-            <Badge text="เร็วๆ นี้" gradient="linear-gradient(135deg, #10b981, #059669)" />
             <CardIcon gradient="linear-gradient(135deg, #10b981, #059669)" icon={<EnvironmentOutlined />} />
             <h3 style={{ fontSize: 18, fontWeight: 600, color: darkMode ? '#fff' : '#1f2937', marginBottom: 4, textAlign: 'center' }}>เช็คอิน</h3>
             <p style={{ fontSize: 12, color: darkMode ? 'rgba(255,255,255,0.5)' : '#9ca3af', marginBottom: 16, textAlign: 'center' }}>บันทึกเวลาเข้า-ออกงาน</p>

@@ -63,6 +63,14 @@ const MainLayout: React.FC = () => {
   const salesOnly = isSalesOnly();
   const accountOnly = isAccountOnly();
   const quotationType = getQuotationType();
+  const isBasicOnly = user?.roles?.length === 1 && user?.roles?.includes('BASIC');
+
+  // Redirect BASIC users to intro page
+  React.useEffect(() => {
+    if (isBasicOnly && location.pathname !== '/intro' && location.pathname !== '/profile') {
+      navigate('/intro');
+    }
+  }, [isBasicOnly, location.pathname, navigate]);
 
   // Full menu for admin/manager
   const fullMenuItems = [
