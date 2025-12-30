@@ -49,7 +49,9 @@ const QuotationForm: React.FC = () => {
   const [customerSearchText, setCustomerSearchText] = useState('');
   const [selectedCustomerId, setSelectedCustomerId] = useState<number | null>(null);
   const [customerEditMode, setCustomerEditMode] = useState(false);
+  const [customerCreateMode, setCustomerCreateMode] = useState(false);
   const [editingCustomer, setEditingCustomer] = useState<any>(null);
+  const [newCustomer, setNewCustomer] = useState<any>({});
   const [savingCustomer, setSavingCustomer] = useState(false);
 
   // Product Modal States
@@ -309,6 +311,56 @@ const QuotationForm: React.FC = () => {
     } finally {
       setSavingCustomer(false);
     }
+  };
+
+  // Create new customer
+  const handleCreateCustomer = async () => {
+    if (!newCustomer.code || !newCustomer.name) {
+      message.warning('กรุณากรอกรหัสและชื่อลูกค้า');
+      return;
+    }
+    
+    setSavingCustomer(true);
+    try {
+      const res = await customersApi.create({
+        code: newCustomer.code,
+        name: newCustomer.name,
+        taxId: newCustomer.taxId,
+        phone: newCustomer.phone,
+        email: newCustomer.email,
+        address: newCustomer.address,
+        contactPerson: newCustomer.contactPerson,
+        contactPhone: newCustomer.contactPhone,
+        contactEmail: newCustomer.contactEmail,
+        isActive: true,
+      });
+      
+      // Add to customers list
+      const createdCustomer = res.data;
+      setCustomers([createdCustomer, ...customers]);
+      
+      // Auto-select new customer
+      setSelectedCustomerId(createdCustomer.id);
+      setSelectedCustomer(createdCustomer);
+      form.setFieldsValue({ 
+        customerId: createdCustomer.id,
+        contactPerson: createdCustomer.contactPerson || '',
+      });
+      
+      message.success('สร้างลูกค้าใหม่สำเร็จ');
+      setCustomerCreateMode(false);
+      setNewCustomer({});
+      setCustomerModalOpen(false);
+    } catch (error: any) {
+      message.error(error.response?.data?.message || 'ไม่สามารถสร้างลูกค้าได้');
+    } finally {
+      setSavingCustomer(false);
+    }
+  };
+
+  const openCustomerCreate = () => {
+    setNewCustomer({});
+    setCustomerCreateMode(true);
   };
 
   const isCustomerInfoIncomplete = (customer: any) => {
@@ -1169,25 +1221,111 @@ const QuotationForm: React.FC = () => {
 
       {/* Customer Selection Modal */}
       <Modal
-        title="👤 เลือกลูกค้า"
+        title={customerCreateMode ? "➕ สร้างลูกค้าใหม่" : "👤 เลือกลูกค้า"}
         open={customerModalOpen}
         onCancel={() => {
           if (customerEditMode) {
             setCustomerEditMode(false);
             setEditingCustomer(null);
+          } else if (customerCreateMode) {
+            setCustomerCreateMode(false);
+            setNewCustomer({});
           } else {
             setCustomerModalOpen(false);
             setCustomerSearchText('');
           }
         }}
-        onOk={customerEditMode ? handleSaveCustomerEdit : handleSelectCustomer}
-        okText={customerEditMode ? "💾 บันทึก" : "✓ เลือกลูกค้า"}
-        cancelText={customerEditMode ? "← กลับ" : "ยกเลิก"}
+        onOk={customerCreateMode ? handleCreateCustomer : customerEditMode ? handleSaveCustomerEdit : handleSelectCustomer}
+        okText={customerCreateMode ? "💾 สร้างลูกค้า" : customerEditMode ? "💾 บันทึก" : "✓ เลือกลูกค้า"}
+        cancelText={customerCreateMode || customerEditMode ? "← กลับ" : "ยกเลิก"}
         confirmLoading={savingCustomer}
-        okButtonProps={{ disabled: !customerEditMode && !selectedCustomerId }}
+        okButtonProps={{ disabled: !customerCreateMode && !customerEditMode && !selectedCustomerId }}
         width={650}
       >
-        {customerEditMode && editingCustomer ? (
+        {customerCreateMode ? (
+          // Create Mode
+          <div>
+            <Row gutter={[16, 12]}>
+              <Col span={8}>
+                <div style={{ marginBottom: 4, opacity: 0.7 }}>🏷️ รหัสลูกค้า <span style={{ color: '#ef4444' }}>*</span></div>
+                <Input 
+                  value={newCustomer.code} 
+                  onChange={e => setNewCustomer({...newCustomer, code: e.target.value})}
+                  placeholder="CUS-001"
+                />
+              </Col>
+              <Col span={16}>
+                <div style={{ marginBottom: 4, opacity: 0.7 }}>🏢 ชื่อลูกค้า/บริษัท <span style={{ color: '#ef4444' }}>*</span></div>
+                <Input 
+                  value={newCustomer.name} 
+                  onChange={e => setNewCustomer({...newCustomer, name: e.target.value})}
+                  placeholder="ชื่อบริษัท หรือ ชื่อลูกค้า"
+                />
+              </Col>
+              <Col span={24}>
+                <div style={{ marginBottom: 4, opacity: 0.7 }}>🏢 เลขผู้เสียภาษี</div>
+                <Input 
+                  value={newCustomer.taxId} 
+                  onChange={e => setNewCustomer({...newCustomer, taxId: e.target.value})}
+                  placeholder="0105XXXXXXXXX"
+                  maxLength={13}
+                />
+              </Col>
+              <Col span={12}>
+                <div style={{ marginBottom: 4, opacity: 0.7 }}>📞 เบอร์โทร</div>
+                <Input 
+                  value={newCustomer.phone} 
+                  onChange={e => setNewCustomer({...newCustomer, phone: e.target.value})}
+                  placeholder="02-xxx-xxxx"
+                />
+              </Col>
+              <Col span={12}>
+                <div style={{ marginBottom: 4, opacity: 0.7 }}>📧 อีเมล</div>
+                <Input 
+                  value={newCustomer.email} 
+                  onChange={e => setNewCustomer({...newCustomer, email: e.target.value})}
+                  placeholder="email@company.com"
+                />
+              </Col>
+              <Col span={24}>
+                <div style={{ marginBottom: 4, opacity: 0.7 }}>📍 ที่อยู่</div>
+                <Input.TextArea 
+                  rows={2}
+                  value={newCustomer.address} 
+                  onChange={e => setNewCustomer({...newCustomer, address: e.target.value})}
+                  placeholder="ที่อยู่บริษัท"
+                />
+              </Col>
+              <Col span={24}>
+                <Divider style={{ margin: '8px 0' }}>ผู้ติดต่อ</Divider>
+              </Col>
+              <Col span={8}>
+                <div style={{ marginBottom: 4, opacity: 0.7 }}>👤 ชื่อผู้ติดต่อ</div>
+                <Input 
+                  value={newCustomer.contactPerson} 
+                  onChange={e => setNewCustomer({...newCustomer, contactPerson: e.target.value})}
+                  placeholder="คุณ..."
+                />
+              </Col>
+              <Col span={8}>
+                <div style={{ marginBottom: 4, opacity: 0.7 }}>📞 เบอร์ผู้ติดต่อ</div>
+                <Input 
+                  value={newCustomer.contactPhone} 
+                  onChange={e => setNewCustomer({...newCustomer, contactPhone: e.target.value})}
+                  placeholder="08x-xxx-xxxx"
+                />
+              </Col>
+              <Col span={8}>
+                <div style={{ marginBottom: 4, opacity: 0.7 }}>📧 อีเมลผู้ติดต่อ</div>
+                <Input 
+                  value={newCustomer.contactEmail} 
+                  onChange={e => setNewCustomer({...newCustomer, contactEmail: e.target.value})}
+                  placeholder="contact@company.com"
+                />
+              </Col>
+            </Row>
+          </div>
+        ) : customerEditMode && editingCustomer ? (
           // Edit Mode
           <div>
             <div style={{ marginBottom: 16, fontWeight: 500, fontSize: 16 }}>
@@ -1260,8 +1398,16 @@ const QuotationForm: React.FC = () => {
         ) : (
           // Selection Mode
           <div>
-            <div style={{ marginBottom: 12 }}>
+            <div style={{ marginBottom: 12, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
               <p style={{ margin: 0, opacity: 0.7 }}>เลือกลูกค้าสำหรับใบเสนอราคานี้:</p>
+              <Button 
+                type="link" 
+                icon={<PlusOutlined />} 
+                onClick={openCustomerCreate}
+                style={{ padding: 0 }}
+              >
+                สร้างลูกค้าใหม่
+              </Button>
             </div>
             
             {/* Search Box */}
