@@ -654,7 +654,7 @@ ${record.clockOutNote ? `📝 ${record.clockOutNote}` : ''}${otHours}`;
       checkinRecords: records.map(r => ({
         id: r.id,
         userId: r.userId,
-        userName: r.user ? `${r.user.firstName} ${r.user.lastName}` : 'Unknown',
+        userName: r.user?.fullName || 'Unknown',
         nickname: r.user?.nickname || '',
         clockInTime: r.clockInTime,
         clockOutTime: r.clockOutTime,
@@ -667,7 +667,7 @@ ${record.clockOutNote ? `📝 ${record.clockOutNote}` : ''}${otHours}`;
       leaveRecords: leaves.map(l => ({
         id: l.id,
         userId: l.userId,
-        userName: l.user ? `${l.user.firstName} ${l.user.lastName}` : 'Unknown',
+        userName: l.user?.fullName || 'Unknown',
         nickname: l.user?.nickname || '',
         leaveType: l.leaveType,
         leaveDuration: l.leaveDuration,
