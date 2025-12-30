@@ -165,6 +165,22 @@ export class UserService {
     });
   }
 
+  async createRole(dto: { code: string; name: string; description?: string }) {
+    const existing = await this.roleRepository.findOne({ where: { code: dto.code } });
+    if (existing) {
+      throw new ConflictException('Role code already exists');
+    }
+    
+    const role = this.roleRepository.create({
+      code: dto.code,
+      name: dto.name,
+      description: dto.description,
+      isActive: true,
+    });
+    
+    return this.roleRepository.save(role);
+  }
+
   async updateRolesByCodes(userId: number, roleCodes: string[], ctx?: AuditContext) {
     await this.findOne(userId);
     
