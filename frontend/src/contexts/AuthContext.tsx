@@ -63,7 +63,7 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
         icon: null,
         content: (
           <div style={{ marginTop: 16 }}>
-            <p style={{ fontSize: 15, marginBottom: 16 }}>
+            <p style={{ fontSize: 15, marginBottom: 16, color: '#ff6b6b' }}>
               บัญชีของคุณถูกใช้งานจากอุปกรณ์ใหม่ ระบบจึงทำการออกจากระบบโดยอัตโนมัติ
             </p>
             {details?.details && (
@@ -94,11 +94,11 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
             <div style={{ 
               marginTop: 16, 
               padding: 12, 
-              backgroundColor: 'rgba(255, 77, 79, 0.15)', 
+              backgroundColor: 'rgba(250, 173, 20, 0.2)', 
               borderRadius: 8,
-              border: '1px solid #ff4d4f',
+              border: '1px solid #faad14',
               fontSize: 14,
-              color: '#ff4d4f',
+              color: '#faad14',
             }}>
               ⚠️ หากไม่ใช่คุณ กรุณาเปลี่ยนรหัสผ่านทันที
             </div>
