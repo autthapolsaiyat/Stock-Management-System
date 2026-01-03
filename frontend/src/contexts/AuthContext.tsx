@@ -2,7 +2,6 @@ import React, { createContext, useContext, useState, useEffect, ReactNode } from
 import { authApi, SESSION_EXPIRED_EVENT } from '../services/api';
 import { message, Modal } from 'antd';
 
-
 interface User {
   id: number;
   username: string;
@@ -57,7 +56,7 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
       
       Modal.warning({
         title: (
-          <span style={{ fontSize: 18, fontWeight: 600 }}>
+          <span style={{ fontSize: 18, fontWeight: 600, color: '#faad14' }}>
             ⚠️ มีการเข้าสู่ระบบจากอุปกรณ์อื่น
           </span>
         ),
@@ -70,22 +69,22 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
             {details?.details && (
               <div style={{ 
                 padding: 16, 
-                backgroundColor: '#f8f9fa', 
+                backgroundColor: 'rgba(255,255,255,0.1)', 
                 borderRadius: 8,
-                border: '1px solid #e9ecef',
+                border: '1px solid rgba(255,255,255,0.2)',
                 fontSize: 14,
               }}>
                 <div style={{ marginBottom: 8 }}>
-                  <strong>📅 เวลา:</strong> {formatThaiDateTime(details.details.loginTime)}
+                  📅 <strong>เวลา:</strong> {formatThaiDateTime(details.details.loginTime)}
                 </div>
                 {details.details.deviceInfo && (
                   <>
                     <div style={{ marginBottom: 8 }}>
-                      <strong>💻 อุปกรณ์:</strong> {details.details.deviceInfo.browser} บน {details.details.deviceInfo.os}
+                      💻 <strong>อุปกรณ์:</strong> {details.details.deviceInfo.browser} บน {details.details.deviceInfo.os}
                     </div>
                     {details.details.deviceInfo.ip && (
                       <div>
-                        <strong>🌐 IP:</strong> {details.details.deviceInfo.ip}
+                        🌐 <strong>IP:</strong> {details.details.deviceInfo.ip}
                       </div>
                     )}
                   </>
@@ -95,10 +94,11 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
             <div style={{ 
               marginTop: 16, 
               padding: 12, 
-              backgroundColor: '#fff3cd', 
+              backgroundColor: 'rgba(250, 173, 20, 0.2)', 
               borderRadius: 8,
-              border: '1px solid #ffc107',
+              border: '1px solid #faad14',
               fontSize: 14,
+              color: '#faad14',
             }}>
               ⚠️ หากไม่ใช่คุณ กรุณาเปลี่ยนรหัสผ่านทันที
             </div>
