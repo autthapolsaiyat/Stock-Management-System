@@ -94,11 +94,11 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
             <div style={{ 
               marginTop: 16, 
               padding: 12, 
-              backgroundColor: 'rgba(250, 173, 20, 0.2)', 
+              backgroundColor: 'rgba(255, 77, 79, 0.15)', 
               borderRadius: 8,
-              border: '1px solid #faad14',
+              border: '1px solid #ff4d4f',
               fontSize: 14,
-              color: '#faad14',
+              color: '#ff4d4f',
             }}>
               ⚠️ หากไม่ใช่คุณ กรุณาเปลี่ยนรหัสผ่านทันที
             </div>
