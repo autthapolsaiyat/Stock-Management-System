@@ -94,10 +94,20 @@ export class CheckinSettingsDto {
   @IsNumber()
   gracePeriodMinutes?: number;
 
-  @ApiPropertyOptional({ description: 'LINE Notify Token' })
+  @ApiPropertyOptional({ description: 'LINE Notify Token (legacy)' })
   @IsOptional()
   @IsString()
   lineNotifyToken?: string;
+
+  @ApiPropertyOptional({ description: 'LINE Channel Access Token' })
+  @IsOptional()
+  @IsString()
+  lineChannelAccessToken?: string;
+
+  @ApiPropertyOptional({ description: 'LINE Group ID or User ID' })
+  @IsOptional()
+  @IsString()
+  lineGroupId?: string;
 
   @ApiPropertyOptional({ description: 'Notify on check-in' })
   @IsOptional()

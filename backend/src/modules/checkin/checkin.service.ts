@@ -531,6 +531,8 @@ export class CheckinService {
       'CHECKIN_CLOCK_OUT_TIME',
       'CHECKIN_GRACE_PERIOD',
       'CHECKIN_LINE_TOKEN',
+      'CHECKIN_LINE_CHANNEL_ACCESS_TOKEN',
+      'CHECKIN_LINE_GROUP_ID',
       'CHECKIN_NOTIFY_ON_CHECKIN',
       'CHECKIN_NOTIFY_ON_CHECKOUT',
       'CHECKIN_NOTIFY_ON_LATE',
@@ -548,6 +550,8 @@ export class CheckinService {
       clockOutTime: settings.CHECKIN_CLOCK_OUT_TIME || '18:00',
       gracePeriodMinutes: parseInt(settings.CHECKIN_GRACE_PERIOD) || 15,
       lineNotifyToken: settings.CHECKIN_LINE_TOKEN || '',
+      lineChannelAccessToken: settings.CHECKIN_LINE_CHANNEL_ACCESS_TOKEN || '',
+      lineGroupId: settings.CHECKIN_LINE_GROUP_ID || '',
       notifyOnCheckin: settings.CHECKIN_NOTIFY_ON_CHECKIN !== 'false',
       notifyOnCheckout: settings.CHECKIN_NOTIFY_ON_CHECKOUT !== 'false',
       notifyOnLate: settings.CHECKIN_NOTIFY_ON_LATE !== 'false',
@@ -562,6 +566,8 @@ export class CheckinService {
       { key: 'CHECKIN_CLOCK_OUT_TIME', value: dto.clockOutTime },
       { key: 'CHECKIN_GRACE_PERIOD', value: dto.gracePeriodMinutes?.toString() },
       { key: 'CHECKIN_LINE_TOKEN', value: dto.lineNotifyToken },
+      { key: 'CHECKIN_LINE_CHANNEL_ACCESS_TOKEN', value: dto.lineChannelAccessToken },
+      { key: 'CHECKIN_LINE_GROUP_ID', value: dto.lineGroupId },
       { key: 'CHECKIN_NOTIFY_ON_CHECKIN', value: dto.notifyOnCheckin?.toString() },
       { key: 'CHECKIN_NOTIFY_ON_CHECKOUT', value: dto.notifyOnCheckout?.toString() },
       { key: 'CHECKIN_NOTIFY_ON_LATE', value: dto.notifyOnLate?.toString() },
@@ -579,6 +585,32 @@ export class CheckinService {
   // ==================== LINE NOTIFY ====================
 
   async sendLineNotify(message: string) {
+    // Try LINE Messaging API first
+    const channelAccessToken = await this.getSetting('CHECKIN_LINE_CHANNEL_ACCESS_TOKEN', '');
+    const groupId = await this.getSetting('CHECKIN_LINE_GROUP_ID', '');
+    
+    if (channelAccessToken && groupId) {
+      try {
+        await axios.post(
+          'https://api.line.me/v2/bot/message/push',
+          {
+            to: groupId,
+            messages: [{ type: 'text', text: message }],
+          },
+          {
+            headers: {
+              'Content-Type': 'application/json',
+              'Authorization': `Bearer ${channelAccessToken}`,
+            },
+          },
+        );
+        return;
+      } catch (error) {
+        console.error('LINE Messaging API error:', error.response?.data || error.message);
+      }
+    }
+
+    // Fallback to LINE Notify (legacy)
     const token = await this.getSetting('CHECKIN_LINE_TOKEN', '');
     if (!token) return;
 

@@ -80,6 +80,8 @@ const CheckinAdminPage: React.FC = () => {
         clockOutTime: values.clockOutTime?.format('HH:mm'),
         gracePeriodMinutes: values.gracePeriodMinutes,
         lineNotifyToken: values.lineNotifyToken,
+        lineChannelAccessToken: values.lineChannelAccessToken,
+        lineGroupId: values.lineGroupId,
         notifyOnCheckin: values.notifyOnCheckin,
         notifyOnCheckout: values.notifyOnCheckout,
         notifyOnLate: values.notifyOnLate,
@@ -352,11 +354,46 @@ const CheckinAdminPage: React.FC = () => {
 
         {/* LINE Notify Settings */}
         <Card 
-          title={<><MessageOutlined /> ตั้งค่า LINE Notify</>}
+          title={<><MessageOutlined /> ตั้งค่า LINE แจ้งเตือน</>}
           style={{ marginBottom: 24 }}
           className="card-holo"
           loading={loading}
         >
+          <Title level={5}>🤖 LINE Messaging API (แนะนำ)</Title>
+          <Text type="secondary" style={{ display: 'block', marginBottom: 16 }}>
+            ใช้ส่งข้อความไปยังกลุ่ม LINE หรือ User ID โดยตรง
+          </Text>
+          
+          <Form.Item
+            label="Channel Access Token"
+            name="lineChannelAccessToken"
+            tooltip="รับ Token จาก LINE Developers Console"
+          >
+            <Input.Password 
+              placeholder="Channel Access Token จาก LINE Developers" 
+              size="large"
+            />
+          </Form.Item>
+
+          <Form.Item
+            label="Group ID / User ID"
+            name="lineGroupId"
+            tooltip="ID ของกลุ่ม LINE หรือ User ที่ต้องการส่งข้อความ"
+            extra="ใช้ Group ID เพื่อส่งไปกลุ่ม หรือ User ID เพื่อส่งไปส่วนตัว"
+          >
+            <Input 
+              placeholder="Uxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx หรือ Cxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx" 
+              size="large"
+            />
+          </Form.Item>
+
+          <Divider />
+
+          <Title level={5}>📢 LINE Notify (Legacy)</Title>
+          <Text type="secondary" style={{ display: 'block', marginBottom: 16 }}>
+            ใช้สำหรับส่งแจ้งเตือนแบบเดิม (ถ้าไม่ได้ตั้ง Messaging API)
+          </Text>
+
           <Form.Item
             label="LINE Notify Token"
             name="lineNotifyToken"
