@@ -35,7 +35,7 @@ export class UserEntity {
   isActive: boolean;
 
   @Column({ name: 'quotation_type', nullable: true })
-  quotationType: string; // STANDARD, FORENSIC, MAINTENANCE, null = all
+  quotationType: string;
 
   @Column({ name: 'customer_group_id', nullable: true })
   customerGroupId: number;
@@ -46,6 +46,19 @@ export class UserEntity {
 
   @Column({ name: 'last_login_at', nullable: true })
   lastLoginAt: Date;
+
+  // Session Management Fields
+  @Column({ name: 'session_token', nullable: true })
+  sessionToken: string;
+
+  @Column({ name: 'session_device_info', nullable: true })
+  sessionDeviceInfo: string;
+
+  @Column({ name: 'session_created_at', nullable: true })
+  sessionCreatedAt: Date;
+
+  @Column({ name: 'allow_multiple_sessions', default: false })
+  allowMultipleSessions: boolean;
 
   @CreateDateColumn({ name: 'created_at' })
   createdAt: Date;

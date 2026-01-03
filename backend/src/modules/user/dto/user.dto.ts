@@ -34,6 +34,11 @@ export class CreateUserDto {
   @ApiPropertyOptional()
   @IsOptional()
   isActive?: boolean;
+
+  @ApiPropertyOptional({ example: false })
+  @IsBoolean()
+  @IsOptional()
+  allowMultipleSessions?: boolean;
 }
 
 export class UpdateUserDto {
@@ -67,4 +72,9 @@ export class UpdateUserDto {
   @ApiPropertyOptional()
   @IsOptional()
   isActive?: boolean;
+
+  @ApiPropertyOptional({ example: false })
+  @IsBoolean()
+  @IsOptional()
+  allowMultipleSessions?: boolean;
 }

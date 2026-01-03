@@ -75,6 +75,18 @@ export class UserController {
     return this.userService.toggleActive(id, getAuditContext(req));
   }
 
+  @Put(':id/toggle-multiple-sessions')
+  @ApiOperation({ summary: 'Toggle allow multiple sessions' })
+  toggleMultipleSessions(@Param('id', ParseIntPipe) id: number, @Req() req: any) {
+    return this.userService.toggleMultipleSessions(id, getAuditContext(req));
+  }
+
+  @Post(':id/force-logout')
+  @ApiOperation({ summary: 'Force logout user' })
+  forceLogout(@Param('id', ParseIntPipe) id: number, @Req() req: any) {
+    return this.userService.forceLogout(id, getAuditContext(req));
+  }
+
   @Delete(':id')
   @ApiOperation({ summary: 'Delete user' })
   delete(@Param('id', ParseIntPipe) id: number, @Req() req: any) {

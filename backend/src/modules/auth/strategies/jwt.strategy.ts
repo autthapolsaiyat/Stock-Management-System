@@ -22,6 +22,10 @@ export class JwtStrategy extends PassportStrategy(Strategy) {
     if (!user) {
       throw new UnauthorizedException();
     }
+
+    // Validate session (single session check)
+    await this.authService.validateSession(payload);
+
     return { ...payload, userId: payload.sub };
   }
 }

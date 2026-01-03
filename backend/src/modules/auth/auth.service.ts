@@ -1,8 +1,9 @@
-import { Injectable, UnauthorizedException, BadRequestException } from '@nestjs/common';
+import { Injectable, UnauthorizedException, BadRequestException, ForbiddenException } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import * as bcrypt from 'bcryptjs';
+import { v4 as uuidv4 } from 'uuid';
 import { UserEntity } from '../user/entities/user.entity';
 import { LoginDto } from './dto/login.dto';
 
@@ -14,7 +15,7 @@ export class AuthService {
     private jwtService: JwtService,
   ) {}
 
-  async login(dto: LoginDto) {
+  async login(dto: LoginDto, deviceInfo?: { browser?: string; os?: string; ip?: string; userAgent?: string }) {
     const user = await this.userRepository.findOne({
       where: { username: dto.username, isActive: true },
       relations: ['userRoles', 'userRoles.role', 'userRoles.role.rolePermissions', 'userRoles.role.rolePermissions.permission', 'customerGroup'],
@@ -24,7 +25,16 @@ export class AuthService {
       throw new UnauthorizedException('Invalid credentials');
     }
 
-    await this.userRepository.update(user.id, { lastLoginAt: new Date() });
+    // Generate new session token
+    const sessionToken = uuidv4();
+
+    // Update session info
+    await this.userRepository.update(user.id, { 
+      lastLoginAt: new Date(),
+      sessionToken: sessionToken,
+      sessionDeviceInfo: deviceInfo ? JSON.stringify(deviceInfo) : null,
+      sessionCreatedAt: new Date(),
+    });
 
     const roles = user.userRoles.map(ur => ur.role.code);
     const permissions = [...new Set(
@@ -38,6 +48,7 @@ export class AuthService {
       permissions,
       quotationType: user.quotationType,
       customerGroupId: user.customerGroupId,
+      sessionToken: sessionToken,
     };
     
     return {
@@ -83,6 +94,53 @@ export class AuthService {
   async validateUser(payload: any): Promise<UserEntity | null> {
     return this.userRepository.findOne({
       where: { id: payload.sub, isActive: true },
+    });
+  }
+
+  async validateSession(payload: any): Promise<boolean> {
+    const user = await this.userRepository.findOne({
+      where: { id: payload.sub, isActive: true },
+    });
+
+    if (!user) {
+      throw new UnauthorizedException('User not found');
+    }
+
+    // If user allows multiple sessions, always valid
+    if (user.allowMultipleSessions) {
+      return true;
+    }
+
+    // Check if session token matches
+    if (user.sessionToken && payload.sessionToken !== user.sessionToken) {
+      let deviceInfo = null;
+      if (user.sessionDeviceInfo) {
+        try {
+          deviceInfo = JSON.parse(user.sessionDeviceInfo);
+        } catch (e) {
+          deviceInfo = null;
+        }
+      }
+
+      throw new ForbiddenException({
+        statusCode: 403,
+        error: 'SESSION_EXPIRED',
+        message: 'บัญชีของคุณถูกเข้าสู่ระบบจากอุปกรณ์อื่น',
+        details: {
+          loginTime: user.sessionCreatedAt,
+          deviceInfo: deviceInfo,
+        },
+      });
+    }
+
+    return true;
+  }
+
+  async logout(userId: number): Promise<void> {
+    await this.userRepository.update(userId, {
+      sessionToken: null,
+      sessionDeviceInfo: null,
+      sessionCreatedAt: null,
     });
   }
 }

@@ -45,6 +45,8 @@ export class UserService {
       nickname: user.nickname,
       email: user.email,
       isActive: user.isActive,
+      allowMultipleSessions: user.allowMultipleSessions,
+      sessionCreatedAt: user.sessionCreatedAt,
       roles: user.userRoles?.map(ur => ur.role?.code).filter(Boolean) || [],
       createdAt: user.createdAt,
     }));
@@ -71,6 +73,7 @@ export class UserService {
       nickname: dto.nickname,
       email: dto.email,
       isActive: true,
+      allowMultipleSessions: dto.allowMultipleSessions || false,
     });
 
     const savedUser = await this.userRepository.save(user);
@@ -79,7 +82,6 @@ export class UserService {
       await this.assignRoles(savedUser.id, dto.roleIds);
     }
     
-    // Audit Log
     if (ctx) {
       await this.auditLogService.log({
         module: 'USER',
@@ -105,6 +107,7 @@ export class UserService {
     if (dto.email !== undefined) user.email = dto.email;
     if (dto.isActive !== undefined) user.isActive = dto.isActive;
     if (dto.password) user.passwordHash = await bcrypt.hash(dto.password, 10);
+    if (dto.allowMultipleSessions !== undefined) user.allowMultipleSessions = dto.allowMultipleSessions;
 
     await this.userRepository.save(user);
 
@@ -112,7 +115,6 @@ export class UserService {
       await this.assignRoles(id, dto.roleIds);
     }
     
-    // Audit Log
     if (ctx) {
       await this.auditLogService.log({
         module: 'USER',
@@ -123,7 +125,7 @@ export class UserService {
         userName: ctx.userName,
         ipAddress: ctx.ipAddress,
         userAgent: ctx.userAgent,
-        details: { fullName: user.fullName, nickname: user.nickname, isActive: user.isActive },
+        details: { fullName: user.fullName, nickname: user.nickname, isActive: user.isActive, allowMultipleSessions: user.allowMultipleSessions },
       });
     }
 
@@ -134,7 +136,6 @@ export class UserService {
     const user = await this.findOne(id);
     user.isActive = false;
     
-    // Audit Log
     if (ctx) {
       await this.auditLogService.log({
         module: 'USER',
@@ -195,7 +196,6 @@ export class UserService {
     );
     await this.userRoleRepository.save(userRoles);
     
-    // Audit Log
     if (ctx) {
       await this.auditLogService.log({
         module: 'USER',
@@ -217,7 +217,6 @@ export class UserService {
     user.passwordHash = await bcrypt.hash(newPassword, 10);
     await this.userRepository.save(user);
     
-    // Audit Log
     if (ctx) {
       await this.auditLogService.log({
         module: 'USER',
@@ -239,7 +238,6 @@ export class UserService {
     user.isActive = !user.isActive;
     await this.userRepository.save(user);
     
-    // Audit Log
     if (ctx) {
       await this.auditLogService.log({
         module: 'USER',
@@ -254,5 +252,55 @@ export class UserService {
     }
     
     return { message: `User ${user.isActive ? 'activated' : 'deactivated'} successfully` };
+  }
+
+  async forceLogout(userId: number, ctx?: AuditContext) {
+    const user = await this.findOne(userId);
+    
+    await this.userRepository.update(userId, {
+      sessionToken: null,
+      sessionDeviceInfo: null,
+      sessionCreatedAt: null,
+    });
+    
+    if (ctx) {
+      await this.auditLogService.log({
+        module: 'USER',
+        action: 'FORCE_LOGOUT',
+        documentId: userId,
+        documentNo: user.username,
+        userId: ctx.userId,
+        userName: ctx.userName,
+        ipAddress: ctx.ipAddress,
+        userAgent: ctx.userAgent,
+      });
+    }
+    
+    return { message: 'บังคับออกจากระบบสำเร็จ' };
+  }
+
+  async toggleMultipleSessions(userId: number, ctx?: AuditContext) {
+    const user = await this.findOne(userId);
+    user.allowMultipleSessions = !user.allowMultipleSessions;
+    await this.userRepository.save(user);
+    
+    if (ctx) {
+      await this.auditLogService.log({
+        module: 'USER',
+        action: 'TOGGLE_MULTIPLE_SESSIONS',
+        documentId: userId,
+        documentNo: user.username,
+        userId: ctx.userId,
+        userName: ctx.userName,
+        ipAddress: ctx.ipAddress,
+        userAgent: ctx.userAgent,
+        details: { allowMultipleSessions: user.allowMultipleSessions },
+      });
+    }
+    
+    return { 
+      message: user.allowMultipleSessions ? 'อนุญาตให้เข้าหลายเครื่องแล้ว' : 'จำกัดเครื่องเดียวแล้ว',
+      allowMultipleSessions: user.allowMultipleSessions,
+    };
   }
 }
