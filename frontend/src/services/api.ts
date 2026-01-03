@@ -472,3 +472,44 @@ export const checkinApi = {
 };
 
 export default api;
+
+// Upload API
+export const uploadApi = {
+  uploadImage: (file: FormData) => api.post('/api/upload/image', file, {
+    headers: { 'Content-Type': 'multipart/form-data' },
+  }),
+  uploadFile: (file: FormData) => api.post('/api/upload/file', file, {
+    headers: { 'Content-Type': 'multipart/form-data' },
+  }),
+};
+
+// User Settings API
+export const userSettingsApi = {
+  get: () => api.get('/api/user-settings'),
+  update: (data: any) => api.put('/api/user-settings', data),
+  getByKey: (key: string) => api.get(`/api/user-settings/key/${key}`),
+  updateByKey: (key: string, value: any) => api.put(`/api/user-settings/key/${key}`, { value }),
+};
+
+// Aliases for plural names
+export const stockCountsApi = stockCountApi;
+export const stockAdjustmentsApi = stockAdjustmentApi;
+export const stockIssuesApi = stockIssueApi;
+export const stockTransfersApi = stockTransferApi;
+export const journalEntriesApi = journalEntryApi;
+export const paymentReceiptsApi = paymentReceiptApi;
+export const paymentVouchersApi = paymentVoucherApi;
+export const bankAccountsApi = bankAccountApi;
+export const auditLogsApi = auditLogApi;
+
+// Extended quotationsApi
+quotationsApi.send = (id: number) => api.post(`/api/quotations/${id}/send`);
+quotationsApi.confirm = (id: number) => api.post(`/api/quotations/${id}/confirm`);
+quotationsApi.createRevision = (id: number, data: any) => api.post(`/api/quotations/${id}/revision`, data);
+quotationsApi.submitForApproval = (id: number) => api.post(`/api/quotations/${id}/submit`);
+
+// Extended salesInvoicesApi
+salesInvoicesApi.createCreditNote = (id: number, data: any) => api.post(`/api/sales-invoices/${id}/credit-note`, data);
+
+// Extended chartOfAccountsApi
+chartOfAccountsApi.initialize = () => api.post('/api/accounting/chart-of-accounts/initialize');
