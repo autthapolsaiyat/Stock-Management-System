@@ -1,7 +1,7 @@
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
 import { authApi, SESSION_EXPIRED_EVENT } from '../services/api';
 import { message, Modal } from 'antd';
-import { ExclamationCircleOutlined } from '@ant-design/icons';
+import { WarningOutlined } from '@ant-design/icons';
 
 interface User {
   id: number;
@@ -55,46 +55,61 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     const handleSessionExpired = (event: CustomEvent<any>) => {
       const details = event.detail;
       
-      Modal.error({
-        title: '⚠️ บัญชีของคุณถูกเข้าสู่ระบบจากอุปกรณ์อื่น',
-        icon: <ExclamationCircleOutlined />,
+      Modal.warning({
+        title: (
+          <span style={{ fontSize: 18, fontWeight: 600 }}>
+            ⚠️ มีการเข้าสู่ระบบจากอุปกรณ์อื่น
+          </span>
+        ),
+        icon: null,
         content: (
           <div style={{ marginTop: 16 }}>
-            <p>{details?.message || 'กรุณาเข้าสู่ระบบใหม่อีกครั้ง'}</p>
+            <p style={{ fontSize: 15, marginBottom: 16 }}>
+              บัญชีของคุณถูกใช้งานจากอุปกรณ์ใหม่ ระบบจึงทำการออกจากระบบโดยอัตโนมัติ
+            </p>
             {details?.details && (
               <div style={{ 
-                marginTop: 12, 
-                padding: 12, 
-                backgroundColor: '#f5f5f5', 
+                padding: 16, 
+                backgroundColor: '#f8f9fa', 
                 borderRadius: 8,
-                fontSize: 13,
+                border: '1px solid #e9ecef',
+                fontSize: 14,
               }}>
-                <p style={{ margin: '4px 0' }}>
-                  <strong>เวลา:</strong> {formatThaiDateTime(details.details.loginTime)}
-                </p>
+                <div style={{ marginBottom: 8 }}>
+                  <strong>📅 เวลา:</strong> {formatThaiDateTime(details.details.loginTime)}
+                </div>
                 {details.details.deviceInfo && (
                   <>
-                    <p style={{ margin: '4px 0' }}>
-                      <strong>อุปกรณ์:</strong> {details.details.deviceInfo.browser} บน {details.details.deviceInfo.os}
-                    </p>
+                    <div style={{ marginBottom: 8 }}>
+                      <strong>💻 อุปกรณ์:</strong> {details.details.deviceInfo.browser} บน {details.details.deviceInfo.os}
+                    </div>
                     {details.details.deviceInfo.ip && (
-                      <p style={{ margin: '4px 0' }}>
-                        <strong>IP:</strong> {details.details.deviceInfo.ip}
-                      </p>
+                      <div>
+                        <strong>🌐 IP:</strong> {details.details.deviceInfo.ip}
+                      </div>
                     )}
                   </>
                 )}
               </div>
             )}
-            <p style={{ marginTop: 16, color: '#ff4d4f' }}>
-              หากไม่ใช่คุณ กรุณาเปลี่ยนรหัสผ่านทันที
-            </p>
+            <div style={{ 
+              marginTop: 16, 
+              padding: 12, 
+              backgroundColor: '#fff3cd', 
+              borderRadius: 8,
+              border: '1px solid #ffc107',
+              fontSize: 14,
+            }}>
+              ⚠️ หากไม่ใช่คุณ กรุณาเปลี่ยนรหัสผ่านทันที
+            </div>
           </div>
         ),
         okText: 'เข้าสู่ระบบใหม่',
         onOk: () => {
           window.location.href = '/login';
         },
+        centered: true,
+        width: 450,
       });
       
       setToken(null);
