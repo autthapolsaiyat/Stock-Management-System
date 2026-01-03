@@ -7,6 +7,20 @@ import { ClockInDto, ClockOutDto, CreateLeaveDto, UpdateLeaveDto, CheckinSetting
 import { SystemSettingsService } from '../system-settings/system-settings.service';
 import axios from 'axios';
 
+// Helper function for Bangkok timezone
+function getBangkokDate(): Date {
+  const now = new Date();
+  const bangkokOffset = 7 * 60;
+  const utcOffset = now.getTimezoneOffset();
+  const bangkokTime = new Date(now.getTime() + (bangkokOffset + utcOffset) * 60 * 1000);
+  return bangkokTime;
+}
+
+function getBangkokDateString(): string {
+  const bangkokDate = getBangkokDate();
+  return bangkokDate.toISOString().split('T')[0];
+}
+
 @Injectable()
 export class CheckinService {
   constructor(
@@ -20,8 +34,8 @@ export class CheckinService {
   // ==================== CLOCK IN/OUT ====================
 
   async clockIn(userId: number, dto: ClockInDto) {
-    const today = new Date();
-    const dateStr = today.toISOString().split('T')[0];
+    const today = getBangkokDate();
+    const dateStr = getBangkokDateString(); // today.toISOString().split('T')[0];
 
     // Check if already clocked in today
     let record = await this.checkinRepo.findOne({
@@ -70,8 +84,8 @@ export class CheckinService {
   }
 
   async clockOut(userId: number, dto: ClockOutDto) {
-    const today = new Date();
-    const dateStr = today.toISOString().split('T')[0];
+    const today = getBangkokDate();
+    const dateStr = getBangkokDateString(); // today.toISOString().split('T')[0];
 
     // Check if clocked in today
     const record = await this.checkinRepo.findOne({
@@ -121,8 +135,8 @@ export class CheckinService {
   }
 
   async getTodayStatus(userId: number) {
-    const today = new Date();
-    const dateStr = today.toISOString().split('T')[0];
+    const today = getBangkokDate();
+    const dateStr = getBangkokDateString(); // today.toISOString().split('T')[0];
 
     const record = await this.checkinRepo.findOne({
       where: { userId, checkinDate: dateStr as any },
