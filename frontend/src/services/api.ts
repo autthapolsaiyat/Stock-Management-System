@@ -2,6 +2,14 @@ import axios from 'axios';
 
 const API_URL = 'https://svs-stock-api.azurewebsites.net';
 
+// Session expired event
+export const SESSION_EXPIRED_EVENT = 'session-expired';
+
+export const dispatchSessionExpired = (details?: any) => {
+  const event = new CustomEvent(SESSION_EXPIRED_EVENT, { detail: details });
+  window.dispatchEvent(event);
+};
+
 const api = axios.create({
   baseURL: API_URL,
   headers: { 'Content-Type': 'application/json' },
@@ -19,11 +27,21 @@ api.interceptors.request.use(
 api.interceptors.response.use(
   (response) => response,
   (error) => {
+    // Handle 401 Unauthorized
     if (error.response?.status === 401) {
       localStorage.removeItem('token');
       localStorage.removeItem('user');
       window.location.href = '/login';
     }
+    
+    // Handle 403 SESSION_EXPIRED
+    if (error.response?.status === 403 && error.response?.data?.error === 'SESSION_EXPIRED') {
+      dispatchSessionExpired(error.response.data);
+      localStorage.removeItem('token');
+      localStorage.removeItem('user');
+      return Promise.reject(error);
+    }
+    
     return Promise.reject(error);
   }
 );
@@ -31,6 +49,9 @@ api.interceptors.response.use(
 // Auth API
 export const authApi = {
   login: (username: string, password: string) => api.post('/api/auth/login', { username, password }),
+  logout: () => api.post('/api/auth/logout'),
+  changePassword: (currentPassword: string, newPassword: string) => 
+    api.put('/api/auth/change-password', { currentPassword, newPassword }),
 };
 
 // Users API
@@ -41,6 +62,8 @@ export const usersApi = {
   create: (data: any) => api.post('/api/users', data),
   update: (id: number, data: any) => api.put(`/api/users/${id}`, data),
   delete: (id: number) => api.delete(`/api/users/${id}`),
+  forceLogout: (id: number) => api.post(`/api/users/${id}/force-logout`),
+  toggleMultipleSessions: (id: number) => api.put(`/api/users/${id}/toggle-multiple-sessions`),
 };
 
 // Products API
@@ -56,7 +79,6 @@ export const productsApi = {
   updateCategory: (id: number, data: any) => api.put(`/api/categories/${id}`, data),
   deleteCategory: (id: number) => api.delete(`/api/categories/${id}`),
   getUnits: () => api.get('/api/products/units'),
-  // NEW: Price History API
   getPriceHistory: () => api.get('/api/products/price-history'),
   getProductPriceHistory: (id: number) => api.get(`/api/products/${id}/price-history`),
 };
@@ -121,7 +143,7 @@ export const stockApi = {
   getMovements: (productId: number) => api.get(`/api/stock/movements/${productId}`),
 };
 
-// Stock Balance API (for reporting)
+// Stock Balance API
 export const stockBalanceApi = {
   getAll: (params?: { warehouse_id?: number }) => 
     api.get('/api/stock/balance', { params: { warehouseId: params?.warehouse_id } }),
@@ -134,7 +156,6 @@ export const systemSettingsApi = {
   getByKey: (key: string) => api.get(`/api/system-settings/key/${key}`),
   update: (key: string, value: any) => api.put(`/api/system-settings/key/${key}`, { value }),
   updateBulk: (settings: { key: string; value: any }[]) => api.put('/api/system-settings/bulk', { settings }),
-  // Public endpoint - ไม่ต้อง login
   getPublicBranding: () => api.get('/api/system-settings/public/branding'),
 };
 
@@ -161,7 +182,7 @@ export const goodsReceiptsApi = {
   post: (id: number) => api.post(`/api/goods-receipts/${id}/post`),
   cancel: (id: number) => api.post(`/api/goods-receipts/${id}/cancel`),
   getByQuotation: (quotationId: number) => api.get(`/api/goods-receipts/quotation/${quotationId}`),
-  reverse: (id: number, reason: string) => api.post("/api/goods-receipts/" + id + "/reverse", { reason }),
+  reverse: (id: number, reason: string) => api.post(`/api/goods-receipts/${id}/reverse`, { reason }),
   createFromPO: (poId: number, data?: any) => api.post(`/api/goods-receipts/from-po/${poId}`, data),
 };
 
@@ -174,198 +195,134 @@ export const salesInvoicesApi = {
   cancel: (id: number) => api.post(`/api/sales-invoices/${id}/cancel`),
   createFromQuotation: (quotationId: number) => api.post(`/api/sales-invoices/from-quotation/${quotationId}`),
   getByQuotation: (quotationId: number) => api.get(`/api/sales-invoices/quotation/${quotationId}`),
-  markPaid: (id: number, data: any) => api.post("/api/sales-invoices/" + id + "/mark-paid", data),
-  createCreditNote: (id: number, reason: string) => api.post("/api/sales-invoices/" + id + "/credit-note", { reason }),
+  markPaid: (id: number, data: any) => api.post(`/api/sales-invoices/${id}/mark-paid`, data),
 };
 
-// Stock Issues API
-export const stockIssuesApi = {
-  getAll: () => api.get('/api/stock-issues'),
-  getById: (id: number) => api.get(`/api/stock-issues/${id}`),
-  create: (data: any) => api.post('/api/stock-issues', data),
-  post: (id: number) => api.post(`/api/stock-issues/${id}/post`),
-  cancel: (id: number) => api.post(`/api/stock-issues/${id}/cancel`),
-  delete: (id: number) => api.delete(`/api/stock-issues/${id}`),
+// Quotations API
+export const quotationsApi = {
+  getAll: (params?: { status?: string; quotationType?: string; customerGroupId?: number }) => 
+    api.get('/api/quotations', { params }),
+  getById: (id: number) => api.get(`/api/quotations/${id}`),
+  create: (data: any) => api.post('/api/quotations', data),
+  update: (id: number, data: any) => api.put(`/api/quotations/${id}`, data),
+  submit: (id: number) => api.post(`/api/quotations/${id}/submit`),
+  approve: (id: number) => api.post(`/api/quotations/${id}/approve`),
+  reject: (id: number, reason: string) => api.post(`/api/quotations/${id}/reject`, { reason }),
+  revise: (id: number, data: any) => api.post(`/api/quotations/${id}/revise`, data),
+  cancel: (id: number) => api.post(`/api/quotations/${id}/cancel`),
+  won: (id: number) => api.post(`/api/quotations/${id}/won`),
+  lost: (id: number, reason: string) => api.post(`/api/quotations/${id}/lost`, { reason }),
+  delete: (id: number) => api.delete(`/api/quotations/${id}`),
+  duplicate: (id: number) => api.post(`/api/quotations/${id}/duplicate`),
+  print: (id: number) => api.get(`/api/quotations/${id}/print`),
 };
 
-// Stock Transfers API
-export const stockTransfersApi = {
+// FIFO API
+export const fifoApi = {
+  getLayers: (productId?: number, warehouseId?: number) => 
+    api.get('/api/fifo/layers', { params: { productId, warehouseId } }),
+  getMovements: (productId: number) => api.get(`/api/fifo/movements/${productId}`),
+  getCostHistory: (productId: number) => api.get(`/api/fifo/cost-history/${productId}`),
+  recalculate: (productId?: number) => api.post('/api/fifo/recalculate', { productId }),
+};
+
+// Stock Count API
+export const stockCountApi = {
+  getAll: () => api.get('/api/stock-counts'),
+  getById: (id: number) => api.get(`/api/stock-counts/${id}`),
+  create: (data: any) => api.post('/api/stock-counts', data),
+  update: (id: number, data: any) => api.put(`/api/stock-counts/${id}`, data),
+  post: (id: number) => api.post(`/api/stock-counts/${id}/post`),
+  cancel: (id: number) => api.post(`/api/stock-counts/${id}/cancel`),
+};
+
+// Stock Adjustment API
+export const stockAdjustmentApi = {
+  getAll: () => api.get('/api/stock-adjustments'),
+  getById: (id: number) => api.get(`/api/stock-adjustments/${id}`),
+  create: (data: any) => api.post('/api/stock-adjustments', data),
+  post: (id: number) => api.post(`/api/stock-adjustments/${id}/post`),
+  cancel: (id: number) => api.post(`/api/stock-adjustments/${id}/cancel`),
+};
+
+// Stock Transfer API
+export const stockTransferApi = {
   getAll: () => api.get('/api/stock-transfers'),
   getById: (id: number) => api.get(`/api/stock-transfers/${id}`),
   create: (data: any) => api.post('/api/stock-transfers', data),
   post: (id: number) => api.post(`/api/stock-transfers/${id}/post`),
   cancel: (id: number) => api.post(`/api/stock-transfers/${id}/cancel`),
-  delete: (id: number) => api.delete(`/api/stock-transfers/${id}`),
 };
 
-// Stock Adjustments API
-export const stockAdjustmentsApi = {
-  getAll: () => api.get('/api/stock-adjustments'),
-  getById: (id: number) => api.get(`/api/stock-adjustments/${id}`),
-  getProducts: (warehouseId: number) => api.get('/api/stock-adjustments/products', { params: { warehouseId } }),
-  create: (data: any) => api.post('/api/stock-adjustments', data),
-  post: (id: number) => api.post(`/api/stock-adjustments/${id}/post`),
-  cancel: (id: number) => api.post(`/api/stock-adjustments/${id}/cancel`),
-  delete: (id: number) => api.delete(`/api/stock-adjustments/${id}`),
+// Stock Issue API
+export const stockIssueApi = {
+  getAll: () => api.get('/api/stock-issues'),
+  getById: (id: number) => api.get(`/api/stock-issues/${id}`),
+  create: (data: any) => api.post('/api/stock-issues', data),
+  post: (id: number) => api.post(`/api/stock-issues/${id}/post`),
+  cancel: (id: number) => api.post(`/api/stock-issues/${id}/cancel`),
 };
 
-// Stock Counts API
-export const stockCountsApi = {
-  getAll: () => api.get('/api/stock-counts'),
-  getById: (id: number) => api.get(`/api/stock-counts/${id}`),
-  create: (data: any) => api.post('/api/stock-counts', data),
-  start: (id: number) => api.post(`/api/stock-counts/${id}/start`),
-  updateItem: (id: number, itemId: number, data: any) => api.post(`/api/stock-counts/${id}/items/${itemId}`, data),
-  complete: (id: number) => api.post(`/api/stock-counts/${id}/complete`),
-  approve: (id: number) => api.post(`/api/stock-counts/${id}/approve`),
-  createAdjustment: (id: number) => api.post(`/api/stock-counts/${id}/create-adjustment`),
-  cancel: (id: number) => api.post(`/api/stock-counts/${id}/cancel`),
-  delete: (id: number) => api.delete(`/api/stock-counts/${id}`),
+// Audit Log API
+export const auditLogApi = {
+  getAll: (params?: { module?: string; startDate?: string; endDate?: string; limit?: number }) =>
+    api.get('/api/audit-log', { params }),
 };
-
-// Audit Logs API
-export const auditLogsApi = {
-  getAll: (params?: { 
-    module?: string; 
-    action?: string; 
-    userId?: number;
-    startDate?: string;
-    endDate?: string;
-    limit?: number;
-    offset?: number;
-  }) => api.get('/api/audit-logs', { params }),
-  getModules: () => api.get('/api/audit-logs/modules'),
-  getActions: () => api.get('/api/audit-logs/actions'),
-  exportCsv: (params?: { 
-    module?: string; 
-    action?: string;
-    startDate?: string;
-    endDate?: string;
-  }) => api.get('/api/audit-logs/export', { 
-    params, 
-    responseType: 'blob' 
-  }),
-};
-
-// Quotations API
-export const quotationsApi = {
-  getAll: (params?: any) => api.get('/api/quotations', { params }),
-  getById: (id: number) => api.get(`/api/quotations/${id}`),
-  create: (data: any) => api.post('/api/quotations', data),
-  update: (id: number, data: any) => api.put(`/api/quotations/${id}`, data),
-  delete: (id: number) => api.delete(`/api/quotations/${id}`),
-  submitForApproval: (id: number) => api.post(`/api/quotations/${id}/submit`),
-  approve: (id: number) => api.post(`/api/quotations/${id}/approve`),
-  reject: (id: number, reason: string) => api.post(`/api/quotations/${id}/reject`, { reason }),
-  approveMargin: (id: number) => api.post(`/api/quotations/${id}/approve-margin`),
-  send: (id: number) => api.post(`/api/quotations/${id}/send`),
-  confirm: (id: number) => api.post(`/api/quotations/${id}/confirm`),
-  createRevision: (id: number, reason?: string) => api.post("/api/quotations/" + id + "/revision", { reason }),
-  cancel: (id: number) => api.post(`/api/quotations/${id}/cancel`),
-  void: (id: number, reason: string) => api.post(`/api/quotations/${id}/void`, { reason }),
-};
-
-// User Settings API
-export const userSettingsApi = {
-  getAll: () => api.get('/api/user-settings'),
-  getSeller: () => api.get('/api/user-settings/seller'),
-  updateSeller: (data: any) => api.put('/api/user-settings/seller', data),
-  getQuotationDefaults: () => api.get('/api/user-settings/quotation-defaults'),
-  getEmployees: () => api.get("/api/user-settings/employees"),
-  getEmployeeById: (id: number) => api.get(`/api/user-settings/employee/${id}`),
-  updateQuotationDefaults: (data: any) => api.put('/api/user-settings/quotation-defaults', data),
-};
-
-// Upload API
-export const uploadApi = {
-  uploadImage: (file: File, folder: string = 'system') => {
-    const formData = new FormData();
-    formData.append('file', file);
-    formData.append('folder', folder);
-    return api.post('/api/upload', formData, {
-      headers: { 'Content-Type': 'multipart/form-data' },
-    });
-  },
-  uploadBase64: (base64: string, folder: string) => 
-    api.post('/api/upload/base64', { image: base64, folder }),
-};
-
-// ==================== ACCOUNTING APIs ====================
 
 // Chart of Accounts API
 export const chartOfAccountsApi = {
   getAll: () => api.get('/api/accounting/chart-of-accounts'),
-  getTree: () => api.get('/api/accounting/chart-of-accounts/tree'),
-  getByType: (type: string) => api.get(`/api/accounting/chart-of-accounts/type/${type}`),
   getById: (id: number) => api.get(`/api/accounting/chart-of-accounts/${id}`),
   create: (data: any) => api.post('/api/accounting/chart-of-accounts', data),
   update: (id: number, data: any) => api.put(`/api/accounting/chart-of-accounts/${id}`, data),
   delete: (id: number) => api.delete(`/api/accounting/chart-of-accounts/${id}`),
-  initialize: () => api.post('/api/accounting/chart-of-accounts/initialize'),
+  getTree: () => api.get('/api/accounting/chart-of-accounts/tree'),
 };
 
-// Journal Entries API
-export const journalEntriesApi = {
-  getAll: (params?: {
-    startDate?: string;
-    endDate?: string;
-    journalType?: string;
-    status?: string;
-    referenceType?: string;
-  }) => api.get('/api/accounting/journal-entries', { params }),
+// Journal Entry API
+export const journalEntryApi = {
+  getAll: (params?: { startDate?: string; endDate?: string; status?: string }) =>
+    api.get('/api/accounting/journal-entries', { params }),
   getById: (id: number) => api.get(`/api/accounting/journal-entries/${id}`),
   create: (data: any) => api.post('/api/accounting/journal-entries', data),
   update: (id: number, data: any) => api.put(`/api/accounting/journal-entries/${id}`, data),
   post: (id: number) => api.post(`/api/accounting/journal-entries/${id}/post`),
-  cancel: (id: number, reason: string) => api.post(`/api/accounting/journal-entries/${id}/cancel`, { reason }),
   reverse: (id: number) => api.post(`/api/accounting/journal-entries/${id}/reverse`),
   delete: (id: number) => api.delete(`/api/accounting/journal-entries/${id}`),
 };
 
-// Payment Receipts API (รับเงิน)
-export const paymentReceiptsApi = {
-  getAll: (params?: {
-    customerId?: number;
-    startDate?: string;
-    endDate?: string;
-    status?: string;
-  }) => api.get('/api/accounting/payment-receipts', { params }),
-  getById: (id: number) => api.get(`/api/accounting/payment-receipts/${id}`),
-  getCustomerOutstanding: (customerId: number) => 
-    api.get(`/api/accounting/payment-receipts/customer/${customerId}/outstanding`),
-  create: (data: any) => api.post('/api/accounting/payment-receipts', data),
-  post: (id: number) => api.post(`/api/accounting/payment-receipts/${id}/post`),
-  cancel: (id: number, reason: string) => api.post(`/api/accounting/payment-receipts/${id}/cancel`, { reason }),
-  delete: (id: number) => api.delete(`/api/accounting/payment-receipts/${id}`),
-};
-
-// Payment Vouchers API (จ่ายเงิน)
-export const paymentVouchersApi = {
-  getAll: (params?: {
-    supplierId?: number;
-    startDate?: string;
-    endDate?: string;
-    status?: string;
-  }) => api.get('/api/accounting/payment-vouchers', { params }),
-  getById: (id: number) => api.get(`/api/accounting/payment-vouchers/${id}`),
-  getSupplierOutstanding: (supplierId: number) => 
-    api.get(`/api/accounting/payment-vouchers/supplier/${supplierId}/outstanding`),
-  create: (data: any) => api.post('/api/accounting/payment-vouchers', data),
-  post: (id: number) => api.post(`/api/accounting/payment-vouchers/${id}/post`),
-  cancel: (id: number, reason: string) => api.post(`/api/accounting/payment-vouchers/${id}/cancel`, { reason }),
-  delete: (id: number) => api.delete(`/api/accounting/payment-vouchers/${id}`),
-};
-
-// Bank Accounts API
-export const bankAccountsApi = {
+// Bank Account API
+export const bankAccountApi = {
   getAll: () => api.get('/api/accounting/bank-accounts'),
   getById: (id: number) => api.get(`/api/accounting/bank-accounts/${id}`),
   create: (data: any) => api.post('/api/accounting/bank-accounts', data),
   update: (id: number, data: any) => api.put(`/api/accounting/bank-accounts/${id}`, data),
   delete: (id: number) => api.delete(`/api/accounting/bank-accounts/${id}`),
+  getTransactions: (id: number, params?: { startDate?: string; endDate?: string }) =>
+    api.get(`/api/accounting/bank-accounts/${id}/transactions`, { params }),
 };
 
-// AR (Accounts Receivable) API
+// Payment Receipt API
+export const paymentReceiptApi = {
+  getAll: (params?: { startDate?: string; endDate?: string; customerId?: number }) =>
+    api.get('/api/accounting/payment-receipts', { params }),
+  getById: (id: number) => api.get(`/api/accounting/payment-receipts/${id}`),
+  create: (data: any) => api.post('/api/accounting/payment-receipts', data),
+  post: (id: number) => api.post(`/api/accounting/payment-receipts/${id}/post`),
+  cancel: (id: number, reason: string) => api.post(`/api/accounting/payment-receipts/${id}/cancel`, { reason }),
+};
+
+// Payment Voucher API
+export const paymentVoucherApi = {
+  getAll: (params?: { startDate?: string; endDate?: string; supplierId?: number }) =>
+    api.get('/api/accounting/payment-vouchers', { params }),
+  getById: (id: number) => api.get(`/api/accounting/payment-vouchers/${id}`),
+  create: (data: any) => api.post('/api/accounting/payment-vouchers', data),
+  post: (id: number) => api.post(`/api/accounting/payment-vouchers/${id}/post`),
+  cancel: (id: number, reason: string) => api.post(`/api/accounting/payment-vouchers/${id}/cancel`, { reason }),
+};
+
+// AR API
 export const arApi = {
   getOutstanding: (params?: { customerId?: number; status?: string }) => 
     api.get('/api/accounting/ar/outstanding', { params }),
@@ -374,7 +331,7 @@ export const arApi = {
   getSummary: () => api.get('/api/accounting/ar/summary'),
 };
 
-// AP (Accounts Payable) API
+// AP API
 export const apApi = {
   getOutstanding: (params?: { supplierId?: number; status?: string }) => 
     api.get('/api/accounting/ap/outstanding', { params }),
@@ -426,13 +383,7 @@ export const closingPeriodApi = {
   reopen: (id: number, reason: string) => api.post(`/api/accounting/closing-periods/${id}/reopen`, { reason }),
 };
 
-export default api;
-// ==========================================
-// เพิ่มใน frontend/src/services/api.ts
-// ก่อน export default api;
-// ==========================================
-
-// Tax Invoices API (ใบกำกับภาษี/ใบเพิ่มหนี้/ใบลดหนี้)
+// Tax Invoices API
 export const taxInvoicesApi = {
   getAll: (params?: { startDate?: string; endDate?: string; docType?: string }) =>
     api.get('/api/accounting/tax-invoices', { params }),
@@ -443,7 +394,7 @@ export const taxInvoicesApi = {
   delete: (id: number) => api.delete(`/api/accounting/tax-invoices/${id}`),
 };
 
-// Withholding Tax API (หัก ณ ที่จ่าย)
+// Withholding Tax API
 export const withholdingTaxApi = {
   getAll: (params?: { startDate?: string; endDate?: string; formType?: string }) =>
     api.get('/api/accounting/withholding-tax', { params }),
@@ -453,7 +404,7 @@ export const withholdingTaxApi = {
   delete: (id: number) => api.delete(`/api/accounting/withholding-tax/${id}`),
 };
 
-// VAT Report API (รายงานภาษีซื้อ-ขาย)
+// VAT Report API
 export const vatReportApi = {
   getOutputVat: (year: number, month: number) =>
     api.get('/api/accounting/vat-report/output', { params: { year, month } }),
@@ -465,7 +416,7 @@ export const vatReportApi = {
     api.get('/api/accounting/vat-report/export-pp30', { params: { year, month }, responseType: 'blob' }),
 };
 
-// Fixed Assets API (สินทรัพย์ถาวร)
+// Fixed Assets API
 export const fixedAssetsApi = {
   getAll: (params?: { category?: string; status?: string }) =>
     api.get('/api/accounting/fixed-assets', { params }),
@@ -481,7 +432,7 @@ export const fixedAssetsApi = {
     api.get('/api/accounting/fixed-assets/depreciation-report', { params: { year } }),
 };
 
-// Cash Flow API (งบกระแสเงินสด)
+// Cash Flow API
 export const cashFlowApi = {
   getStatement: (startDate: string, endDate: string) =>
     api.get('/api/accounting/cash-flow/statement', { params: { startDate, endDate } }),
@@ -489,54 +440,35 @@ export const cashFlowApi = {
     api.get(`/api/accounting/cash-flow/${activity}`, { params: { startDate, endDate } }),
 };
 
-// ==================== CHECKIN APIs ====================
-
+// Checkin API
 export const checkinApi = {
-  // Clock In/Out
   clockIn: (data: { latitude?: number; longitude?: number; note?: string }) =>
     api.post('/api/checkin/clock-in', data),
   clockOut: (data: { latitude?: number; longitude?: number; note?: string }) =>
     api.post('/api/checkin/clock-out', data),
-  getTodayStatus: () =>
-    api.get('/api/checkin/today'),
-  getHistory: (limit = 10) =>
-    api.get('/api/checkin/history', { params: { limit } }),
+  getTodayStatus: () => api.get('/api/checkin/today'),
+  getHistory: (limit = 10) => api.get('/api/checkin/history', { params: { limit } }),
   getMonthlySummary: (year?: number, month?: number) =>
     api.get('/api/checkin/monthly-summary', { params: { year, month } }),
-
-  // Leave
   createLeave: (data: { leaveDate: string; leaveType: string; leaveDuration?: string; reason?: string }) =>
     api.post('/api/checkin/leave', data),
   createBulkLeave: (data: { startDate: string; endDate: string; leaveType: string; reason?: string }) =>
     api.post('/api/checkin/leave/bulk', data),
   createBulkCheckin: (data: { startDate: string; endDate: string; note?: string }) =>
     api.post('/api/checkin/bulk', data),
-  updateLeave: (id: number, data: any) =>
-    api.put(`/api/checkin/leave/${id}`, data),
-  deleteLeave: (id: number) =>
-    api.delete(`/api/checkin/leave/${id}`),
+  updateLeave: (id: number, data: any) => api.put(`/api/checkin/leave/${id}`, data),
+  deleteLeave: (id: number) => api.delete(`/api/checkin/leave/${id}`),
   getMyLeaves: (year?: number, month?: number) =>
     api.get('/api/checkin/leave', { params: { year, month } }),
-
-  // Admin: Report
   getMonthlyReport: (year: number, month: number) =>
     api.get('/api/checkin/report/monthly', { params: { year, month } }),
-
-  // Admin: Settings
-  getSettings: () =>
-    api.get('/api/checkin/settings'),
-  updateSettings: (data: any) =>
-    api.put('/api/checkin/settings', data),
-  testLineNotify: () =>
-    api.post('/api/checkin/settings/test-line'),
-  sendDailySummary: () =>
-    api.post('/api/checkin/settings/send-daily-summary'),
-
-  // Admin: Manage Records
-  getRecordsByDate: (date: string) =>
-    api.get('/api/checkin/admin/records', { params: { date } }),
-  deleteCheckinRecord: (id: number) =>
-    api.delete(`/api/checkin/admin/records/${id}`),
-  deleteLeaveRecordAdmin: (id: number) =>
-    api.delete(`/api/checkin/admin/leave/${id}`),
+  getSettings: () => api.get('/api/checkin/settings'),
+  updateSettings: (data: any) => api.put('/api/checkin/settings', data),
+  testLineNotify: () => api.post('/api/checkin/settings/test-line'),
+  sendDailySummary: () => api.post('/api/checkin/settings/send-daily-summary'),
+  getRecordsByDate: (date: string) => api.get('/api/checkin/admin/records', { params: { date } }),
+  deleteCheckinRecord: (id: number) => api.delete(`/api/checkin/admin/records/${id}`),
+  deleteLeaveRecordAdmin: (id: number) => api.delete(`/api/checkin/admin/leave/${id}`),
 };
+
+export default api;

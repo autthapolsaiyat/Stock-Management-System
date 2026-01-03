@@ -1,6 +1,7 @@
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
-import { authApi } from '../services/api';
-import { message } from 'antd';
+import { authApi, SESSION_EXPIRED_EVENT } from '../services/api';
+import { message, Modal } from 'antd';
+import { ExclamationCircleOutlined } from '@ant-design/icons';
 
 interface User {
   id: number;
@@ -9,7 +10,7 @@ interface User {
   fullName: string;
   roles: string[];
   permissions: string[];
-  quotationType: string | null; // STANDARD, FORENSIC, MAINTENANCE, null = all
+  quotationType: string | null;
 }
 
 interface AuthContextType {
@@ -29,10 +30,83 @@ interface AuthContextType {
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
+const formatThaiDateTime = (dateString: string) => {
+  try {
+    const date = new Date(dateString);
+    return date.toLocaleString('th-TH', {
+      year: 'numeric',
+      month: 'long',
+      day: 'numeric',
+      hour: '2-digit',
+      minute: '2-digit',
+      second: '2-digit',
+    });
+  } catch {
+    return dateString;
+  }
+};
+
 export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
   const [user, setUser] = useState<User | null>(null);
   const [token, setToken] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(true);
+
+  useEffect(() => {
+    const handleSessionExpired = (event: CustomEvent<any>) => {
+      const details = event.detail;
+      
+      Modal.error({
+        title: '⚠️ บัญชีของคุณถูกเข้าสู่ระบบจากอุปกรณ์อื่น',
+        icon: <ExclamationCircleOutlined />,
+        content: (
+          <div style={{ marginTop: 16 }}>
+            <p>{details?.message || 'กรุณาเข้าสู่ระบบใหม่อีกครั้ง'}</p>
+            {details?.details && (
+              <div style={{ 
+                marginTop: 12, 
+                padding: 12, 
+                backgroundColor: '#f5f5f5', 
+                borderRadius: 8,
+                fontSize: 13,
+              }}>
+                <p style={{ margin: '4px 0' }}>
+                  <strong>เวลา:</strong> {formatThaiDateTime(details.details.loginTime)}
+                </p>
+                {details.details.deviceInfo && (
+                  <>
+                    <p style={{ margin: '4px 0' }}>
+                      <strong>อุปกรณ์:</strong> {details.details.deviceInfo.browser} บน {details.details.deviceInfo.os}
+                    </p>
+                    {details.details.deviceInfo.ip && (
+                      <p style={{ margin: '4px 0' }}>
+                        <strong>IP:</strong> {details.details.deviceInfo.ip}
+                      </p>
+                    )}
+                  </>
+                )}
+              </div>
+            )}
+            <p style={{ marginTop: 16, color: '#ff4d4f' }}>
+              หากไม่ใช่คุณ กรุณาเปลี่ยนรหัสผ่านทันที
+            </p>
+          </div>
+        ),
+        okText: 'เข้าสู่ระบบใหม่',
+        onOk: () => {
+          window.location.href = '/login';
+        },
+      });
+      
+      setToken(null);
+      setUser(null);
+    };
+
+    window.addEventListener(SESSION_EXPIRED_EVENT, handleSessionExpired as EventListener);
+    
+    return () => {
+      window.removeEventListener(SESSION_EXPIRED_EVENT, handleSessionExpired as EventListener);
+    };
+  }, []);
 
   useEffect(() => {
     const storedToken = localStorage.getItem('token');
@@ -75,7 +149,13 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     }
   };
 
-  const logout = () => {
+  const logout = async () => {
+    try {
+      await authApi.logout();
+    } catch (error) {
+      console.error('Logout error:', error);
+    }
+    
     localStorage.removeItem('token');
     localStorage.removeItem('user');
     setToken(null);
@@ -91,7 +171,6 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     return user?.permissions?.includes(permission) || false;
   };
 
-  // Check if user is sales-only (limited menu)
   const isSalesOnly = (): boolean => {
     const salesRoles = ['SALES_STANDARD', 'SALES_FORENSIC', 'SALES_MAINTENANCE'];
     return user?.roles?.some(r => salesRoles.includes(r)) && 
@@ -99,7 +178,6 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
            !user?.roles?.includes('MANAGER') || false;
   };
 
-  // Check if user is account-only (accounting menu only)
   const isAccountOnly = (): boolean => {
     const accountRoles = ['ACCOUNT', 'ACCOUNTANT', 'ACCOUNTING', 'FINANCE'];
     return user?.roles?.some(r => accountRoles.includes(r)) && 
@@ -108,13 +186,11 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
            !user?.roles?.includes('MANAGER') || false;
   };
 
-  // Check if user has access to accounting module
   const hasAccountAccess = (): boolean => {
     const accountRoles = ['ACCOUNT', 'ACCOUNTANT', 'ACCOUNTING', 'FINANCE', 'ADMIN', 'SUPER_ADMIN', 'MANAGER'];
     return user?.roles?.some(r => accountRoles.includes(r)) || false;
   };
 
-  // Get user's quotation type
   const getQuotationType = (): string | null => {
     return user?.quotationType || null;
   };

@@ -2,14 +2,17 @@ import { useState, useEffect } from 'react';
 import { 
   Card, Table, Button, Input, Space, Tag, Modal, Form, 
   Select, Switch, message, Popconfirm, Avatar, Badge,
-  Tooltip, Divider
+  Tooltip, Divider, Typography
 } from 'antd';
 import { 
   UserOutlined, PlusOutlined, EditOutlined, DeleteOutlined, 
   KeyOutlined, SearchOutlined, SafetyOutlined,
-  LockOutlined, UnlockOutlined, ReloadOutlined, CopyOutlined
+  LockOutlined, UnlockOutlined, ReloadOutlined, CopyOutlined,
+  LogoutOutlined, DesktopOutlined, GlobalOutlined
 } from '@ant-design/icons';
 import api from '../../services/api';
+
+const { Text } = Typography;
 
 interface User {
   id: number;
@@ -20,6 +23,8 @@ interface User {
   isActive: boolean;
   roles: string[];
   createdAt: string;
+  allowMultipleSessions?: boolean;
+  sessionCreatedAt?: string;
 }
 
 interface Role {
@@ -85,6 +90,7 @@ const UserManagementPage = () => {
   const handleCreate = () => {
     setSelectedUser(null);
     form.resetFields();
+    form.setFieldsValue({ allowMultipleSessions: false });
     setModalVisible(true);
   };
 
@@ -93,9 +99,11 @@ const UserManagementPage = () => {
     form.setFieldsValue({
       username: user.username,
       fullName: user.fullName,
+      nickname: user.nickname,
       email: user.email,
       isActive: user.isActive,
       roles: user.roles,
+      allowMultipleSessions: user.allowMultipleSessions || false,
     });
     setModalVisible(true);
   };
@@ -110,26 +118,25 @@ const UserManagementPage = () => {
   const handleSubmit = async (values: any) => {
     try {
       if (selectedUser) {
-        // Update user
         await api.put(`/api/users/${selectedUser.id}`, {
           fullName: values.fullName,
           nickname: values.nickname,
           email: values.email,
           isActive: values.isActive,
+          allowMultipleSessions: values.allowMultipleSessions,
         });
-        // Update roles
         if (values.roles) {
           await api.put(`/api/users/${selectedUser.id}/roles`, { roles: values.roles });
         }
         message.success('อัปเดตข้อมูลผู้ใช้สำเร็จ');
       } else {
-        // Create user
         await api.post('/api/users', { 
           username: values.username,
           fullName: values.fullName,
           nickname: values.nickname,
           email: values.email,
           password: '123456',
+          allowMultipleSessions: values.allowMultipleSessions || false,
           roleIds: values.roles ? roles.filter(r => values.roles.includes(r.code)).map(r => r.id) : [],
         });
         message.success('สร้างผู้ใช้สำเร็จ (รหัสผ่านเริ่มต้น: 123456)');
@@ -162,6 +169,26 @@ const UserManagementPage = () => {
     }
   };
 
+  const handleForceLogout = async (user: User) => {
+    try {
+      await api.post(`/api/users/${user.id}/force-logout`);
+      message.success(`บังคับออกจากระบบ ${user.fullName} สำเร็จ`);
+      fetchUsers();
+    } catch (error) {
+      message.error('เกิดข้อผิดพลาด');
+    }
+  };
+
+  const handleToggleMultipleSessions = async (user: User) => {
+    try {
+      const response = await api.put(`/api/users/${user.id}/toggle-multiple-sessions`);
+      message.success(response.data.message);
+      fetchUsers();
+    } catch (error) {
+      message.error('เกิดข้อผิดพลาด');
+    }
+  };
+
   const handleDelete = async (id: number) => {
     try {
       await api.delete(`/api/users/${id}`);
@@ -184,6 +211,7 @@ const UserManagementPage = () => {
     PURCHASING: 'gold',
     ACCOUNTING: 'magenta',
     VIEWER: 'default',
+    BASIC: 'default',
   };
 
   const filteredUsers = users.filter((user) => {
@@ -196,6 +224,22 @@ const UserManagementPage = () => {
       user.email?.toLowerCase().includes(search)
     );
   });
+
+  const formatThaiDateTime = (dateString: string) => {
+    if (!dateString) return '-';
+    try {
+      const date = new Date(dateString);
+      return date.toLocaleString('th-TH', {
+        day: '2-digit',
+        month: 'short',
+        year: 'numeric',
+        hour: '2-digit',
+        minute: '2-digit',
+      });
+    } catch {
+      return '-';
+    }
+  };
 
   const columns = [
     {
@@ -228,12 +272,6 @@ const UserManagementPage = () => {
       ),
     },
     {
-      title: 'อีเมล',
-      dataIndex: 'email',
-      key: 'email',
-      render: (email: string) => email || '-',
-    },
-    {
       title: 'สิทธิ์',
       dataIndex: 'roles',
       key: 'roles',
@@ -245,6 +283,30 @@ const UserManagementPage = () => {
             </Tag>
           ))}
         </Space>
+      ),
+    },
+    {
+      title: 'Session',
+      key: 'session',
+      width: 180,
+      render: (_: any, record: User) => (
+        <div>
+          <div style={{ marginBottom: 4 }}>
+            <Tooltip title={record.allowMultipleSessions ? 'อนุญาตหลายเครื่อง' : 'เครื่องเดียวเท่านั้น'}>
+              <Tag 
+                icon={record.allowMultipleSessions ? <GlobalOutlined /> : <DesktopOutlined />}
+                color={record.allowMultipleSessions ? 'green' : 'blue'}
+              >
+                {record.allowMultipleSessions ? 'หลายเครื่อง' : 'เครื่องเดียว'}
+              </Tag>
+            </Tooltip>
+          </div>
+          {record.sessionCreatedAt && (
+            <Text type="secondary" style={{ fontSize: 11 }}>
+              เข้าล่าสุด: {formatThaiDateTime(record.sessionCreatedAt)}
+            </Text>
+          )}
+        </div>
       ),
     },
     {
@@ -262,7 +324,7 @@ const UserManagementPage = () => {
     {
       title: 'จัดการ',
       key: 'actions',
-      width: 200,
+      width: 250,
       render: (_: any, record: User) => (
         <Space>
           <Tooltip title="แก้ไขข้อมูล">
@@ -280,12 +342,35 @@ const UserManagementPage = () => {
               style={{ color: '#f59e0b' }}
             />
           </Tooltip>
+          <Tooltip title={record.allowMultipleSessions ? 'จำกัดเครื่องเดียว' : 'อนุญาตหลายเครื่อง'}>
+            <Button 
+              type="text" 
+              icon={record.allowMultipleSessions ? <DesktopOutlined /> : <GlobalOutlined />}
+              onClick={() => handleToggleMultipleSessions(record)}
+              style={{ color: '#8b5cf6' }}
+            />
+          </Tooltip>
+          <Popconfirm
+            title="บังคับออกจากระบบ?"
+            description="ผู้ใช้จะถูกเตะออกจากทุกอุปกรณ์"
+            onConfirm={() => handleForceLogout(record)}
+            okText="ยืนยัน"
+            cancelText="ยกเลิก"
+          >
+            <Tooltip title="บังคับออกจากระบบ">
+              <Button 
+                type="text" 
+                icon={<LogoutOutlined />}
+                style={{ color: '#ef4444' }}
+              />
+            </Tooltip>
+          </Popconfirm>
           <Tooltip title={record.isActive ? 'ระงับผู้ใช้' : 'เปิดใช้งาน'}>
             <Button 
               type="text" 
               icon={record.isActive ? <LockOutlined /> : <UnlockOutlined />} 
               onClick={() => handleToggleActive(record)}
-              style={{ color: record.isActive ? '#ef4444' : '#22c55e' }}
+              style={{ color: record.isActive ? '#6b7280' : '#22c55e' }}
             />
           </Tooltip>
           <Popconfirm
@@ -391,6 +476,25 @@ const UserManagementPage = () => {
                   </Space>
                 ),
               }))}
+            />
+          </Form.Item>
+
+          <Divider orientation="left" style={{ fontSize: 13 }}>การจัดการ Session</Divider>
+
+          <Form.Item 
+            name="allowMultipleSessions" 
+            label={
+              <Space>
+                <GlobalOutlined />
+                <span>อนุญาตให้เข้าได้หลายเครื่องพร้อมกัน</span>
+              </Space>
+            }
+            valuePropName="checked"
+            extra="ถ้าปิด: เข้าได้เครื่องเดียว ถ้าเข้าเครื่องใหม่จะเตะออกจากเครื่องเก่า"
+          >
+            <Switch 
+              checkedChildren="หลายเครื่อง" 
+              unCheckedChildren="เครื่องเดียว" 
             />
           </Form.Item>
 
