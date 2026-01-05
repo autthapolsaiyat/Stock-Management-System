@@ -144,7 +144,7 @@ const QuickCalculator: React.FC<QuickCalculatorProps> = ({
   // Calculate all cells
   const calculatedCells = useMemo(() => {
     return data.cells.map((row, rowIndex) => {
-      return row.map((cell, _colIndex) => {
+      return row.map((cell, colIndex) => {
         if (cell.formula) {
           const calculated = evaluateFormula(cell.formula, rowIndex, data.cells, data.settings);
           return { ...cell, calculatedValue: calculated };
@@ -352,7 +352,7 @@ const QuickCalculator: React.FC<QuickCalculatorProps> = ({
                   <td style={{ padding: '4px', border: '1px solid #ddd', textAlign: 'center', background: '#f0f0f0' }}>
                     {rowIndex + 1}
                   </td>
-                  {row.map((cell, _colIndex) => {
+                  {row.map((cell, colIndex) => {
                     const isEditing = editingCell?.row === rowIndex && editingCell?.col === colIndex;
                     const isEditable = isEditableColumn(colIndex);
                     const displayValue = cell.calculatedValue;
