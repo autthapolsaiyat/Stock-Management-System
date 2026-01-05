@@ -144,7 +144,7 @@ const QuickCalculator: React.FC<QuickCalculatorProps> = ({
   // Calculate all cells
   const calculatedCells = useMemo(() => {
     return data.cells.map((row, rowIndex) => {
-      return row.map((cell, colIndex) => {
+      return row.map((cell, _colIndex) => {
         if (cell.formula) {
           const calculated = evaluateFormula(cell.formula, rowIndex, data.cells, data.settings);
           return { ...cell, calculatedValue: calculated };
