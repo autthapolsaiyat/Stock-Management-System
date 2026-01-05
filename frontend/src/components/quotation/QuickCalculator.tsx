@@ -18,7 +18,7 @@ import {
   ReloadOutlined,
   SettingOutlined,
 } from '@ant-design/icons';
-import { api } from '../../services/api';
+import api from '../../services/api';
 
 interface CellData {
   value: string | number | null;
@@ -65,7 +65,7 @@ const QuickCalculator: React.FC<QuickCalculatorProps> = ({
   onDataChange,
   open: externalOpen,
   onClose: externalOnClose,
-  onAddItems,
+  // onAddItems, // Reserved for future use
 }) => {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
@@ -108,7 +108,7 @@ const QuickCalculator: React.FC<QuickCalculatorProps> = ({
   }, [modalOpen, quotationId, loadData]);
 
   // Parse and evaluate formula
-  const evaluateFormula = useCallback((formula: string, rowIndex: number, cells: CellData[][], settings: CalculatorData['settings']): number | null => {
+  const evaluateFormula = useCallback((formula: string, _rowIndex: number, cells: CellData[][], settings: CalculatorData['settings']): number | null => {
     if (!formula || !formula.startsWith('=')) return null;
 
     let expression = formula.substring(1);
@@ -117,7 +117,7 @@ const QuickCalculator: React.FC<QuickCalculatorProps> = ({
     expression = expression.replace(/\$CLEARANCE/g, settings.clearanceFee.toString());
     
     const cellRefRegex = /([A-L])(\d+)/g;
-    expression = expression.replace(cellRefRegex, (match, col, row) => {
+    expression = expression.replace(cellRefRegex, (_match, col, row) => {
       const colIndex = col.charCodeAt(0) - 65;
       const rowIdx = parseInt(row) - 1;
       
@@ -144,7 +144,7 @@ const QuickCalculator: React.FC<QuickCalculatorProps> = ({
   // Calculate all cells
   const calculatedCells = useMemo(() => {
     return data.cells.map((row, rowIndex) => {
-      return row.map((cell, colIndex) => {
+      return row.map((cell, _colIndex) => {
         if (cell.formula) {
           const calculated = evaluateFormula(cell.formula, rowIndex, data.cells, data.settings);
           return { ...cell, calculatedValue: calculated };
@@ -352,7 +352,7 @@ const QuickCalculator: React.FC<QuickCalculatorProps> = ({
                   <td style={{ padding: '4px', border: '1px solid #ddd', textAlign: 'center', background: '#f0f0f0' }}>
                     {rowIndex + 1}
                   </td>
-                  {row.map((cell, colIndex) => {
+                  {row.map((cell, _colIndex) => {
                     const isEditing = editingCell?.row === rowIndex && editingCell?.col === colIndex;
                     const isEditable = isEditableColumn(colIndex);
                     const displayValue = cell.calculatedValue;
