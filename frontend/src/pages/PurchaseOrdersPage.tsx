@@ -250,6 +250,69 @@ const PurchaseOrdersPage: React.FC = () => {
             </Form.Item>
           </Space>
 
+          {/* International PO Toggle */}
+          <Form.Item name="isInternational" valuePropName="checked" style={{ marginBottom: 16 }}>
+            <Space>
+              <input type="checkbox" id="isInternational" onChange={(e) => form.setFieldValue('isInternational', e.target.checked)} />
+              <label htmlFor="isInternational" style={{ color: '#e5e7eb' }}>🌍 ใบสั่งซื้อต่างประเทศ (International PO)</label>
+            </Space>
+          </Form.Item>
+
+          {/* International PO Fields */}
+          <Form.Item noStyle shouldUpdate={(prev, cur) => prev.isInternational !== cur.isInternational}>
+            {({ getFieldValue }) => getFieldValue('isInternational') && (
+              <div style={{ background: 'rgba(59,130,246,0.1)', padding: 16, borderRadius: 8, marginBottom: 16 }}>
+                <Space style={{ width: '100%', marginBottom: 12 }} size={16}>
+                  <Form.Item name="vendorAttention" label="Attention" style={{ flex: 1, marginBottom: 0 }}>
+                    <Input placeholder="Contact Person" />
+                  </Form.Item>
+                  <Form.Item name="vendorFax" label="Fax" style={{ flex: 1, marginBottom: 0 }}>
+                    <Input placeholder="+1 234 567 8900" />
+                  </Form.Item>
+                </Space>
+                <Space style={{ width: '100%', marginBottom: 12 }} size={16}>
+                  <Form.Item name="endUser" label="End User" style={{ flex: 1, marginBottom: 0 }}>
+                    <Input placeholder="End User Company" />
+                  </Form.Item>
+                </Space>
+                <Space style={{ width: '100%', marginBottom: 12 }} size={16}>
+                  <Form.Item name="currency" label="Currency" style={{ flex: 1, marginBottom: 0 }}>
+                    <Select defaultValue="USD" options={[
+                      { value: 'USD', label: 'USD - US Dollar' },
+                      { value: 'EUR', label: 'EUR - Euro' },
+                      { value: 'JPY', label: 'JPY - Japanese Yen' },
+                      { value: 'CNY', label: 'CNY - Chinese Yuan' },
+                      { value: 'THB', label: 'THB - Thai Baht' },
+                    ]} />
+                  </Form.Item>
+                  <Form.Item name="exchangeRate" label="Exchange Rate" style={{ flex: 1, marginBottom: 0 }}>
+                    <InputNumber min={0} step={0.01} style={{ width: '100%' }} placeholder="33.00" />
+                  </Form.Item>
+                </Space>
+                <Space style={{ width: '100%', marginBottom: 12 }} size={16}>
+                  <Form.Item name="deliveryTime" label="Delivery Time" style={{ flex: 1, marginBottom: 0 }}>
+                    <Input placeholder="As soon as possible" />
+                  </Form.Item>
+                  <Form.Item name="paymentMethod" label="Payment Method" style={{ flex: 1, marginBottom: 0 }}>
+                    <Select options={[
+                      { value: 'T/T', label: 'T/T (Telegraphic Transfer)' },
+                      { value: 'L/C', label: 'L/C (Letter of Credit)' },
+                      { value: 'D/P', label: 'D/P (Document against Payment)' },
+                      { value: 'D/A', label: 'D/A (Document against Acceptance)' },
+                    ]} placeholder="Select payment method" />
+                  </Form.Item>
+                </Space>
+                <Form.Item name="shippingInstruction" label="Shipping Instruction" style={{ marginBottom: 0 }}>
+                  <Select options={[
+                    { value: 'Air freight', label: 'Air freight' },
+                    { value: 'Sea freight', label: 'Sea freight' },
+                    { value: 'Express (DHL/FedEx)', label: 'Express (DHL/FedEx)' },
+                  ]} placeholder="Select shipping method" />
+                </Form.Item>
+              </div>
+            )}
+          </Form.Item>
+
           <div style={{ marginBottom: 16 }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 }}>
               <label style={{ color: '#e5e7eb' }}>รายการสินค้า</label>
