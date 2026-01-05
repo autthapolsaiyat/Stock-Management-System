@@ -1,9 +1,11 @@
 import React, { useEffect, useState, useMemo } from 'react';
 import { Table, Button, Card, Space, Tag, message, Modal, Form, Select, InputNumber, Input, DatePicker, Divider, Typography } from 'antd';
-import { PlusOutlined, EyeOutlined, CheckOutlined, CloseOutlined, EditOutlined } from '@ant-design/icons';
+import { PlusOutlined, EyeOutlined, CheckOutlined, CloseOutlined, EditOutlined, PrinterOutlined } from '@ant-design/icons';
 import { purchaseOrdersApi, suppliersApi, productsApi } from '../services/api';
 import { PurchaseOrder, Supplier, Product } from '../types';
 import dayjs from 'dayjs';
+import PurchaseOrderPrintPreview from '../components/print/PurchaseOrderPrintPreview';
+import InternationalPOPrintPreview from '../components/print/InternationalPOPrintPreview';
 
 const { Text } = Typography;
 
@@ -14,6 +16,8 @@ const PurchaseOrdersPage: React.FC = () => {
   const [loading, setLoading] = useState(true);
   const [modalVisible, setModalVisible] = useState(false);
   const [detailVisible, setDetailVisible] = useState(false);
+  const [printVisible, setPrintVisible] = useState(false);
+  const [printOrder, setPrintOrder] = useState<PurchaseOrder | null>(null);
   const [selectedOrder, setSelectedOrder] = useState<PurchaseOrder | null>(null);
   const [editingOrder, setEditingOrder] = useState<PurchaseOrder | null>(null);
   const [items, setItems] = useState<any[]>([{ productId: undefined, qty: 1, unitPrice: 0 }]);
@@ -204,6 +208,7 @@ const PurchaseOrdersPage: React.FC = () => {
       render: (_: any, r: PurchaseOrder) => (
         <Space>
           <Button type="text" icon={<EyeOutlined />} onClick={() => handleView(r.id)} style={{ color: '#22d3ee' }} />
+          <Button type="text" icon={<PrinterOutlined />} onClick={() => { setPrintOrder(r); setPrintVisible(true); }} style={{ color: '#a78bfa' }} />
           {(r.status === 'draft' || r.status === 'DRAFT') && (
             <>
               {/* Bug #4 Fix: Edit button for draft */}
@@ -465,6 +470,24 @@ const PurchaseOrdersPage: React.FC = () => {
           </Form.Item>
         </Form>
       </Modal>
+
+      {/* Print Preview - Domestic */}
+      {printOrder && !printOrder.isInternational && (
+        <PurchaseOrderPrintPreview
+          open={printVisible}
+          onClose={() => { setPrintVisible(false); setPrintOrder(null); }}
+          purchaseOrder={printOrder}
+        />
+      )}
+
+      {/* Print Preview - International */}
+      {printOrder && printOrder.isInternational && (
+        <InternationalPOPrintPreview
+          open={printVisible}
+          onClose={() => { setPrintVisible(false); setPrintOrder(null); }}
+          purchaseOrder={printOrder}
+        />
+      )}
     </div>
   );
 };
