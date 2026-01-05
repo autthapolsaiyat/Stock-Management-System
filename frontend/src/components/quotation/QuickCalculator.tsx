@@ -300,7 +300,7 @@ const QuickCalculator: React.FC<QuickCalculatorProps> = ({
       style={{ marginTop: 16 }}
       extra={<Button type="link" icon={<ExpandOutlined />} onClick={() => setIsModalOpen(true)}>ขยาย</Button>}
     >
-      <div style={{ fontSize: 12, color: '#666' }}>
+      <div style={{ fontSize: 12, color: '#333' }}>
         {data.cells.length > 0 
           ? `${data.cells.length} รายการ | Rate: ${data.settings.exchangeRate} | ค่าเคลียร์: ${data.settings.clearanceFee.toLocaleString()}`
           : 'คลิก "ขยาย" เพื่อใช้งาน วางรายการเพื่อคำนวณต้นทุนเบื้องต้น'}
@@ -314,8 +314,8 @@ const QuickCalculator: React.FC<QuickCalculatorProps> = ({
         <Button type="primary" icon={<PlusOutlined />} onClick={addRow}>
           เพิ่มแถว
         </Button>
-        <span style={{ color: '#666', fontSize: 12, alignSelf: 'center' }}>
-          💡 พิมพ์สูตรได้ เช่น =A1*33, =B1+C1, =C1*10%, =C1+10% | ใช้ $RATE และ $CLEARANCE อ้างอิงค่าตั้งค่า
+        <span style={{ color: '#333', fontSize: 12, alignSelf: 'center' }}>
+          💡 สูตร: =A1*33, =B1+C1, =C1*10% | ตัวแปร: $RATE (อัตราแลกเปลี่ยน), $CLEARANCE (ค่าเคลียร์) เช่น =B1*$RATE, =$CLEARANCE/G1
         </span>
       </div>
 
