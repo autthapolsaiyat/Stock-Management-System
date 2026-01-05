@@ -135,7 +135,7 @@ const QuickCalculator: React.FC<QuickCalculatorProps> = ({
 
     try {
       const result = new Function(`return ${expression}`)();
-      if (typeof result === 'number' && !isNaN(result) && isFinite(result)) {
+     if (typeof result === 'number' && !isNaN(result) && isFinite(result)) {
         return Math.round(result * 100) / 100;
       }
     } catch (e) {
