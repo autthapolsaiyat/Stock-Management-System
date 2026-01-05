@@ -36,13 +36,11 @@ interface CalculatorData {
 }
 
 interface QuickCalculatorProps {
-  // New props for embedded mode
   quotationId?: number;
   onDataChange?: (data: CalculatorData) => void;
-  // Legacy props for modal mode
   open?: boolean;
   onClose?: () => void;
-  onAddItems?: (items: { name: string; qty: number; price: number; total: number }[]) => void;
+  // onAddItems?: (items: { name: string; qty: number; price: number; total: number }[]) => void;
 }
 
 const DEFAULT_HEADERS = [
@@ -65,7 +63,6 @@ const QuickCalculator: React.FC<QuickCalculatorProps> = ({
   onDataChange,
   open: externalOpen,
   onClose: externalOnClose,
-  // onAddItems, // Reserved for future use
 }) => {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
@@ -79,12 +76,10 @@ const QuickCalculator: React.FC<QuickCalculatorProps> = ({
   const [editingCell, setEditingCell] = useState<{ row: number; col: number } | null>(null);
   const [editValue, setEditValue] = useState<string>('');
 
-  // Determine if using external control (legacy mode) or internal control
   const isExternalControl = externalOpen !== undefined;
   const modalOpen = isExternalControl ? externalOpen : isModalOpen;
   const closeModal = isExternalControl ? externalOnClose : () => setIsModalOpen(false);
 
-  // Load data from API
   const loadData = useCallback(async () => {
     if (!quotationId) return;
     
@@ -107,57 +102,80 @@ const QuickCalculator: React.FC<QuickCalculatorProps> = ({
     }
   }, [modalOpen, quotationId, loadData]);
 
-  // Parse and evaluate formula
-  const evaluateFormula = useCallback((formula: string, _rowIndex: number, cells: CellData[][], settings: CalculatorData['settings']): number | null => {
-    if (!formula || !formula.startsWith('=')) return null;
-
-    let expression = formula.substring(1);
-    
-    expression = expression.replace(/\$RATE/g, settings.exchangeRate.toString());
-    expression = expression.replace(/\$CLEARANCE/g, settings.clearanceFee.toString());
-    
-    // Support percentage: 10% -> 0.1, *10% -> *0.1
-    expression = expression.replace(/(\d+)%/g, (_m: string, num: string) => (parseFloat(num) / 100).toString());
-    
-    const cellRefRegex = /([A-L])(\d+)/g;
-    expression = expression.replace(cellRefRegex, (_match, col, row) => {
-      const colIndex = col.charCodeAt(0) - 65;
-      const rowIdx = parseInt(row) - 1;
-      
-      if (rowIdx >= 0 && rowIdx < cells.length && colIndex >= 0 && colIndex < 12) {
-        const cellValue = cells[rowIdx]?.[colIndex]?.value;
-        if (cellValue !== null && cellValue !== undefined && cellValue !== '') {
-          return cellValue.toString();
-        }
-      }
-      return '0';
-    });
-
-    try {
-      const result = new Function(`return ${expression}`)();
-     if (typeof result === 'number' && !isNaN(result) && isFinite(result)) {
-        return Math.round(result * 100) / 100;
-      }
-    } catch (e) {
-      console.error('Formula evaluation error:', e);
-    }
-    return null;
-  }, []);
-
-  // Calculate all cells
+  // Calculate all cells with formulas - iterative approach
   const calculatedCells = useMemo(() => {
-    return data.cells.map((row, rowIndex) => {
-      return row.map((cell, _colIndex) => {
-        if (cell.formula) {
-          const calculated = evaluateFormula(cell.formula, rowIndex, data.cells, data.settings);
-          return { ...cell, calculatedValue: calculated };
-        }
-        return { ...cell, calculatedValue: cell.value };
+    const { cells, settings } = data;
+    
+    // Create a copy with calculated values
+    const result: CellData[][] = cells.map(row => 
+      row.map(cell => ({ ...cell, calculatedValue: cell.value }))
+    );
+    
+    // Helper to get cell value (already calculated or raw)
+    const getCellValue = (rowIdx: number, colIdx: number): number => {
+      if (rowIdx < 0 || rowIdx >= result.length) return 0;
+      if (colIdx < 0 || colIdx >= 12) return 0;
+      const val = result[rowIdx]?.[colIdx]?.calculatedValue;
+      if (val === null || val === undefined || val === '') return 0;
+      return typeof val === 'number' ? val : parseFloat(val) || 0;
+    };
+    
+    // Evaluate a single formula
+    const evalFormula = (formula: string, rowIndex: number): number | null => {
+      if (!formula || !formula.startsWith('=')) return null;
+      
+      let expr = formula.substring(1);
+      
+      // Replace variables
+      expr = expr.replace(/\$RATE/g, settings.exchangeRate.toString());
+      expr = expr.replace(/\$CLEARANCE/g, settings.clearanceFee.toString());
+      
+      // Replace percentages: 10% -> 0.1
+      expr = expr.replace(/(\d+(?:\.\d+)?)%/g, (_, num) => (parseFloat(num) / 100).toString());
+      
+      // Replace cell references: C1 -> value
+      expr = expr.replace(/([A-L])(\d+)/g, (_, col, row) => {
+        const colIdx = col.charCodeAt(0) - 65;
+        const rowIdx = parseInt(row) - 1;
+        return getCellValue(rowIdx, colIdx).toString();
       });
-    });
-  }, [data.cells, data.settings, evaluateFormula]);
+      
+      try {
+        // eslint-disable-next-line no-new-func
+        const fn = new Function(`return ${expr}`);
+        const result = fn();
+        if (typeof result === 'number' && !isNaN(result) && isFinite(result)) {
+          return Math.round(result * 100) / 100;
+        }
+      } catch (e) {
+        console.error('Formula error:', formula, expr, e);
+      }
+      return null;
+    };
+    
+    // Multiple passes to resolve dependencies (max 5 iterations)
+    for (let pass = 0; pass < 5; pass++) {
+      let changed = false;
+      
+      for (let rowIdx = 0; rowIdx < result.length; rowIdx++) {
+        for (let colIdx = 0; colIdx < result[rowIdx].length; colIdx++) {
+          const cell = result[rowIdx][colIdx];
+          if (cell.formula) {
+            const newValue = evalFormula(cell.formula, rowIdx);
+            if (newValue !== null && newValue !== cell.calculatedValue) {
+              cell.calculatedValue = newValue;
+              changed = true;
+            }
+          }
+        }
+      }
+      
+      if (!changed) break;
+    }
+    
+    return result;
+  }, [data]);
 
-  // Save data to API
   const saveData = async () => {
     if (!quotationId) {
       message.info('บันทึกในหน่วยความจำ');
@@ -178,7 +196,6 @@ const QuickCalculator: React.FC<QuickCalculatorProps> = ({
     }
   };
 
-  // Add new row
   const addRow = () => {
     const newRowIndex = data.cells.length + 1;
     const newRow: CellData[] = [
@@ -202,7 +219,6 @@ const QuickCalculator: React.FC<QuickCalculatorProps> = ({
     }));
   };
 
-  // Remove row
   const removeRow = (rowIndex: number) => {
     setData(prev => ({
       ...prev,
@@ -210,7 +226,6 @@ const QuickCalculator: React.FC<QuickCalculatorProps> = ({
     }));
   };
 
-  // Handle cell click
   const handleCellClick = (rowIndex: number, colIndex: number) => {
     const cell = data.cells[rowIndex]?.[colIndex];
     setEditingCell({ row: rowIndex, col: colIndex });
@@ -222,32 +237,31 @@ const QuickCalculator: React.FC<QuickCalculatorProps> = ({
     }
   };
 
-  // Handle cell value change
   const handleCellChange = (rowIndex: number, colIndex: number, value: string) => {
     setData(prev => {
-      const newCells = [...prev.cells];
-      if (!newCells[rowIndex]) newCells[rowIndex] = [];
-      
-      if (value.startsWith('=')) {
-        newCells[rowIndex][colIndex] = { 
-          ...newCells[rowIndex][colIndex],
-          value: null,
-          formula: value 
-        };
-      } else {
-        const numValue = value === '' ? null : parseFloat(value);
-        newCells[rowIndex][colIndex] = { 
-          ...newCells[rowIndex][colIndex],
-          value: isNaN(numValue as number) ? value : numValue,
-          formula: undefined
-        };
-      }
+      const newCells = prev.cells.map((row, rIdx) => 
+        rIdx === rowIndex 
+          ? row.map((cell, cIdx) => {
+              if (cIdx !== colIndex) return cell;
+              
+              if (value.startsWith('=')) {
+                return { ...cell, value: null, formula: value };
+              } else {
+                const numValue = value === '' ? null : parseFloat(value);
+                return { 
+                  ...cell, 
+                  value: isNaN(numValue as number) ? value : numValue,
+                  formula: undefined 
+                };
+              }
+            })
+          : row
+      );
       
       return { ...prev, cells: newCells };
     });
   };
 
-  // Handle cell blur
   const handleCellBlur = () => {
     if (editingCell) {
       handleCellChange(editingCell.row, editingCell.col, editValue);
@@ -256,7 +270,6 @@ const QuickCalculator: React.FC<QuickCalculatorProps> = ({
     }
   };
 
-  // Handle key press
   const handleKeyDown = (e: React.KeyboardEvent) => {
     if (e.key === 'Enter') {
       handleCellBlur();
@@ -266,7 +279,6 @@ const QuickCalculator: React.FC<QuickCalculatorProps> = ({
     }
   };
 
-  // Format number for display
   const formatNumber = (value: number | string | null | undefined): string => {
     if (value === null || value === undefined || value === '') return '';
     const num = typeof value === 'string' ? parseFloat(value) : value;
@@ -274,17 +286,10 @@ const QuickCalculator: React.FC<QuickCalculatorProps> = ({
     return num.toLocaleString('th-TH', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
   };
 
-  // Get column letter
   const getColumnLetter = (index: number): string => {
     return String.fromCharCode(65 + index);
   };
 
-  // Check if column is editable
-  const isEditableColumn = (_colIndex: number): boolean => {
-    return true; // All columns editable
-  };
-
-  // Render mini preview (for embedded mode)
   const renderMiniPreview = () => (
     <Card
       title="🧮 เครื่องคิดเลขด่วน"
@@ -299,20 +304,17 @@ const QuickCalculator: React.FC<QuickCalculatorProps> = ({
     </Card>
   );
 
-  // Render spreadsheet table
   const renderSpreadsheet = () => (
     <>
-      {/* Toolbar */}
-      <div style={{ marginBottom: 16, display: 'flex', gap: 8 }}>
+      <div style={{ marginBottom: 16, display: 'flex', gap: 8, flexWrap: 'wrap' }}>
         <Button type="primary" icon={<PlusOutlined />} onClick={addRow}>
           เพิ่มแถว
         </Button>
         <span style={{ color: '#666', fontSize: 12, alignSelf: 'center' }}>
-          💡 พิมพ์สูตรได้ เช่น =A1*33, =B1+C1 | ใช้ $RATE และ $CLEARANCE อ้างอิงค่าตั้งค่า
+          💡 พิมพ์สูตรได้ เช่น =A1*33, =B1+C1, =C1*10%, =C1+10% | ใช้ $RATE และ $CLEARANCE อ้างอิงค่าตั้งค่า
         </span>
       </div>
 
-      {/* Spreadsheet Table */}
       <div style={{ overflowX: 'auto' }}>
         <table
           style={{
@@ -332,7 +334,6 @@ const QuickCalculator: React.FC<QuickCalculatorProps> = ({
                     padding: '8px 4px',
                     border: '1px solid #ddd',
                     minWidth: 100,
-                    background: isEditableColumn(idx) ? '#1890ff' : '#69c0ff',
                   }}
                 >
                   <div>{getColumnLetter(idx)}</div>
@@ -357,7 +358,6 @@ const QuickCalculator: React.FC<QuickCalculatorProps> = ({
                   </td>
                   {row.map((cell, colIndex) => {
                     const isEditing = editingCell?.row === rowIndex && editingCell?.col === colIndex;
-                    const isEditable = isEditableColumn(colIndex);
                     const displayValue = cell.calculatedValue;
                     
                     return (
@@ -366,14 +366,10 @@ const QuickCalculator: React.FC<QuickCalculatorProps> = ({
                         style={{
                           padding: '2px',
                           border: '1px solid #ddd',
-                          background: isEditing 
-                            ? '#e6f7ff' 
-                            : isEditable 
-                              ? '#fff' 
-                              : '#f5f5f5',
-                          cursor: isEditable ? 'text' : 'default',
+                          background: isEditing ? '#e6f7ff' : '#fff',
+                          cursor: 'text',
                         }}
-                        onClick={() => isEditable && handleCellClick(rowIndex, colIndex)}
+                        onClick={() => handleCellClick(rowIndex, colIndex)}
                       >
                         {isEditing ? (
                           <input
@@ -426,7 +422,6 @@ const QuickCalculator: React.FC<QuickCalculatorProps> = ({
         </table>
       </div>
 
-      {/* Summary */}
       {calculatedCells.length > 0 && (
         <div style={{ marginTop: 16, padding: 12, background: '#f6ffed', borderRadius: 8, border: '1px solid #b7eb8f' }}>
           <strong>📋 สรุป:</strong>{' '}
@@ -447,16 +442,10 @@ const QuickCalculator: React.FC<QuickCalculatorProps> = ({
 
   return (
     <>
-      {/* Show mini preview only in embedded mode */}
       {!isExternalControl && renderMiniPreview()}
 
-      {/* Full Modal */}
       <Modal
-        title={
-          <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-            <span>📊 เครื่องคิดเลขด่วน - คำนวณต้นทุนสินค้านำเข้า</span>
-          </div>
-        }
+        title="📊 เครื่องคิดเลขด่วน - คำนวณต้นทุนสินค้านำเข้า"
         open={modalOpen}
         onCancel={closeModal}
         width="95%"
@@ -487,7 +476,6 @@ const QuickCalculator: React.FC<QuickCalculatorProps> = ({
         </Spin>
       </Modal>
 
-      {/* Settings Modal */}
       <Modal
         title="⚙️ ตั้งค่าเครื่องคิดเลข"
         open={isSettingsOpen}
