@@ -277,7 +277,7 @@ const QuickCalculator: React.FC<QuickCalculatorProps> = ({
   };
 
   // Check if column is editable
-  const isEditableColumn = (colIndex: number): boolean => {
+  const isEditableColumn = (_colIndex: number): boolean => {
     return true; // All columns editable
   };
 
