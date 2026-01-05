@@ -11,7 +11,7 @@ import {
 } from '@ant-design/icons';
 import dayjs from 'dayjs';
 import { quotationsApi, customersApi, productsApi, systemSettingsApi } from '../../services/api';
-import type { QuotationItem, QuotationImage, SourceType } from '../../types/quotation';
+import type { QuotationItem, QuotationImage } from '../../types/quotation';
 import { useAuth } from '../../contexts/AuthContext';
 import SettingsModal from '../../components/quotation/SettingsModal';
 import TempProductModal from '../../components/quotation/TempProductModal';
