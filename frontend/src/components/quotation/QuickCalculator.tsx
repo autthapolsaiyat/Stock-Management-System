@@ -199,7 +199,7 @@ const QuickCalculator: React.FC<QuickCalculatorProps> = ({
   };
 
   const addRow = () => {
-    const n = data.cells.length + 1;
+    // const n = data.cells.length + 1;
     const newRow: CellData[] = [
       { value: null },           // A: ราคาของ $
       { value: null },           // B: ราคาต่อรอบ $
