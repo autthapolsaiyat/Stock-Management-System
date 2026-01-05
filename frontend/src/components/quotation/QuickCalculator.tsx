@@ -121,7 +121,7 @@ const QuickCalculator: React.FC<QuickCalculatorProps> = ({
     };
     
     // Evaluate a single formula
-    const evalFormula = (formula: string, rowIndex: number): number | null => {
+    const evalFormula = (formula: string, _rowIndex: number): number | null => {
       if (!formula || !formula.startsWith('=')) return null;
       
       let expr = formula.substring(1);

@@ -1175,23 +1175,6 @@ const QuotationForm: React.FC = () => {
       <QuickCalculator
         open={calculatorOpen}
         onClose={() => setCalculatorOpen(false)}
-        onAddItems={(calcItems) => {
-          const newItems = calcItems.map((item, index) => ({
-            lineNo: items.length + index + 1,
-            sourceType: 'TEMP' as SourceType,
-            itemCode: `CALC-${Date.now()}-${index}`,
-            itemName: item.name,
-            qty: item.qty,
-            unit: 'EA',
-            unitPrice: item.price,
-            estimatedCost: 0,
-            expectedMarginPercent: 100,
-            lineTotal: item.total,
-            itemStatus: 'PENDING' as const,
-          }));
-          setItems([...items, ...newItems]);
-          setCalculatorOpen(false);
-        }}
       />
       <QuotationPrintPreview
         open={previewOpen}
