@@ -148,6 +148,16 @@ export interface PurchaseOrder {
   deliveryDate?: string;
   remark?: string;
   items: PurchaseOrderItem[];
+  // International PO fields
+  isInternational?: boolean;
+  vendorAttention?: string;
+  vendorFax?: string;
+  endUser?: string;
+  deliveryTime?: string;
+  paymentMethod?: string;
+  shippingInstruction?: string;
+  currency?: string;
+  exchangeRate?: number;
   createdAt: string;
 }
 
