@@ -148,6 +148,34 @@ export class PurchaseOrderEntity {
   @Column({ name: 'updated_by', nullable: true })
   updatedBy: number;
 
+
+  // International PO Fields
+  @Column({ name: 'is_international', type: 'boolean', default: false })
+  isInternational: boolean;
+
+  @Column({ name: 'vendor_attention', type: 'varchar', length: 100, nullable: true })
+  vendorAttention: string;
+
+  @Column({ name: 'vendor_fax', type: 'varchar', length: 50, nullable: true })
+  vendorFax: string;
+
+  @Column({ name: 'end_user', type: 'varchar', length: 255, nullable: true })
+  endUser: string;
+
+  @Column({ name: 'delivery_time', type: 'varchar', length: 100, nullable: true })
+  deliveryTime: string;
+
+  @Column({ name: 'payment_method', type: 'varchar', length: 50, nullable: true })
+  paymentMethod: string;
+
+  @Column({ name: 'shipping_instruction', type: 'varchar', length: 100, nullable: true })
+  shippingInstruction: string;
+
+  @Column({ type: 'varchar', length: 10, default: 'THB' })
+  currency: string;
+
+  @Column({ name: 'exchange_rate', type: 'decimal', precision: 10, scale: 4, default: 1 })
+  exchangeRate: number;
   @OneToMany(() => PurchaseOrderItemEntity, item => item.purchaseOrder)
   items: PurchaseOrderItemEntity[];
 }

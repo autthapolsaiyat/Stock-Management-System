@@ -74,6 +74,16 @@ export class PurchaseOrderService {
         publicNote: dto.publicNote,
         internalNote: dto.internalNote,
         remark: dto.remark,
+        // International PO fields
+        isInternational: dto.isInternational || false,
+        vendorAttention: dto.vendorAttention,
+        vendorFax: dto.vendorFax,
+        endUser: dto.endUser,
+        deliveryTime: dto.deliveryTime,
+        paymentMethod: dto.paymentMethod,
+        shippingInstruction: dto.shippingInstruction,
+        currency: dto.currency || 'THB',
+        exchangeRate: dto.exchangeRate || 1,
         status: 'DRAFT',
         createdBy: userId,
       });
@@ -206,6 +216,16 @@ export class PurchaseOrderService {
       publicNote: dto.publicNote,
       internalNote: dto.internalNote,
       remark: dto.remark,
+        // International PO fields
+        isInternational: dto.isInternational || false,
+        vendorAttention: dto.vendorAttention,
+        vendorFax: dto.vendorFax,
+        endUser: dto.endUser,
+        deliveryTime: dto.deliveryTime,
+        paymentMethod: dto.paymentMethod,
+        shippingInstruction: dto.shippingInstruction,
+        currency: dto.currency || 'THB',
+        exchangeRate: dto.exchangeRate || 1,
       items: itemsToOrder.map(item => ({
         quotationId: quotation.id,
         quotationItemId: item.id,
@@ -247,6 +267,16 @@ export class PurchaseOrderService {
       publicNote: dto.publicNote ?? po.publicNote,
       internalNote: dto.internalNote ?? po.internalNote,
       remark: dto.remark ?? po.remark,
+      // International PO fields
+      isInternational: dto.isInternational ?? po.isInternational,
+      vendorAttention: dto.vendorAttention ?? po.vendorAttention,
+      vendorFax: dto.vendorFax ?? po.vendorFax,
+      endUser: dto.endUser ?? po.endUser,
+      deliveryTime: dto.deliveryTime ?? po.deliveryTime,
+      paymentMethod: dto.paymentMethod ?? po.paymentMethod,
+      shippingInstruction: dto.shippingInstruction ?? po.shippingInstruction,
+      currency: dto.currency ?? po.currency,
+      exchangeRate: dto.exchangeRate ?? po.exchangeRate,
       updatedBy: userId,
     });
 
