@@ -116,6 +116,9 @@ const QuickCalculator: React.FC<QuickCalculatorProps> = ({
     expression = expression.replace(/\$RATE/g, settings.exchangeRate.toString());
     expression = expression.replace(/\$CLEARANCE/g, settings.clearanceFee.toString());
     
+    // Support percentage: 10% -> 0.1, *10% -> *0.1
+    expression = expression.replace(/(\d+)%/g, (_m: string, num: string) => (parseFloat(num) / 100).toString());
+    
     const cellRefRegex = /([A-L])(\d+)/g;
     expression = expression.replace(cellRefRegex, (_match, col, row) => {
       const colIndex = col.charCodeAt(0) - 65;
