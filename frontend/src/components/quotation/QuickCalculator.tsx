@@ -50,13 +50,15 @@ const DEFAULT_HEADERS = [
   'ค่าบริการ 10%',
   'Freight $/Sample',
   'ค่าส่ง (xRate)',
+  'Shipment/year',
   'ค่าเคลียร์/รอบ',
+  'ค่าเคลียร์/ship',
   'ราคารวม',
   'XDS ($)',
   'ราคารวม+XDS',
   'จำนวน (N)',
   'ราคาสุดท้าย',
-];
+];// REPLACED
 
 const QuickCalculator: React.FC<QuickCalculatorProps> = ({
   quotationId,
@@ -114,7 +116,7 @@ const QuickCalculator: React.FC<QuickCalculatorProps> = ({
     // Helper to get cell value (already calculated or raw)
     const getCellValue = (rowIdx: number, colIdx: number): number => {
       if (rowIdx < 0 || rowIdx >= result.length) return 0;
-      if (colIdx < 0 || colIdx >= 12) return 0;
+      if (colIdx < 0 || colIdx >= 14) return 0;
       const val = result[rowIdx]?.[colIdx]?.calculatedValue;
       if (val === null || val === undefined || val === '') return 0;
       return typeof val === 'number' ? val : parseFloat(val) || 0;
@@ -134,7 +136,7 @@ const QuickCalculator: React.FC<QuickCalculatorProps> = ({
       expr = expr.replace(/(\d+(?:\.\d+)?)%/g, (_, num) => (parseFloat(num) / 100).toString());
       
       // Replace cell references: C1 -> value
-      expr = expr.replace(/([A-L])(\d+)/g, (_, col, row) => {
+      expr = expr.replace(/([A-N])(\d+)/g, (_, col, row) => {
         const colIdx = col.charCodeAt(0) - 65;
         const rowIdx = parseInt(row) - 1;
         return getCellValue(rowIdx, colIdx).toString();
@@ -197,20 +199,22 @@ const QuickCalculator: React.FC<QuickCalculatorProps> = ({
   };
 
   const addRow = () => {
-    const newRowIndex = data.cells.length + 1;
+    const n = data.cells.length + 1;
     const newRow: CellData[] = [
-      { value: null },
-      { value: null },
-      { value: null, formula: `=B${newRowIndex}*$RATE` },
-      { value: null, formula: `=C${newRowIndex}*1.1` },
-      { value: 180 },
-      { value: null, formula: `=E${newRowIndex}*$RATE` },
-      { value: null, formula: '=$CLEARANCE' },
-      { value: null, formula: `=D${newRowIndex}+F${newRowIndex}+G${newRowIndex}` },
-      { value: null },
-      { value: null, formula: `=H${newRowIndex}+(I${newRowIndex}*$RATE)` },
-      { value: 1 },
-      { value: null, formula: `=J${newRowIndex}+(G${newRowIndex}/K${newRowIndex})` },
+      { value: null },           // A: ราคาของ $
+      { value: null },           // B: ราคาต่อรอบ $
+      { value: null },           // C: ค่าของ (xRate)
+      { value: null },           // D: ค่าบริการ 10%
+      { value: null },           // E: Freight $/Sample
+      { value: null },           // F: ค่าส่ง (xRate)
+      { value: null },           // G: Shipment/year
+      { value: null },           // H: ค่าเคลียร์/รอบ
+      { value: null },           // I: ค่าเคลียร์/ship
+      { value: null },           // J: ราคารวม
+      { value: null },           // K: XDS ($)
+      { value: null },           // L: ราคารวม+XDS
+      { value: null },           // M: จำนวน (N)
+      { value: null },           // N: ราคาสุดท้าย
     ];
     
     setData(prev => ({
@@ -430,7 +434,7 @@ const QuickCalculator: React.FC<QuickCalculatorProps> = ({
           <strong style={{ color: '#52c41a' }}>
             {formatNumber(
               calculatedCells.reduce((sum, row) => {
-                const lastCol = row[11]?.calculatedValue;
+                const lastCol = row[13]?.calculatedValue;
                 return sum + (typeof lastCol === 'number' ? lastCol : 0);
               }, 0)
             )} บาท
