@@ -686,13 +686,13 @@ export class CheckinService {
 
     } else {
       const time = record.clockOutTime.toLocaleTimeString('th-TH', { hour: '2-digit', minute: '2-digit', second: '2-digit' });
-      const otText = record.otHours > 0 ? `\n⏱️ OT ${record.otHours} ชม.` : '';
+      // OT removed from LINE notify
 
       message = `😊 ${nickname}
 👤 ${username}
 📅 ${dateStr}
 ⏰ ${time}
-🏢 Check Out${otText}
+🏢 Check Out
 📍 ${record.clockOutNote || record.clockInNote || 'ทำงานที่บริษัท'}`;
     }
 
